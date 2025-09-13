@@ -636,15 +636,15 @@ def test_sync_exposures_special_characters(
     client.baseurl = URL("https://superset.example.org/")
 
     chart_with_special_characters = copy.deepcopy(chart_response)
-    chart_with_special_characters["result"][
-        "slice_name"
-    ] = "T!tl3_ w1th $pecial characters()*"  # type: ignore
+    chart_with_special_characters["result"]["slice_name"] = (
+        "T!tl3_ w1th $pecial characters()*"  # type: ignore
+    )
     client.get_chart.return_value = chart_with_special_characters["result"]
 
     dashboard_with_special_characters = copy.deepcopy(dashboard_response)
-    dashboard_with_special_characters["result"][
-        "dashboard_title"
-    ] = "D4shboard %^#? `wi_th` $pecial characters()*"  # type: ignore
+    dashboard_with_special_characters["result"]["dashboard_title"] = (
+        "D4shboard %^#? `wi_th` $pecial characters()*"  # type: ignore
+    )
     client.get_dashboard.return_value = dashboard_with_special_characters["result"]
 
     session = client.auth.session

@@ -16,7 +16,6 @@ from pytest_mock import MockerFixture
 from requests_mock.mocker import Mocker
 from yarl import URL
 
-from preset_cli import __version__
 from preset_cli.api.clients.superset import (
     RoleType,
     RuleType,
@@ -2665,19 +2664,15 @@ def test_parse_html_array() -> None:
     """
     Test ``parse_html_array``.
     """
-    assert (
-        parse_html_array(
-            """
+    assert parse_html_array(
+        """
                     
                       [main.test_table]
                     
                     """,
-        )
-        == ["main.test_table"]
-    )
-    assert (
-        parse_html_array(
-            """
+    ) == ["main.test_table"]
+    assert parse_html_array(
+        """
                 
                     
                         
@@ -2685,9 +2680,7 @@ def test_parse_html_array() -> None:
                         
                             public.FCC 2018 Survey
 """,
-        )
-        == ["main.sales", "public.FCC 2018 Survey"]
-    )
+    ) == ["main.sales", "public.FCC 2018 Survey"]
 
 
 def test_import_role(mocker: MockerFixture, requests_mock: Mocker) -> None:

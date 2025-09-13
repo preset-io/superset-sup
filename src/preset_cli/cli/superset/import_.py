@@ -101,7 +101,6 @@ def import_ownership(  # pylint: disable=too-many-locals
             }
             for ownership in resources:
                 if ownership["uuid"] not in assets_to_skip:
-
                     _logger.info(
                         "Importing ownership for %s %s",
                         resource_name,

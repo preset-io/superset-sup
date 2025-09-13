@@ -1,6 +1,7 @@
 """
 Main entry point for Superset commands.
 """
+
 from typing import Any, Optional
 
 import click
@@ -90,7 +91,6 @@ def mutate_commands(source: click.core.Group, target: click.core.Group) -> None:
     Programmatically modify commands so they work with workspaces.
     """
     for name, command in source.commands.items():
-
         if isinstance(command, click.core.Group):
 
             @click.group()

@@ -315,7 +315,6 @@ def convert_query_to_projection(sql: str, dialect: MFSQLEngine) -> str:
     # convert WHERE predicate to a CASE statement
     where_expression = parsed_query.find(Where)
     if where_expression:
-
         # Remove DISTINCT from metric to avoid conficting with CASE
         distinct = False
         for node in metric_expression.this.walk():

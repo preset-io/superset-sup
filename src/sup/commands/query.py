@@ -13,7 +13,7 @@ from rich.syntax import Syntax
 from typing_extensions import Annotated
 
 from sup.output.formatters import display_porcelain_list
-from sup.output.styles import EMOJIS, RICH_STYLES
+from sup.output.styles import COLORS, EMOJIS, RICH_STYLES
 from sup.output.tables import display_saved_queries_table
 
 app = typer.Typer(help="Manage saved queries", no_args_is_help=True)
@@ -246,14 +246,14 @@ def display_saved_query_details(query: Dict[str, Any]) -> None:
         info_lines.append(f"Last Run: {query['last_run_delta_humanized']}")
 
     panel_content = "\n".join(info_lines)
-    console.print(Panel(panel_content, title=f"Saved Query: {label}", border_style="blue"))
+    console.print(Panel(panel_content, title=f"Saved Query: {label}", border_style=COLORS.info))
 
     # Show SQL content with syntax highlighting
     sql_content = query.get("sql", "")
     if sql_content:
         console.print(f"\n{EMOJIS['sql']} SQL Query:", style=RICH_STYLES["header"])
         sql_syntax = Syntax(sql_content, "sql", theme="monokai", line_numbers=False)
-        console.print(Panel(sql_syntax, title="SQL Content", border_style="blue"))
+        console.print(Panel(sql_syntax, title="SQL Content", border_style=COLORS.info))
 
     # Show tags if available
     tags = query.get("tags", [])

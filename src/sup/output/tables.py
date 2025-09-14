@@ -23,7 +23,7 @@ class EntityTableConfig:
         self,
         title_emoji: str,
         title_name: str,
-        border_style: str = "cyan",
+        border_style: str = COLORS.secondary,
         info_command: Optional[str] = None,
     ):
         self.title_emoji = title_emoji
@@ -36,7 +36,7 @@ class EntityTableConfig:
         self,
         field: str,
         display_name: str,
-        style: str = "cyan",
+        style: str = COLORS.secondary,
         no_wrap: bool = True,
         link_template: Optional[str] = None,
         transform_func: Optional[Callable[..., Any]] = None,
@@ -140,13 +140,13 @@ DATASET_TABLE_CONFIG = (
     EntityTableConfig(
         title_emoji=EMOJIS["table"],
         title_name="Datasets",
-        border_style="cyan",
+        border_style=COLORS.secondary,
         info_command="sup dataset info",
     )
     .add_column(
         "id",
         "ID",
-        style="cyan",
+        style=COLORS.secondary,
         link_template="https://{hostname}/api/v1/dataset/{id}",
     )
     .add_column(
@@ -160,19 +160,19 @@ DATASET_TABLE_CONFIG = (
     .add_column(
         "database.database_name",
         "Database",
-        style="yellow",
+        style=COLORS.warning,
         transform_func=lambda _, item: item.get("database", {}).get("database_name", "Unknown"),
     )
     .add_column(
         "schema",
         "Schema",
-        style="blue",
+        style=COLORS.info,
         transform_func=lambda schema, _: schema or "default",
     )
     .add_column(
         "kind",
         "Type",
-        style="green",
+        style=COLORS.success,
         transform_func=lambda kind, _: kind or "physical",
     )
     .add_column(
@@ -193,7 +193,7 @@ CHART_TABLE_CONFIG = (
     .add_column(
         "id",
         "ID",
-        style="cyan",
+        style=COLORS.secondary,
         link_template="https://{hostname}/api/v1/chart/{id}",
     )
     .add_column(
@@ -206,13 +206,13 @@ CHART_TABLE_CONFIG = (
     .add_column(
         "viz_type",
         "Type",
-        style="yellow",
+        style=COLORS.warning,
         transform_func=lambda viz_type, _: viz_type or "Unknown",
     )
     .add_column(
         "datasource_name",
         "Dataset",
-        style="blue",
+        style=COLORS.info,
         transform_func=lambda ds_name, item: (
             item.get("datasource_name_text")
             or ds_name
@@ -222,7 +222,7 @@ CHART_TABLE_CONFIG = (
     .add_column(
         "dashboards",
         "Dashboards",
-        style="green",
+        style=COLORS.success,
         transform_func=lambda dashboards, _: (
             ", ".join(
                 [str(d.get("dashboard_title", d.get("id", ""))) for d in (dashboards or [])[:2]],
@@ -238,16 +238,16 @@ WORKSPACE_TABLE_CONFIG = (
     EntityTableConfig(
         title_emoji=EMOJIS["workspace"],
         title_name="Workspaces",
-        border_style="blue",
+        border_style=COLORS.info,
     )
-    .add_column("id", "ID", style="cyan")
+    .add_column("id", "ID", style=COLORS.secondary)
     .add_column("title", "Name", style="bright_white", no_wrap=False)
-    .add_column("team_name", "Team", style="yellow")
-    .add_column("hostname", "URL", style="blue", no_wrap=False)
+    .add_column("team_name", "Team", style=COLORS.warning)
+    .add_column("hostname", "URL", style=COLORS.info, no_wrap=False)
     .add_column(
         "status",
         "Status",
-        style="green",
+        style=COLORS.success,
         transform_func=lambda status, _: status or "active",
     )
 )
@@ -262,7 +262,7 @@ DASHBOARD_TABLE_CONFIG = (
     .add_column(
         "id",
         "ID",
-        style="cyan",
+        style=COLORS.secondary,
         link_template="https://{hostname}/api/v1/dashboard/{id}",
     )
     .add_column(
@@ -275,13 +275,13 @@ DASHBOARD_TABLE_CONFIG = (
     .add_column(
         "published",
         "Status",
-        style="green",
+        style=COLORS.success,
         transform_func=lambda published, _: "Published" if published else "Draft",
     )
     .add_column(
         "owners",
         "Owners",
-        style="blue",
+        style=COLORS.info,
         transform_func=lambda owners, _: (
             ", ".join(
                 [
@@ -308,13 +308,13 @@ SAVED_QUERY_TABLE_CONFIG = (
     EntityTableConfig(
         title_emoji=EMOJIS["sql"],
         title_name="Saved Queries",
-        border_style="blue",
+        border_style=COLORS.info,
         info_command="sup query info",
     )
     .add_column(
         "id",
         "ID",
-        style="cyan",
+        style=COLORS.secondary,
         link_template="https://{hostname}/api/v1/saved_query/{id}",
     )
     .add_column(
@@ -327,13 +327,13 @@ SAVED_QUERY_TABLE_CONFIG = (
     .add_column(
         "database.database_name",
         "Database",
-        style="yellow",
+        style=COLORS.warning,
         transform_func=lambda _, item: item.get("database", {}).get("database_name", "Unknown"),
     )
     .add_column(
         "schema",
         "Schema",
-        style="blue",
+        style=COLORS.info,
         transform_func=lambda schema, _: schema or "default",
     )
     .add_column(
@@ -350,21 +350,21 @@ DATABASE_TABLE_CONFIG = (
     EntityTableConfig(
         title_emoji=EMOJIS["database"],
         title_name="Databases",
-        border_style="green",
+        border_style=COLORS.success,
     )
-    .add_column("id", "ID", style="cyan")
+    .add_column("id", "ID", style=COLORS.secondary)
     .add_column("database_name", "Name", style="bright_white", no_wrap=False)
-    .add_column("backend", "Engine", style="yellow")
+    .add_column("backend", "Engine", style=COLORS.warning)
     .add_column(
         "allow_run_async",
         "Async",
-        style="green",
+        style=COLORS.success,
         transform_func=lambda allow_async, _: "Yes" if allow_async else "No",
     )
     .add_column(
         "expose_in_sqllab",
         "SQL Lab",
-        style="blue",
+        style=COLORS.info,
         transform_func=lambda expose, _: "Yes" if expose else "No",
     )
 )

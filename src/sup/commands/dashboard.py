@@ -14,7 +14,7 @@ from typing_extensions import Annotated
 
 from sup.filters.dashboard import apply_dashboard_filters, parse_dashboard_filters
 from sup.output.formatters import display_porcelain_list
-from sup.output.styles import EMOJIS, RICH_STYLES
+from sup.output.styles import COLORS, EMOJIS, RICH_STYLES
 from sup.output.tables import display_dashboards_table
 
 app = typer.Typer(help="Manage dashboards", no_args_is_help=True)
@@ -297,7 +297,7 @@ def display_dashboard_details(dashboard: Dict[str, Any]) -> None:
             header_style=RICH_STYLES["header"],
             border_style="dim",
         )
-        chart_table.add_column("ID", style="cyan", no_wrap=True)
+        chart_table.add_column("ID", style=COLORS.secondary, no_wrap=True)
         chart_table.add_column("Name", style="bright_white", no_wrap=False)
 
         # Sort by ID for consistent display

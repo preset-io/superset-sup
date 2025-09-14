@@ -12,7 +12,7 @@ from rich.table import Table
 from preset_cli.api.clients.preset import PresetClient
 from sup.auth.preset import SupPresetAuth
 from sup.config.settings import SupContext
-from sup.output.styles import EMOJIS, RICH_STYLES
+from sup.output.styles import COLORS, EMOJIS, RICH_STYLES
 
 console = Console()
 
@@ -93,13 +93,13 @@ class SupPresetClient:
             title=f"{EMOJIS['workspace']} Available Workspaces",
             show_header=True,
             header_style=RICH_STYLES["header"],
-            border_style="blue",
+            border_style=COLORS.info,
         )
 
-        table.add_column("ID", style="cyan", no_wrap=True)
+        table.add_column("ID", style=COLORS.secondary, no_wrap=True)
         table.add_column("Name", style="bright_white", no_wrap=False)
-        table.add_column("Team", style="yellow", no_wrap=True)
-        table.add_column("Status", style="green", no_wrap=True)
+        table.add_column("Team", style=COLORS.warning, no_wrap=True)
+        table.add_column("Status", style=COLORS.success, no_wrap=True)
 
         for workspace in workspaces:
             workspace_id = str(workspace.get("id", ""))

@@ -12,7 +12,7 @@ from rich.table import Table
 from preset_cli.api.clients.superset import SupersetClient
 from sup.auth.preset import SupPresetAuth
 from sup.config.settings import SupContext
-from sup.output.styles import EMOJIS, RICH_STYLES
+from sup.output.styles import COLORS, EMOJIS, RICH_STYLES
 
 console = Console()
 
@@ -137,14 +137,14 @@ class SupSupersetClient:
             title=f"{EMOJIS['database']} Available Databases",
             show_header=True,
             header_style=RICH_STYLES["header"],
-            border_style="green",
+            border_style=COLORS.success,
         )
 
-        table.add_column("ID", style="cyan", no_wrap=True)
+        table.add_column("ID", style=COLORS.secondary, no_wrap=True)
         table.add_column("Name", style="bright_white", no_wrap=False)
-        table.add_column("Type", style="yellow", no_wrap=True)
-        table.add_column("Backend", style="blue", no_wrap=True)
-        table.add_column("Status", style="green", no_wrap=True)
+        table.add_column("Type", style=COLORS.warning, no_wrap=True)
+        table.add_column("Backend", style=COLORS.info, no_wrap=True)
+        table.add_column("Status", style=COLORS.success, no_wrap=True)
 
         for database in databases:
             db_id = str(database.get("id", ""))

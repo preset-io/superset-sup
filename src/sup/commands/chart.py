@@ -13,7 +13,7 @@ from typing_extensions import Annotated
 
 from sup.filters.chart import apply_chart_filters, parse_chart_filters
 from sup.output.formatters import display_porcelain_list
-from sup.output.styles import EMOJIS, RICH_STYLES
+from sup.output.styles import COLORS, EMOJIS, RICH_STYLES
 
 app = typer.Typer(help="Manage charts", no_args_is_help=True)
 console = Console()
@@ -513,7 +513,7 @@ def display_chart_sql_rich(chart_id: int, chart_name: str, sql_queries: List[str
     for i, sql_query in enumerate(sql_queries, 1):
         title = f"SQL Query {i}" if len(sql_queries) > 1 else "Compiled SQL Query"
         sql_syntax = Syntax(sql_query, "sql", theme="monokai", line_numbers=False)
-        console.print(Panel(sql_syntax, title=title, border_style="blue"))
+        console.print(Panel(sql_syntax, title=title, border_style=COLORS.info))
 
 
 def display_charts_table(
@@ -535,11 +535,11 @@ def display_charts_table(
         border_style=RICH_STYLES["brand"],
     )
 
-    table.add_column("ID", style="cyan", no_wrap=True)
+    table.add_column("ID", style=COLORS.secondary, no_wrap=True)
     table.add_column("Name", style="bright_white", no_wrap=False)
-    table.add_column("Type", style="yellow", no_wrap=True)
-    table.add_column("Dataset", style="blue", no_wrap=True)
-    table.add_column("Dashboards", style="green", no_wrap=True)
+    table.add_column("Type", style=COLORS.warning, no_wrap=True)
+    table.add_column("Dataset", style=COLORS.info, no_wrap=True)
+    table.add_column("Dashboards", style=COLORS.success, no_wrap=True)
 
     for chart in charts:
         chart_id = chart.get("id", "")
@@ -664,7 +664,7 @@ def display_chart_sql_compiled(ctx, client, chart_id: int, chart: Dict[str, Any]
             for i, sql_query in enumerate(sql_queries, 1):
                 title = f"SQL Query {i}" if len(sql_queries) > 1 else "Compiled SQL Query"
                 sql_syntax = Syntax(sql_query, "sql", theme="monokai", line_numbers=False)
-                console.print(Panel(sql_syntax, title=title, border_style="blue"))
+                console.print(Panel(sql_syntax, title=title, border_style=COLORS.info))
         else:
             console.print(
                 f"{EMOJIS['warning']} Could not retrieve compiled SQL query",

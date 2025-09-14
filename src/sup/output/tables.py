@@ -38,6 +38,8 @@ class EntityTableConfig:
         display_name: str,
         style: str = COLORS.secondary,
         no_wrap: bool = True,
+        min_width: Optional[int] = None,
+        max_width: Optional[int] = None,
         link_template: Optional[str] = None,
         transform_func: Optional[Callable[..., Any]] = None,
     ):
@@ -48,6 +50,8 @@ class EntityTableConfig:
                 "display_name": display_name,
                 "style": style,
                 "no_wrap": no_wrap,
+                "min_width": min_width,
+                "max_width": max_width,
                 "link_template": link_template,
                 "transform_func": transform_func,
             },
@@ -88,6 +92,8 @@ def display_entity_table(
             column["display_name"],
             style=column["style"],
             no_wrap=column["no_wrap"],
+            min_width=column.get("min_width"),
+            max_width=column.get("max_width"),
         )
 
     # Add rows
@@ -154,6 +160,8 @@ DATASET_TABLE_CONFIG = (
         "Name",
         style="bright_white",
         no_wrap=False,
+        min_width=15,
+        max_width=40,
         link_template="https://{hostname}{explore_url}",
         transform_func=lambda name, item: name,  # Could add explore_url handling
     )
@@ -161,6 +169,8 @@ DATASET_TABLE_CONFIG = (
         "database.database_name",
         "Database",
         style=COLORS.warning,
+        min_width=20,
+        max_width=35,
         transform_func=lambda _, item: item.get("database", {}).get("database_name", "Unknown"),
     )
     .add_column(
@@ -201,18 +211,24 @@ CHART_TABLE_CONFIG = (
         "Name",
         style="bright_white",
         no_wrap=False,
+        min_width=15,
+        max_width=30,
         link_template="https://{hostname}/superset/explore/?slice_id={id}",
     )
     .add_column(
         "viz_type",
         "Type",
         style=COLORS.warning,
+        min_width=12,
+        max_width=25,
         transform_func=lambda viz_type, _: viz_type or "Unknown",
     )
     .add_column(
         "datasource_name",
         "Dataset",
         style=COLORS.info,
+        min_width=18,
+        max_width=35,
         transform_func=lambda ds_name, item: (
             item.get("datasource_name_text")
             or ds_name
@@ -223,6 +239,8 @@ CHART_TABLE_CONFIG = (
         "dashboards",
         "Dashboards",
         style=COLORS.success,
+        min_width=15,
+        max_width=25,
         transform_func=lambda dashboards, _: (
             ", ".join(
                 [str(d.get("dashboard_title", d.get("id", ""))) for d in (dashboards or [])[:2]],

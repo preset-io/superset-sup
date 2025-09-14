@@ -170,6 +170,39 @@ sup dataset pull/push/sync                     # Dataset migration + sync
 sup database pull/push/sync                    # Database connection management
 ```
 
+### **🔮 dbt Integration Architecture**
+**How dbt capabilities distribute across sup entities:**
+
+**`sup database sync`** (dbt → Superset):
+- dbt profiles → Superset database connections
+- Connection configs → Database credentials and settings
+
+**`sup dataset sync`** (dbt ↔ Superset):
+- dbt models → Superset datasets (table definitions, schema)
+- dbt metrics → Superset calculated fields and aggregations
+- dbt descriptions → Dataset metadata and documentation
+
+**`sup chart sync`** (Superset → dbt):
+- Charts using models → dbt exposures (usage tracking)
+- Chart metadata → Exposure documentation
+
+**`sup dashboard sync`** (Superset → dbt):
+- Dashboards using models → dbt exposures (business context)
+- Dashboard metadata → Exposure documentation
+
+**Required Configuration:**
+```bash
+# dbt Core integration
+sup config set dbt-profiles-dir ~/.dbt/          # dbt profiles location
+sup config set dbt-project-dir ./dbt-project/    # dbt project root
+
+# dbt Cloud integration
+sup config set dbt-cloud-account-id 12345        # dbt Cloud account
+sup config set dbt-cloud-project-id 67890        # dbt Cloud project
+sup config set dbt-cloud-job-id 11111            # Specific job for sync
+sup config set dbt-cloud-api-token xyz123        # dbt Cloud API access
+```
+
 ### **Key Features**
 - **YAML-Only**: Perfect for version control and Jinja templating
 - **Universal Filtering**: All sup filter patterns work with pull/push

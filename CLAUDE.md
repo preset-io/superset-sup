@@ -125,6 +125,23 @@ sup config set target-workspace-id 789        # Set cross-workspace target
 - ✅ **Production Tested**: Live integration with real Preset workspaces
 - 🎯 **Next**: Chart sync for advanced templating workflows (bridges pull/push with legacy CLI power)
 
+### dbt Integration Entity Distribution
+**How dbt capabilities map to sup entities:**
+
+- **`sup database sync`**: dbt profiles → Superset database connections
+- **`sup dataset sync`**: dbt models → Superset datasets (schema, metrics, metadata)
+- **`sup chart sync`**: Superset charts → dbt exposures (usage tracking)
+- **`sup dashboard sync`**: Superset dashboards → dbt exposures (business context)
+
+**Required sup config keys for dbt integration:**
+```bash
+# dbt Core
+dbt-profiles-dir, dbt-project-dir
+
+# dbt Cloud
+dbt-cloud-account-id, dbt-cloud-project-id, dbt-cloud-job-id, dbt-cloud-api-token
+```
+
 ## Legacy CLI Development Commands
 
 ### Environment Setup

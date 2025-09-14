@@ -744,3 +744,288 @@ def display_chart_data_results(ctx, client, chart_id: int, chart: Dict[str, Any]
             f"{EMOJIS['error']} Failed to get chart data: {e}",
             style=RICH_STYLES["error"],
         )
+
+
+@app.command("export")
+def export_charts(
+    assets_folder: Annotated[
+        Optional[str],
+        typer.Argument(
+            help="Assets folder to export chart definitions to (defaults to configured folder)",
+        ),
+    ] = None,
+    # Universal filters - reuse existing list command patterns
+    id_filter: Annotated[
+        Optional[int],
+        typer.Option("--id", help="Export specific chart by ID"),
+    ] = None,
+    ids_filter: Annotated[
+        Optional[str],
+        typer.Option("--ids", help="Export multiple charts by IDs (comma-separated)"),
+    ] = None,
+    name_filter: Annotated[
+        Optional[str],
+        typer.Option("--name", help="Export charts matching name pattern (supports wildcards)"),
+    ] = None,
+    mine_filter: Annotated[
+        bool,
+        typer.Option("--mine", help="Export only charts you own"),
+    ] = False,
+    created_after: Annotated[
+        Optional[str],
+        typer.Option(
+            "--created-after",
+            help="Export charts created after date (YYYY-MM-DD)",
+        ),
+    ] = None,
+    modified_after: Annotated[
+        Optional[str],
+        typer.Option(
+            "--modified-after",
+            help="Export charts modified after date (YYYY-MM-DD)",
+        ),
+    ] = None,
+    limit: Annotated[
+        Optional[int],
+        typer.Option("--limit", "-l", help="Maximum number of charts to export"),
+    ] = None,
+    # Export-specific options
+    workspace_id: Annotated[
+        Optional[int],
+        typer.Option(
+            "--workspace-id",
+            "-w",
+            help="Workspace ID (defaults to configured workspace)",
+        ),
+    ] = None,
+    overwrite: Annotated[
+        bool,
+        typer.Option("--overwrite", help="Overwrite existing files"),
+    ] = False,
+    disable_jinja_escaping: Annotated[
+        bool,
+        typer.Option(
+            "--disable-jinja-escaping",
+            help="Export raw YAML without escaping {{ }} templates (may cause import conflicts)",
+        ),
+    ] = False,
+    force_unix_eol: Annotated[
+        bool,
+        typer.Option("--force-unix-eol", help="Force Unix end-of-line characters"),
+    ] = False,
+    include_dependencies: Annotated[
+        bool,
+        typer.Option(
+            "--include-dependencies",
+            help="Include related datasets and database connections (auto-enabled for --id/--ids)",
+        ),
+    ] = False,
+    porcelain: Annotated[
+        bool,
+        typer.Option("--porcelain", help="Machine-readable output (no decorations)"),
+    ] = False,
+):
+    """
+    Export chart definitions from Superset workspace to local filesystem.
+
+    Downloads chart configurations as YAML files that can be:
+    • Version controlled with git
+    • Modified and re-imported
+    • Backed up for disaster recovery
+    • Migrated between workspaces
+
+    The export creates a directory structure with:
+    • charts/ - Chart definition files
+    • datasets/ - Related dataset definitions (when dependencies included)
+    • databases/ - Database connection configs (when dependencies included)
+    • metadata.yaml - Export metadata
+
+    Dependencies (datasets & databases) are automatically included when exporting
+    specific charts (--id/--ids), or can be explicitly requested with
+    --include-dependencies for broader exports.
+
+    By default, existing {{ }} Jinja2 templates in charts are escaped to prevent
+    conflicts during import. Use --disable-jinja-escaping for raw export.
+
+    Examples:
+        sup chart export                             # Export all charts (charts only)
+        sup chart export --mine --include-dependencies  # Export your charts + dependencies
+        sup chart export --id=3586                  # Export specific chart + dependencies
+        sup chart export --ids=1,2,3 --overwrite   # Export charts + dependencies, overwrite
+        sup chart export --name="*sales*"           # Export matching charts (charts only)
+    """
+    import re
+    from pathlib import Path
+    from typing import Any, Callable, Union
+    from zipfile import ZipFile
+
+    import yaml
+
+    from sup.clients.superset import SupSupersetClient
+    from sup.config.settings import SupContext
+    from sup.filters.chart import apply_chart_filters, parse_chart_filters
+    from sup.output.spinners import data_spinner
+
+    # Jinja2 escaping markers (from original implementation)
+    JINJA2_OPEN_MARKER = "__JINJA2_OPEN__"
+    JINJA2_CLOSE_MARKER = "__JINJA2_CLOSE__"
+
+    def get_newline_char(force_unix_eol: bool = False) -> Union[str, None]:
+        """Returns the newline character used by the open function"""
+        return "\n" if force_unix_eol else None
+
+    def traverse_data(value: Any, handler: Callable) -> Any:
+        """Process value according to its data type"""
+        if isinstance(value, dict):
+            return {k: traverse_data(v, handler) for k, v in value.items()}
+        elif isinstance(value, list):
+            return [traverse_data(item, handler) for item in value]
+        elif isinstance(value, str):
+            return handler(value)
+        else:
+            return value
+
+    def handle_string(value):
+        """Handle Jinja2 escaping for strings"""
+        # Escape existing Jinja2 templates
+        value = re.sub(r"{{", JINJA2_OPEN_MARKER, value)
+        value = re.sub(r"}}", JINJA2_CLOSE_MARKER, value)
+        return value
+
+    def remove_root(file_name: str) -> str:
+        """Remove root directory from file path"""
+        parts = Path(file_name).parts
+        return str(Path(*parts[1:])) if len(parts) > 1 else file_name
+
+    # Resolve assets folder using config default
+    ctx = SupContext()
+    resolved_assets_folder = ctx.get_assets_folder(cli_override=assets_folder)
+
+    if not porcelain:
+        console.print(
+            f"{EMOJIS['export']} Exporting charts to {resolved_assets_folder}...",
+            style=RICH_STYLES["info"],
+        )
+
+    try:
+        # Resolve assets folder path
+        output_path = Path(resolved_assets_folder)
+        if not output_path.exists():
+            output_path.mkdir(parents=True, exist_ok=True)
+        elif not output_path.is_dir():
+            console.print(
+                f"{EMOJIS['error']} Path exists but is not a directory: {resolved_assets_folder}",
+                style=RICH_STYLES["error"],
+            )
+            raise typer.Exit(1)
+
+        # Get charts using existing filtering logic
+        client = SupSupersetClient.from_context(ctx, workspace_id)
+
+        with data_spinner("charts to export", silent=porcelain) as sp:
+            # Parse filters using existing logic
+            filters = parse_chart_filters(
+                id_filter=id_filter,
+                ids_filter=ids_filter,
+                name_filter=name_filter,
+                mine_filter=mine_filter,
+                team_filter=None,  # Team inferred from workspace context
+                created_after=created_after,
+                modified_after=modified_after,
+                limit_filter=limit,
+            )
+
+            # Get all charts and apply filters
+            all_charts = client.get_charts(
+                silent=True,
+                limit=None,  # Get all, then filter
+            )
+            filtered_charts = apply_chart_filters(all_charts, filters)
+
+            # Extract IDs for export
+            chart_ids = [chart["id"] for chart in filtered_charts]
+
+            if sp:
+                sp.text = f"Found {len(chart_ids)} charts to export"
+
+        if not chart_ids:
+            console.print(
+                f"{EMOJIS['warning']} No charts match your filters",
+                style=RICH_STYLES["warning"],
+            )
+            return
+
+        # Determine if we should include dependencies (smart logic from original preset-cli)
+        specific_ids_requested = bool(id_filter or ids_filter)
+        should_include_dependencies = include_dependencies or specific_ids_requested
+
+        if not porcelain:
+            dependency_msg = " (with dependencies)" if should_include_dependencies else ""
+            console.print(
+                f"{EMOJIS['info']} Exporting {len(chart_ids)} charts{dependency_msg}...",
+                style=RICH_STYLES["info"],
+            )
+
+        # Export using existing API
+        zip_buffer = client.client.export_zip("chart", chart_ids)
+
+        # Process ZIP contents
+        with ZipFile(zip_buffer) as bundle:
+            contents = {
+                remove_root(file_name): bundle.read(file_name).decode()
+                for file_name in bundle.namelist()
+            }
+
+        # Save files to filesystem
+        files_written = 0
+        for file_name, file_contents in contents.items():
+            # Skip related files unless dependencies are requested
+            if not should_include_dependencies and not file_name.startswith("chart"):
+                continue
+
+            target = output_path / file_name
+            if target.exists() and not overwrite:
+                if not porcelain:
+                    console.print(
+                        f"{EMOJIS['warning']} File exists, skipping: {target}",
+                        style=RICH_STYLES["warning"],
+                    )
+                continue
+
+            # Create directory if needed
+            if not target.parent.exists():
+                target.parent.mkdir(parents=True, exist_ok=True)
+
+            # Handle Jinja2 escaping if requested
+            if not disable_jinja_escaping:
+                try:
+                    asset_content = yaml.safe_load(file_contents)
+                    for key, value in asset_content.items():
+                        asset_content[key] = traverse_data(value, handle_string)
+                    file_contents = yaml.dump(asset_content, sort_keys=False)
+                except yaml.YAMLError:
+                    # If YAML parsing fails, write as-is
+                    pass
+
+            # Write file with proper line endings
+            newline = get_newline_char(force_unix_eol)
+            with open(target, "w", encoding="utf-8", newline=newline) as output:
+                output.write(file_contents)
+
+            files_written += 1
+
+        if not porcelain:
+            console.print(
+                f"{EMOJIS['success']} Exported {files_written} files to {resolved_assets_folder}",
+                style=RICH_STYLES["success"],
+            )
+        else:
+            print(f"{files_written}\t{resolved_assets_folder}")
+
+    except Exception as e:
+        if not porcelain:
+            console.print(
+                f"{EMOJIS['error']} Failed to export charts: {e}",
+                style=RICH_STYLES["error"],
+            )
+        raise typer.Exit(1)

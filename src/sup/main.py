@@ -18,6 +18,7 @@ from sup.commands import (
     query,
     sql,
     theme,
+    user,
     workspace,
 )
 from sup.commands import config as config_cmd
@@ -65,7 +66,13 @@ HELP_TEMPLATE = """🚀 [bold {primary}]The Ultimate Superset/Preset CLI[/bold {
    [dim]For power users and AI agents[/dim]
 
 [bold {primary}]Key capabilities:[/bold {primary}]
-{capabilities}"""
+{capabilities}
+
+[bold {primary}]Getting Started:[/bold {primary}]
+• [bold]Step 1:[/bold] [cyan]sup config[/cyan] - Set up authentication and credentials
+• [bold]Step 2:[/bold] [cyan]sup workspace list[/cyan] - Find your workspace
+• [bold]Step 3:[/bold] [cyan]sup workspace use <ID>[/cyan] - Set default workspace
+• [bold]Step 4:[/bold] [cyan]sup sql "SELECT 1"[/cyan] - Start querying data"""
 
 
 def format_help():
@@ -106,16 +113,17 @@ def show_banner():
     console.print()
 
 
-# Add command modules
-app.command(name="sql", help="Execute SQL queries")(sql.sql_command)
+# Add command modules - ordered by typical workflow
+app.add_typer(config_cmd.app, name="config", help="Manage authentication and configuration")
 app.add_typer(workspace.app, name="workspace", help="Manage workspaces")
 app.add_typer(database.app, name="database", help="Manage databases")
+app.command(name="sql", help="Execute SQL queries")(sql.sql_command)
 app.add_typer(dataset.app, name="dataset", help="Manage datasets")
 app.add_typer(chart.app, name="chart", help="Manage charts")
 app.add_typer(dashboard.app, name="dashboard", help="Manage dashboards")
 app.add_typer(query.app, name="query", help="Manage saved queries")
+app.add_typer(user.app, name="user", help="Manage users")
 app.add_typer(theme.app, name="theme", help="Test themes and colors", hidden=True)
-app.add_typer(config_cmd.app, name="config", help="Manage configuration")
 
 
 def version_callback(value: bool):

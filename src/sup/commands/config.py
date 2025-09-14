@@ -109,6 +109,7 @@ def show_config():
             f"Authentication: {auth_status}",
             f"Current workspace: {workspace_id or 'None'}",
             f"Current database: {database_id or 'None'}",
+            f"Assets folder: {ctx.get_assets_folder()}",
             f"Output format: {ctx.global_config.output_format.value}",
             f"Max rows: {ctx.global_config.max_rows}",
             f"Show query time: {ctx.global_config.show_query_time}",
@@ -158,6 +159,7 @@ def set_config(
     Examples:
         sup config set workspace-id 123
         sup config set database-id 5 --global
+        sup config set assets-folder ./my-assets/
         sup config set output-format json
     """
     scope = "global" if global_config else "local"
@@ -378,6 +380,7 @@ def show_env_vars():
         ("SUP_PRESET_API_SECRET", "Preset API secret for authentication"),
         ("SUP_WORKSPACE_ID", "Default workspace ID for commands"),
         ("SUP_DATABASE_ID", "Default database ID for SQL commands"),
+        ("SUP_ASSETS_FOLDER", "Default folder for asset import/export operations"),
         ("SUP_OUTPUT_FORMAT", "Default output format (table, json, yaml, csv)"),
         ("SUP_MAX_ROWS", "Maximum rows to display (default: 1000)"),
         ("SUP_SHOW_QUERY_TIME", "Show query execution time (true/false)"),
@@ -409,6 +412,7 @@ def show_env_vars():
     console.print("Examples:", style=f"bold {COLORS.primary}")
     console.print("  export SUP_PRESET_API_TOKEN=your_token_here", style="white")
     console.print("  export SUP_WORKSPACE_ID=123", style="white")
+    console.print("  export SUP_ASSETS_FOLDER=/path/to/assets", style="white")
     console.print("  export SUP_OUTPUT_FORMAT=json", style="white")
     console.print()
 

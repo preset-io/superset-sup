@@ -94,6 +94,9 @@ class SupGlobalConfig(BaseSettings):
     show_query_time: bool = True
     color_output: bool = True
 
+    # Asset management
+    assets_folder: str = "./assets"  # Global default for asset operations
+
     # Current context (can be overridden by project state or env vars)
     current_workspace_id: Optional[int] = None
     current_database_id: Optional[int] = None
@@ -233,6 +236,16 @@ class SupContext:
     def get_workspace_hostname(self) -> Optional[str]:
         """Get cached workspace hostname."""
         return self.project_state.current_workspace_hostname
+
+    def get_assets_folder(self, cli_override: Optional[str] = None) -> str:
+        """Get assets folder with proper precedence."""
+        env_assets_folder = get_env_var("assets_folder")
+        return (
+            cli_override
+            or env_assets_folder
+            or self.project_state.assets_folder
+            or self.global_config.assets_folder
+        )
 
     def set_workspace_context(
         self,

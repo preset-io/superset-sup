@@ -486,3 +486,50 @@ class SupSupersetClient:
                 style=RICH_STYLES["error"],
             )
             raise
+
+    def display_users_table(self, users: List[Dict[str, Any]]) -> None:
+        """Display users in a beautiful Rich table."""
+        if not users:
+            console.print(
+                f"{EMOJIS['warning']} No users found",
+                style=RICH_STYLES["warning"],
+            )
+            return
+
+        table = Table(
+            title=f"{EMOJIS['user']} Available Users",
+            show_header=True,
+            header_style="bold #10B981",
+            border_style="#10B981",
+        )
+
+        table.add_column("ID", justify="right", style="cyan", min_width=4)
+        table.add_column("Email", style="bright_white", min_width=20)
+        table.add_column("First Name", style="bright_white", min_width=15)
+        table.add_column("Last Name", style="bright_white", min_width=15)
+        table.add_column("Status", justify="center", min_width=8)
+        table.add_column("Roles", style="dim", min_width=15)
+
+        for user in users:
+            # Format roles for display - UserType uses "role" field as List[str]
+            roles = user.get("role", [])
+            if isinstance(roles, list) and roles:
+                roles_display = ", ".join(roles[:3])  # Show first 3 roles
+                if len(roles) > 3:
+                    roles_display += f" +{len(roles) - 3} more"
+            else:
+                roles_display = "-"
+
+            # Format active status - UserType doesn't have active field, assume active if has roles
+            active_status = "✅" if roles else "❓"
+
+            table.add_row(
+                str(user.get("id", "")),
+                user.get("email", ""),
+                user.get("first_name", ""),
+                user.get("last_name", ""),
+                active_status,
+                roles_display,
+            )
+
+        console.print(table)

@@ -68,7 +68,7 @@ def list_workspaces(
                 sp.text = f"Found {len(workspaces)} workspaces"
 
         if porcelain:
-            # Tab-separated: ID, Name, Team, URL, Status
+            # Tab-separated: ID, Name, Team, Hostname, Status
             display_porcelain_list(
                 workspaces,
                 ["id", "title", "team_name", "hostname", "status"],

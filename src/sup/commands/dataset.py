@@ -335,7 +335,7 @@ def display_datasets_table(
     table.add_column("Database", style="yellow", no_wrap=True)
     table.add_column("Schema", style="blue", no_wrap=True)
     table.add_column("Type", style="green", no_wrap=True)
-    table.add_column("Columns", style="magenta", no_wrap=True)
+    table.add_column("Columns", style=RICH_STYLES["accent"], no_wrap=True)
 
     for dataset in datasets:
         dataset_id = dataset.get("id", "")

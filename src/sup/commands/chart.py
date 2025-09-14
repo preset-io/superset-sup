@@ -532,7 +532,7 @@ def display_charts_table(
         title=f"{EMOJIS['chart']} Available Charts",
         show_header=True,
         header_style=RICH_STYLES["header"],
-        border_style="magenta",
+        border_style=RICH_STYLES["brand"],
     )
 
     table.add_column("ID", style="cyan", no_wrap=True)
@@ -545,7 +545,11 @@ def display_charts_table(
         chart_id = chart.get("id", "")
         name = chart.get("slice_name", "Unknown")
         viz_type = chart.get("viz_type", "Unknown")
-        dataset_name = chart.get("datasource_name", "Unknown")
+        dataset_name = (
+            chart.get("datasource_name_text")
+            or chart.get("datasource_name")
+            or (f"ID:{chart.get('datasource_id')}" if chart.get("datasource_id") else "Unknown")
+        )
 
         # Handle dashboards (can be multiple)
         dashboards = chart.get("dashboards", [])
@@ -610,7 +614,7 @@ def display_chart_details(chart: Dict[str, Any]) -> None:
         info_lines.append(f"Description: {chart['description']}")
 
     panel_content = "\n".join(info_lines)
-    console.print(Panel(panel_content, title=f"Chart: {name}", border_style="magenta"))
+    console.print(Panel(panel_content, title=f"Chart: {name}", border_style=RICH_STYLES["brand"]))
 
     # Show dashboards if available
     dashboards = chart.get("dashboards", [])

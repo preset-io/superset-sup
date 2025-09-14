@@ -238,7 +238,9 @@ def display_dashboard_details(dashboard: Dict[str, Any]) -> None:
         info_lines.append(f"Modified: {dashboard['changed_on'].split('T')[0]}")
 
     panel_content = "\n".join(info_lines)
-    console.print(Panel(panel_content, title=f"Dashboard: {title}", border_style="magenta"))
+    console.print(
+        Panel(panel_content, title=f"Dashboard: {title}", border_style=RICH_STYLES["brand"]),
+    )
 
     # Show owners if available
     owners = dashboard.get("owners", [])

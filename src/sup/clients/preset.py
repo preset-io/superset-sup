@@ -99,7 +99,6 @@ class SupPresetClient:
         table.add_column("ID", style="cyan", no_wrap=True)
         table.add_column("Name", style="bright_white", no_wrap=False)
         table.add_column("Team", style="yellow", no_wrap=True)
-        table.add_column("URL", style="blue", no_wrap=False)
         table.add_column("Status", style="green", no_wrap=True)
 
         for workspace in workspaces:
@@ -110,13 +109,20 @@ class SupPresetClient:
             hostname = workspace.get("hostname", "")
             status = workspace.get("status", "unknown")
 
-            # Create clickable URL if hostname exists
-            url = f"https://{hostname}" if hostname else "N/A"
+            # Make ID clickable if hostname exists
+            if hostname:
+                clickable_id = f"[link=https://{hostname}]{workspace_id}[/link]"
+            else:
+                clickable_id = workspace_id
 
-            table.add_row(workspace_id, display_name, team_name, url, status)
+            table.add_row(clickable_id, display_name, team_name, status)
 
         console.print(table)
         console.print(
             "\n💡 Use [bold]sup workspace use <ID>[/] to set default workspace",
+            style=RICH_STYLES["dim"],
+        )
+        console.print(
+            "🔗 Click ID to open workspace in browser",
             style=RICH_STYLES["dim"],
         )

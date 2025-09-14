@@ -131,7 +131,7 @@ def display_table(
         elif df[col].dtype == "bool":
             style = "yellow"
         elif pd.api.types.is_datetime64_any_dtype(df[col]):
-            style = "magenta"
+            style = RICH_STYLES["accent"]
 
         table.add_column(str(col), style=style, no_wrap=True, max_width=max_width or 50)
 
@@ -347,7 +347,7 @@ def display_entity_results(
             console.print(f"{EMOJIS['info']} Found {len(items)} items")
             if items:
                 # Generic table fallback
-                table = Table(show_header=True, header_style="bold magenta")
+                table = Table(show_header=True, header_style=RICH_STYLES["header"])
 
                 # Add first few columns
                 sample_item = items[0]

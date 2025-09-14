@@ -11,7 +11,7 @@ from typing import Any, Callable, Dict, List, Optional
 from rich.console import Console
 from rich.table import Table
 
-from sup.output.styles import EMOJIS, RICH_STYLES
+from sup.output.styles import COLORS, EMOJIS, RICH_STYLES
 
 console = Console()
 
@@ -178,7 +178,7 @@ DATASET_TABLE_CONFIG = (
     .add_column(
         "columns",
         "Columns",
-        style="magenta",
+        style=RICH_STYLES["accent"],
         transform_func=lambda columns, _: str(len(columns or [])),
     )
 )
@@ -187,7 +187,7 @@ CHART_TABLE_CONFIG = (
     EntityTableConfig(
         title_emoji=EMOJIS["chart"],
         title_name="Charts",
-        border_style="magenta",
+        border_style=COLORS.secondary,
         info_command="sup chart info",
     )
     .add_column(
@@ -213,7 +213,11 @@ CHART_TABLE_CONFIG = (
         "datasource_name",
         "Dataset",
         style="blue",
-        transform_func=lambda ds_name, _: ds_name or "Unknown",
+        transform_func=lambda ds_name, item: (
+            item.get("datasource_name_text")
+            or ds_name
+            or (f"ID:{item.get('datasource_id')}" if item.get("datasource_id") else "Unknown")
+        ),
     )
     .add_column(
         "dashboards",
@@ -252,7 +256,7 @@ DASHBOARD_TABLE_CONFIG = (
     EntityTableConfig(
         title_emoji=EMOJIS["dashboard"],
         title_name="Dashboards",
-        border_style="magenta",
+        border_style=COLORS.primary,
         info_command="sup dashboard info",
     )
     .add_column(

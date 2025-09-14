@@ -193,9 +193,11 @@ def list_charts(
                 yaml.safe_dump(filtered_charts, default_flow_style=False, indent=2),
             )
         else:
-            # Get hostname for clickable links
+            # Use the new table system with proper width management
+            from sup.output.tables import display_charts_table as display_charts_table_new
+
             workspace_hostname = ctx.get_workspace_hostname()
-            display_charts_table(filtered_charts, workspace_hostname)
+            display_charts_table_new(filtered_charts, workspace_hostname)
 
     except Exception as e:
         if not porcelain:

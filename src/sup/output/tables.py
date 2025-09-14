@@ -204,6 +204,8 @@ CHART_TABLE_CONFIG = (
         "id",
         "ID",
         style=COLORS.secondary,
+        min_width=8,
+        max_width=12,
         link_template="https://{hostname}/api/v1/chart/{id}",
     )
     .add_column(
@@ -219,16 +221,16 @@ CHART_TABLE_CONFIG = (
         "viz_type",
         "Type",
         style=COLORS.warning,
-        min_width=12,
-        max_width=25,
+        min_width=6,
+        max_width=15,
         transform_func=lambda viz_type, _: viz_type or "Unknown",
     )
     .add_column(
         "datasource_name",
         "Dataset",
         style=COLORS.info,
-        min_width=18,
-        max_width=35,
+        min_width=10,
+        max_width=18,
         transform_func=lambda ds_name, item: (
             item.get("datasource_name_text")
             or ds_name
@@ -239,8 +241,8 @@ CHART_TABLE_CONFIG = (
         "dashboards",
         "Dashboards",
         style=COLORS.success,
-        min_width=15,
-        max_width=25,
+        min_width=10,
+        max_width=18,
         transform_func=lambda dashboards, _: (
             ", ".join(
                 [str(d.get("dashboard_title", d.get("id", ""))) for d in (dashboards or [])[:2]],

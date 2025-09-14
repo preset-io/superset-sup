@@ -1,0 +1,108 @@
+slice_name: NRR & GRR over time (PLG-orig)
+description: null
+certified_by: null
+certification_details: null
+viz_type: echarts_timeseries_line
+params:
+  adhoc_filters:
+  - clause: WHERE
+    comparator:
+    - SELF_SERVE
+    datasourceWarning: false
+    expressionType: SIMPLE
+    filterOptionName: filter_4z0ioa4ltes_2ycg3oe63y4
+    isExtra: false
+    isNew: false
+    operator: IN
+    operatorId: IN
+    sqlExpression: null
+    subject: nrr_attribution
+  - clause: WHERE
+    comparator: No filter
+    datasourceWarning: false
+    expressionType: SIMPLE
+    filterOptionName: filter_66mbzrd89hd_5upju1oyeia
+    isExtra: false
+    isNew: false
+    operator: TEMPORAL_RANGE
+    sqlExpression: null
+    subject: ds
+  annotation_layers: []
+  color_scheme: supersetColors
+  comparison_type: values
+  dashboards:
+  - 323
+  datasource: 347__table
+  extra_form_data: {}
+  forecastInterval: 0.8
+  forecastPeriods: 10
+  groupby: []
+  legendOrientation: top
+  legendType: scroll
+  metrics:
+  - aggregate: null
+    column: null
+    datasourceWarning: false
+    expressionType: SQL
+    hasCustomLabel: true
+    label: NRR
+    optionName: metric_sstm5teh7co_712duezhkkv
+    sqlExpression: 'SUM(CASE WHEN arr_364_days_ago > 0 THEN arr END)
+
+      /
+
+      SUM(arr_364_days_ago)
+
+      '
+  - aggregate: null
+    column: null
+    datasourceWarning: false
+    expressionType: SQL
+    hasCustomLabel: true
+    label: GRR
+    optionName: metric_zxmp0f3zb18_lp06i8qk7g
+    sqlExpression: "SUM(\n  CASE \n    WHEN arr_364_days_ago > 0 AND arr_364_days_ago\
+      \ >= arr THEN  arr\n    WHEN arr_364_days_ago > 0 AND \n      arr_364_days_ago\
+      \ < arr THEN arr_364_days_ago\n  END\n)\n/\nSUM(arr_364_days_ago)\n"
+  order_desc: true
+  rich_tooltip: true
+  row_limit: 10000
+  seriesType: line
+  showTooltipTotal: true
+  show_empty_columns: true
+  show_legend: true
+  slice_id: 2974
+  sort_series_type: sum
+  stack: null
+  time_grain_sqla: P1D
+  tooltipTimeFormat: smart_date
+  truncateXAxis: true
+  truncateYAxis: true
+  truncate_metric: true
+  viz_type: echarts_timeseries_line
+  xAxisLabelInterval: auto
+  x_axis: ds
+  x_axis_sort_asc: true
+  x_axis_time_format: smart_date
+  x_axis_title_margin: 15
+  y_axis_bounds:
+  - null
+  - null
+  y_axis_format: ',.1%'
+  y_axis_title_margin: 15
+  y_axis_title_position: Left
+query_context: '{"datasource":{"id":347,"type":"table"},"force":false,"queries":[{"filters":[{"col":"nrr_attribution","op":"IN","val":["SELF_SERVE"]},{"col":"ds","op":"TEMPORAL_RANGE","val":"No
+  filter"}],"extras":{"time_grain_sqla":"P1D","having":"","where":""},"applied_time_extras":{},"columns":[{"timeGrain":"P1D","columnType":"BASE_AXIS","sqlExpression":"ds","label":"ds","expressionType":"SQL"}],"metrics":[{"aggregate":null,"column":null,"datasourceWarning":false,"expressionType":"SQL","hasCustomLabel":true,"label":"NRR","optionName":"metric_sstm5teh7co_712duezhkkv","sqlExpression":"SUM(CASE
+  WHEN arr_364_days_ago > 0 THEN arr END)\n/\nSUM(arr_364_days_ago)\n"},{"aggregate":null,"column":null,"datasourceWarning":false,"expressionType":"SQL","hasCustomLabel":true,"label":"GRR","optionName":"metric_zxmp0f3zb18_lp06i8qk7g","sqlExpression":"SUM(\n  CASE
+  \n    WHEN arr_364_days_ago > 0 AND arr_364_days_ago >= arr THEN  arr\n    WHEN
+  arr_364_days_ago > 0 AND \n      arr_364_days_ago < arr THEN arr_364_days_ago\n  END\n)\n/\nSUM(arr_364_days_ago)\n"}],"orderby":[[{"aggregate":null,"column":null,"datasourceWarning":false,"expressionType":"SQL","hasCustomLabel":true,"label":"NRR","optionName":"metric_sstm5teh7co_712duezhkkv","sqlExpression":"SUM(CASE
+  WHEN arr_364_days_ago > 0 THEN arr END)\n/\nSUM(arr_364_days_ago)\n"},false]],"annotation_layers":[],"row_limit":10000,"series_columns":[],"series_limit":0,"order_desc":true,"url_params":{},"custom_params":{},"custom_form_data":{},"time_offsets":[],"post_processing":[{"operation":"pivot","options":{"index":["ds"],"columns":[],"aggregates":{"NRR":{"operator":"mean"},"GRR":{"operator":"mean"__JINJA2_CLOSE__,"drop_missing_columns":false__JINJA2_CLOSE__,{"operation":"flatten"}]}],"form_data":{"datasource":"347__table","viz_type":"echarts_timeseries_line","slice_id":2974,"x_axis":"ds","time_grain_sqla":"P1D","x_axis_sort_asc":true,"metrics":[{"aggregate":null,"column":null,"datasourceWarning":false,"expressionType":"SQL","hasCustomLabel":true,"label":"NRR","optionName":"metric_sstm5teh7co_712duezhkkv","sqlExpression":"SUM(CASE
+  WHEN arr_364_days_ago > 0 THEN arr END)\n/\nSUM(arr_364_days_ago)\n"},{"aggregate":null,"column":null,"datasourceWarning":false,"expressionType":"SQL","hasCustomLabel":true,"label":"GRR","optionName":"metric_zxmp0f3zb18_lp06i8qk7g","sqlExpression":"SUM(\n  CASE
+  \n    WHEN arr_364_days_ago > 0 AND arr_364_days_ago >= arr THEN  arr\n    WHEN
+  arr_364_days_ago > 0 AND \n      arr_364_days_ago < arr THEN arr_364_days_ago\n  END\n)\n/\nSUM(arr_364_days_ago)\n"}],"groupby":[],"adhoc_filters":[{"clause":"WHERE","comparator":["SELF_SERVE"],"datasourceWarning":false,"expressionType":"SIMPLE","filterOptionName":"filter_4z0ioa4ltes_2ycg3oe63y4","isExtra":false,"isNew":false,"operator":"IN","operatorId":"IN","sqlExpression":null,"subject":"nrr_attribution"},{"clause":"WHERE","comparator":"No
+  filter","datasourceWarning":false,"expressionType":"SIMPLE","filterOptionName":"filter_66mbzrd89hd_5upju1oyeia","isExtra":false,"isNew":false,"operator":"TEMPORAL_RANGE","sqlExpression":null,"subject":"ds"}],"order_desc":true,"row_limit":10000,"truncate_metric":true,"show_empty_columns":true,"comparison_type":"values","annotation_layers":[],"forecastPeriods":10,"forecastInterval":0.8,"x_axis_title_margin":15,"y_axis_title_margin":15,"y_axis_title_position":"Left","sort_series_type":"sum","color_scheme":"supersetColors","seriesType":"line","stack":null,"show_legend":true,"legendType":"scroll","legendOrientation":"top","x_axis_time_format":"smart_date","xAxisLabelInterval":"auto","rich_tooltip":true,"showTooltipTotal":true,"tooltipTimeFormat":"smart_date","y_axis_format":",.1%","truncateXAxis":true,"truncateYAxis":true,"y_axis_bounds":[null,null],"extra_form_data":{},"dashboards":[323],"force":false,"result_format":"json","result_type":"full"},"result_format":"json","result_type":"full"}'
+cache_timeout: null
+uuid: 63e61a21-e672-4528-ab08-42838d45f42e
+version: 1.0.0
+dataset_uuid: 10c8c60d-b1a0-4de1-b39d-82731aa7aeee
+tags: []

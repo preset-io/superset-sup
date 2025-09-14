@@ -1027,3 +1027,250 @@ def export_charts(
                 style=RICH_STYLES["error"],
             )
         raise typer.Exit(1)
+
+
+@app.command("import")
+def import_charts(
+    assets_folder: Annotated[
+        Optional[str],
+        typer.Argument(
+            help="Assets folder to import chart definitions from (defaults to configured folder)",
+        ),
+    ] = None,
+    # Import-specific options
+    workspace_id: Annotated[
+        Optional[int],
+        typer.Option(
+            "--workspace-id",
+            "-w",
+            help="Workspace ID (defaults to configured workspace)",
+        ),
+    ] = None,
+    overwrite: Annotated[
+        bool,
+        typer.Option("--overwrite", help="Overwrite existing charts"),
+    ] = False,
+    disable_jinja_templating: Annotated[
+        bool,
+        typer.Option(
+            "--disable-jinja-templating",
+            help="Disable Jinja2 template processing in YAML files",
+        ),
+    ] = False,
+    continue_on_error: Annotated[
+        bool,
+        typer.Option(
+            "--continue-on-error",
+            help="Continue importing even if some charts fail",
+        ),
+    ] = False,
+    force: Annotated[
+        bool,
+        typer.Option(
+            "--force",
+            "-f",
+            help="Skip confirmation prompts (use with caution)",
+        ),
+    ] = False,
+    porcelain: Annotated[
+        bool,
+        typer.Option("--porcelain", help="Machine-readable output (no decorations)"),
+    ] = False,
+):
+    """
+    Import chart definitions from local filesystem to Superset workspace.
+
+    Reads chart configurations from YAML files and creates/updates charts in
+    the workspace. Automatically handles dependencies (datasets, databases)
+    when present in the assets folder.
+
+    The import processes directory structure:
+    • charts/ - Chart definition files to import
+    • datasets/ - Dataset definitions (imported first as dependencies)
+    • databases/ - Database connections (imported first as dependencies)
+    • metadata.yaml - Import metadata and validation
+
+    Dependencies are imported in correct order: databases → datasets → charts
+    to ensure all required objects exist before chart creation.
+
+    By default, Jinja2 templating is enabled for parameterized assets.
+    Use --disable-jinja-templating to import raw YAML without processing.
+
+    Examples:
+        sup chart import                             # Import to configured target workspace
+        sup chart import ./backup                    # Import from specific folder
+        sup chart import --workspace-id=456          # Import to specific workspace
+        sup chart import --overwrite --force         # Overwrite without confirmation
+        sup chart import --continue-on-error         # Skip failed charts, continue
+    """
+    from preset_cli.cli.superset.sync.native.command import ResourceType, native
+    from sup.config.settings import SupContext
+
+    # Resolve assets folder using config default
+    ctx = SupContext()
+    resolved_assets_folder = ctx.get_assets_folder(cli_override=assets_folder)
+
+    if not porcelain:
+        console.print(
+            f"{EMOJIS['import']} Importing charts from {resolved_assets_folder}...",
+            style=RICH_STYLES["info"],
+        )
+
+    try:
+        # Verify assets folder exists
+        from pathlib import Path
+
+        assets_path = Path(resolved_assets_folder)
+        if not assets_path.exists():
+            console.print(
+                f"{EMOJIS['error']} Assets folder does not exist: {resolved_assets_folder}",
+                style=RICH_STYLES["error"],
+            )
+            raise typer.Exit(1)
+        elif not assets_path.is_dir():
+            console.print(
+                f"{EMOJIS['error']} Path is not a directory: {resolved_assets_folder}",
+                style=RICH_STYLES["error"],
+            )
+            raise typer.Exit(1)
+
+        # Create a mock click context for the native() function
+        # This reuses ALL the existing import logic while providing sup UX
+        import click
+
+        from sup.auth.preset import SupPresetAuth
+
+        # Get source and target workspace context
+        source_workspace_id = ctx.get_workspace_id()
+        target_workspace_id = ctx.get_import_target_workspace_id(cli_override=workspace_id)
+
+        if not source_workspace_id:
+            console.print(
+                f"{EMOJIS['error']} No source workspace configured",
+                style=RICH_STYLES["error"],
+            )
+            console.print(
+                "💡 Run [bold]sup workspace list[/] and [bold]sup workspace use <ID>[/]",
+                style=RICH_STYLES["info"],
+            )
+            raise typer.Exit(1)
+
+        if not target_workspace_id:
+            console.print(
+                f"{EMOJIS['error']} No target workspace configured",
+                style=RICH_STYLES["error"],
+            )
+            console.print(
+                "💡 Set target: [bold]sup workspace set-import-target[/]",
+                style=RICH_STYLES["info"],
+            )
+            raise typer.Exit(1)
+
+        # Safety confirmation for potentially destructive imports
+        if not force and not porcelain:
+            is_cross_workspace = target_workspace_id != source_workspace_id
+
+            console.print(
+                f"{EMOJIS['warning']} Import Operation Summary",
+                style=RICH_STYLES["warning"],
+            )
+            console.print(f"📁 Assets folder: [cyan]{resolved_assets_folder}[/cyan]")
+            console.print(f"📤 Source workspace: [cyan]{source_workspace_id}[/cyan]")
+            console.print(f"📥 Target workspace: [cyan]{target_workspace_id}[/cyan]")
+
+            if is_cross_workspace:
+                console.print(
+                    "🔄 [bold]Cross-workspace import[/bold] - assets copied to different workspace",
+                    style=RICH_STYLES["info"],
+                )
+            else:
+                console.print(
+                    "⚠️  [bold]Same-workspace import[/bold] - may overwrite existing charts",
+                    style=RICH_STYLES["warning"],
+                )
+
+            if not typer.confirm("Continue with import operation?"):
+                console.print(
+                    f"{EMOJIS['info']} Import cancelled",
+                    style=RICH_STYLES["info"],
+                )
+                raise typer.Exit(0)
+
+        # Get target workspace URL (where we're importing TO)
+        # We need to resolve the hostname for the TARGET workspace, not source
+        from sup.clients.preset import SupPresetClient
+
+        preset_client = SupPresetClient.from_context(ctx, silent=True)
+        workspaces = preset_client.get_all_workspaces(silent=True)
+
+        target_workspace = None
+        for ws in workspaces:
+            if ws.get("id") == target_workspace_id:
+                target_workspace = ws
+                break
+
+        if not target_workspace:
+            console.print(
+                f"{EMOJIS['error']} Target workspace {target_workspace_id} not found",
+                style=RICH_STYLES["error"],
+            )
+            raise typer.Exit(1)
+
+        target_hostname = target_workspace.get("hostname")
+        if not target_hostname:
+            console.print(
+                f"{EMOJIS['error']} No hostname for target workspace {target_workspace_id}",
+                style=RICH_STYLES["error"],
+            )
+            raise typer.Exit(1)
+
+        workspace_url = f"https://{target_hostname}/"
+        auth = SupPresetAuth.from_sup_config(ctx, silent=True)
+
+        # Create mock click context that native() expects
+        mock_ctx = click.Context(click.Command("import"))
+        mock_ctx.obj = {
+            "AUTH": auth,
+            "INSTANCE": workspace_url,
+        }
+
+        if not porcelain:
+            console.print(
+                f"{EMOJIS['info']} Processing charts and dependencies...",
+                style=RICH_STYLES["info"],
+            )
+
+        # Call the existing native() function with chart-specific settings
+        # This gives us ALL the existing functionality: dependency resolution,
+        # Jinja2 templating, database password handling, error management, etc.
+        native(
+            ctx=mock_ctx,
+            directory=resolved_assets_folder,
+            option=(),  # No custom template variables
+            asset_type=ResourceType.CHART,
+            overwrite=overwrite,
+            disable_jinja_templating=disable_jinja_templating,
+            disallow_edits=True,  # Mark as externally managed
+            external_url_prefix="",  # No external URL prefix
+            load_env=False,  # Don't load .env files
+            split=False,  # Import as bundle, not individually
+            continue_on_error=continue_on_error,
+            db_password=(),  # No database passwords specified
+        )
+
+        if not porcelain:
+            console.print(
+                f"{EMOJIS['success']} Chart import completed successfully",
+                style=RICH_STYLES["success"],
+            )
+
+    except typer.Exit:
+        # Re-raise typer exits (our own error handling)
+        raise
+    except Exception as e:
+        if not porcelain:
+            console.print(
+                f"{EMOJIS['error']} Failed to import charts: {e}",
+                style=RICH_STYLES["error"],
+            )
+        raise typer.Exit(1)

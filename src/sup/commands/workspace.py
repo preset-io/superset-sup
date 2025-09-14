@@ -192,3 +192,114 @@ def workspace_info(
         f"{EMOJIS['warning']} Workspace info not yet implemented",
         style=RICH_STYLES["warning"],
     )
+
+
+@app.command("set-import-target")
+def set_import_target(
+    workspace_id: Annotated[int, typer.Argument(help="Workspace ID to use as import target")],
+    persist: Annotated[
+        bool,
+        typer.Option("--persist", "-p", help="Save to global config"),
+    ] = False,
+):
+    """
+    Set the import target workspace for cross-workspace operations.
+
+    Only needed when you want imports to go to different workspace than exports.
+    By default, imports use the same workspace as exports (source workspace).
+
+    Use this for enterprise sync workflows:
+    • Development → Staging migrations
+    • Backup → Restore scenarios
+    • Cross-workspace asset sharing
+    """
+    from sup.config.settings import SupContext
+
+    console.print(
+        f"{EMOJIS['import']} Setting import target workspace {workspace_id}...",
+        style=RICH_STYLES["info"],
+    )
+
+    try:
+        ctx = SupContext()
+        ctx.set_import_target_workspace_id(workspace_id, persist=persist)
+
+        if persist:
+            console.print(
+                f"{EMOJIS['success']} Import target workspace {workspace_id} saved globally",
+                style=RICH_STYLES["success"],
+            )
+        else:
+            console.print(
+                f"{EMOJIS['success']} Using workspace {workspace_id} as import target for project",
+                style=RICH_STYLES["success"],
+            )
+            console.print(
+                "💡 Add --persist to save globally",
+                style=RICH_STYLES["dim"],
+            )
+
+    except Exception as e:
+        console.print(
+            f"{EMOJIS['error']} Failed to set import target workspace: {e}",
+            style=RICH_STYLES["error"],
+        )
+        raise typer.Exit(1)
+
+
+@app.command("show")
+def show_workspace_context():
+    """
+    Show current workspace context including source and import target.
+
+    Displays the configured workspaces for exports (source) and imports (target).
+    """
+    from sup.config.settings import SupContext
+
+    try:
+        ctx = SupContext()
+        source_workspace_id = ctx.get_workspace_id()
+        target_workspace_id = ctx.get_import_target_workspace_id()
+
+        console.print(
+            f"{EMOJIS['workspace']} Current Workspace Context",
+            style=RICH_STYLES["header"],
+        )
+
+        if source_workspace_id:
+            console.print(
+                f"📤 Source (exports, queries): [cyan]{source_workspace_id}[/cyan]",
+                style=RICH_STYLES["info"],
+            )
+        else:
+            console.print(
+                "📤 Source: [dim]Not configured[/dim]",
+                style=RICH_STYLES["warning"],
+            )
+            console.print(
+                "💡 Run [bold]sup workspace use <ID>[/] to set source workspace",
+                style=RICH_STYLES["dim"],
+            )
+
+        if target_workspace_id and target_workspace_id != source_workspace_id:
+            console.print(
+                f"📥 Import Target: [cyan]{target_workspace_id}[/cyan] [dim](cross)[/dim]",
+                style=RICH_STYLES["info"],
+            )
+        elif target_workspace_id == source_workspace_id:
+            console.print(
+                f"📥 Import Target: [cyan]{target_workspace_id}[/cyan] [dim](same as source)[/dim]",
+                style=RICH_STYLES["info"],
+            )
+        else:
+            console.print(
+                "📥 Import Target: [dim]Same as source (default)[/dim]",
+                style=RICH_STYLES["info"],
+            )
+
+    except Exception as e:
+        console.print(
+            f"{EMOJIS['error']} Failed to show workspace context: {e}",
+            style=RICH_STYLES["error"],
+        )
+        raise typer.Exit(1)

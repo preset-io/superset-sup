@@ -103,16 +103,18 @@ def show_config():
         # Context info
         workspace_id = ctx.get_workspace_id()
         database_id = ctx.get_database_id()
+        import_target_id = ctx.get_import_target_workspace_id()
 
-        # Create info panel
+        # Create info panel with actual config keys
         info_lines = [
             f"Authentication: {auth_status}",
-            f"Current workspace: {workspace_id or 'None'}",
-            f"Current database: {database_id or 'None'}",
-            f"Assets folder: {ctx.get_assets_folder()}",
-            f"Output format: {ctx.global_config.output_format.value}",
-            f"Max rows: {ctx.global_config.max_rows}",
-            f"Show query time: {ctx.global_config.show_query_time}",
+            f"workspace-id: {workspace_id or 'None'}",
+            f"import-target-workspace-id: {import_target_id or 'Same as workspace-id'}",
+            f"database-id: {database_id or 'None'}",
+            f"assets-folder: {ctx.get_assets_folder()}",
+            f"output-format: {ctx.global_config.output_format.value}",
+            f"max-rows: {ctx.global_config.max_rows}",
+            f"show-query-time: {ctx.global_config.show_query_time}",
         ]
 
         panel_content = "\n".join(info_lines)
@@ -156,23 +158,94 @@ def set_config(
     """
     Set a configuration value.
 
+    Available configuration keys:
+        • workspace-id - Default workspace for exports, queries, listings
+        • import-target-workspace-id - Target workspace for imports (cross-workspace sync)
+        • database-id - Default database for SQL queries
+        • assets-folder - Default folder for export/import operations
+        • output-format - Default output format (table, json, yaml)
+        • max-rows - Maximum rows to display in queries
+        • show-query-time - Show query execution time
+        • preset-api-token - Preset API authentication token
+        • preset-api-secret - Preset API authentication secret
+
     Examples:
-        sup config set workspace-id 123
-        sup config set database-id 5 --global
-        sup config set assets-folder ./my-assets/
-        sup config set output-format json
+        sup config set workspace-id 123                      # Set source workspace
+        sup config set import-target-workspace-id 456        # Set import target
+        sup config set database-id 5 --global               # Set global database
+        sup config set assets-folder ./my-assets/            # Set assets folder
+        sup config set output-format json                   # Set output format
     """
+    from sup.config.settings import SupContext
+
     scope = "global" if global_config else "local"
     console.print(
         f"{EMOJIS['config']} Setting {key} = {value} ({scope})",
         style=RICH_STYLES["info"],
     )
 
-    # TODO: Implement config setting
-    console.print(
-        f"{EMOJIS['success']} Configuration updated",
-        style=RICH_STYLES["success"],
-    )
+    try:
+        ctx = SupContext()
+
+        # Handle different config keys
+        if key == "workspace-id":
+            ctx.set_workspace_context(int(value), persist=global_config)
+        elif key == "import-target-workspace-id":
+            ctx.set_import_target_workspace_id(int(value), persist=global_config)
+        elif key == "database-id":
+            ctx.set_database_context(int(value), persist=global_config)
+        elif key == "assets-folder":
+            if global_config:
+                ctx.global_config.assets_folder = value
+                ctx.global_config.save_to_file()
+            else:
+                ctx.project_state.assets_folder = value
+                ctx.project_state.save_to_file()
+        elif key == "output-format":
+            from sup.config.settings import OutputFormat
+
+            ctx.global_config.output_format = OutputFormat(value)
+            ctx.global_config.save_to_file()
+        elif key == "max-rows":
+            ctx.global_config.max_rows = int(value)
+            ctx.global_config.save_to_file()
+        elif key == "show-query-time":
+            ctx.global_config.show_query_time = value.lower() in ("true", "1", "yes")
+            ctx.global_config.save_to_file()
+        elif key == "preset-api-token":
+            ctx.global_config.preset_api_token = value
+            ctx.global_config.save_to_file()
+        elif key == "preset-api-secret":
+            ctx.global_config.preset_api_secret = value
+            ctx.global_config.save_to_file()
+        else:
+            console.print(
+                f"{EMOJIS['error']} Unknown configuration key: {key}",
+                style=RICH_STYLES["error"],
+            )
+            console.print(
+                "💡 Run [bold]sup config set --help[/] to see available keys",
+                style=RICH_STYLES["info"],
+            )
+            raise typer.Exit(1)
+
+        console.print(
+            f"{EMOJIS['success']} Configuration updated",
+            style=RICH_STYLES["success"],
+        )
+
+    except ValueError as e:
+        console.print(
+            f"{EMOJIS['error']} Invalid value for {key}: {e}",
+            style=RICH_STYLES["error"],
+        )
+        raise typer.Exit(1)
+    except Exception as e:
+        console.print(
+            f"{EMOJIS['error']} Failed to set configuration: {e}",
+            style=RICH_STYLES["error"],
+        )
+        raise typer.Exit(1)
 
 
 @app.command("auth")

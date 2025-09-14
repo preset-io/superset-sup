@@ -1,0 +1,18 @@
+database_name: MAIN - BigQuery Superset READONLY
+sqlalchemy_uri: bigquery://preset-cloud-dbt/
+cache_timeout: null
+expose_in_sqllab: true
+allow_run_async: true
+allow_ctas: false
+allow_cvas: false
+allow_dml: true
+allow_file_upload: false
+extra:
+  metadata_params: {}
+  engine_params: {}
+  metadata_cache_timeout:
+    table_cache_timeout: '1800'
+  schemas_allowed_for_file_upload: []
+impersonate_user: false
+uuid: bf2511d3-b1a6-4022-a169-0f45abf422fc
+version: 1.0.0

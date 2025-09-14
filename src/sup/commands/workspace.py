@@ -194,7 +194,7 @@ def workspace_info(
     )
 
 
-@app.command("set-import-target")
+@app.command("set-target")
 def set_import_target(
     workspace_id: Annotated[int, typer.Argument(help="Workspace ID to use as import target")],
     persist: Annotated[
@@ -222,7 +222,7 @@ def set_import_target(
 
     try:
         ctx = SupContext()
-        ctx.set_import_target_workspace_id(workspace_id, persist=persist)
+        ctx.set_target_workspace_id(workspace_id, persist=persist)
 
         if persist:
             console.print(
@@ -259,7 +259,7 @@ def show_workspace_context():
     try:
         ctx = SupContext()
         source_workspace_id = ctx.get_workspace_id()
-        target_workspace_id = ctx.get_import_target_workspace_id()
+        target_workspace_id = ctx.get_target_workspace_id()
 
         console.print(
             f"{EMOJIS['workspace']} Current Workspace Context",

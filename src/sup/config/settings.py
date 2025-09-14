@@ -101,8 +101,8 @@ class SupGlobalConfig(BaseSettings):
     current_workspace_id: Optional[int] = None
     current_database_id: Optional[int] = None
 
-    # Import target (only needed when importing to different workspace than source)
-    import_target_workspace_id: Optional[int] = None
+    # Push target (only needed when pushing to different workspace than source)
+    target_workspace_id: Optional[int] = None
 
     @classmethod
     def load_from_file(cls) -> "SupGlobalConfig":
@@ -145,8 +145,8 @@ class SupProjectState(BaseSettings):
     current_database_id: Optional[int] = None
     current_team: Optional[str] = None
 
-    # Import target (only needed when importing to different workspace than source)
-    import_target_workspace_id: Optional[int] = None
+    # Push target (only needed when pushing to different workspace than source)
+    target_workspace_id: Optional[int] = None
 
     # Asset sync settings
     assets_folder: str = "./assets"
@@ -278,31 +278,31 @@ class SupContext:
             self.project_state.current_database_id = database_id
             self.project_state.save_to_file()
 
-    def get_import_target_workspace_id(self, cli_override: Optional[int] = None) -> Optional[int]:
+    def get_target_workspace_id(self, cli_override: Optional[int] = None) -> Optional[int]:
         """
         Get import target workspace ID with proper precedence.
 
         Returns None if no explicit target is configured - imports should be blocked
         unless user explicitly sets target or uses --workspace-id override.
         """
-        env_import_target = get_env_var("import_target_workspace_id")
+        env_import_target = get_env_var("target_workspace_id")
         return (
             cli_override
             or (int(env_import_target) if env_import_target is not None else None)
-            or self.project_state.import_target_workspace_id
-            or self.global_config.import_target_workspace_id
+            or self.project_state.target_workspace_id
+            or self.global_config.target_workspace_id
             # NO fallback to main workspace - force explicit configuration
         )
 
-    def set_import_target_workspace_id(self, workspace_id: int, persist: bool = False) -> None:
+    def set_target_workspace_id(self, workspace_id: int, persist: bool = False) -> None:
         """
         Set import target workspace for cross-workspace operations.
 
         Only needed when you want imports to go to different workspace than exports.
         """
         if persist:
-            self.global_config.import_target_workspace_id = workspace_id
+            self.global_config.target_workspace_id = workspace_id
             self.global_config.save_to_file()
         else:
-            self.project_state.import_target_workspace_id = workspace_id
+            self.project_state.target_workspace_id = workspace_id
             self.project_state.save_to_file()

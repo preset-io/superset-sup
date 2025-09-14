@@ -746,48 +746,48 @@ def display_chart_data_results(ctx, client, chart_id: int, chart: Dict[str, Any]
         )
 
 
-@app.command("export")
-def export_charts(
+@app.command("pull")
+def pull_charts(
     assets_folder: Annotated[
         Optional[str],
         typer.Argument(
-            help="Assets folder to export chart definitions to (defaults to configured folder)",
+            help="Assets folder to pull chart definitions to (defaults to configured folder)",
         ),
     ] = None,
     # Universal filters - reuse existing list command patterns
     id_filter: Annotated[
         Optional[int],
-        typer.Option("--id", help="Export specific chart by ID"),
+        typer.Option("--id", help="Pull specific chart by ID"),
     ] = None,
     ids_filter: Annotated[
         Optional[str],
-        typer.Option("--ids", help="Export multiple charts by IDs (comma-separated)"),
+        typer.Option("--ids", help="Pull multiple charts by IDs (comma-separated)"),
     ] = None,
     name_filter: Annotated[
         Optional[str],
-        typer.Option("--name", help="Export charts matching name pattern (supports wildcards)"),
+        typer.Option("--name", help="Pull charts matching name pattern (supports wildcards)"),
     ] = None,
     mine_filter: Annotated[
         bool,
-        typer.Option("--mine", help="Export only charts you own"),
+        typer.Option("--mine", help="Pull only charts you own"),
     ] = False,
     created_after: Annotated[
         Optional[str],
         typer.Option(
             "--created-after",
-            help="Export charts created after date (YYYY-MM-DD)",
+            help="Pull charts created after date (YYYY-MM-DD)",
         ),
     ] = None,
     modified_after: Annotated[
         Optional[str],
         typer.Option(
             "--modified-after",
-            help="Export charts modified after date (YYYY-MM-DD)",
+            help="Pull charts modified after date (YYYY-MM-DD)",
         ),
     ] = None,
     limit: Annotated[
         Optional[int],
-        typer.Option("--limit", "-l", help="Maximum number of charts to export"),
+        typer.Option("--limit", "-l", help="Maximum number of charts to pull"),
     ] = None,
     # Export-specific options
     workspace_id: Annotated[
@@ -826,32 +826,32 @@ def export_charts(
     ] = False,
 ):
     """
-    Export chart definitions from Superset workspace to local filesystem.
+    Pull chart definitions from Superset workspace to local filesystem.
 
     Downloads chart configurations as YAML files that can be:
     • Version controlled with git
-    • Modified and re-imported
+    • Modified and pushed back
     • Backed up for disaster recovery
     • Migrated between workspaces
 
-    The export creates a directory structure with:
+    The pull creates a directory structure with:
     • charts/ - Chart definition files
     • datasets/ - Related dataset definitions (when dependencies included)
     • databases/ - Database connection configs (when dependencies included)
-    • metadata.yaml - Export metadata
+    • metadata.yaml - Pull metadata
 
     Dependencies (datasets & databases) are included by default for complete,
-    importable chart packages. Use --skip-dependencies to export charts only.
+    pushable chart packages. Use --skip-dependencies to pull charts only.
 
     By default, existing {{ }} Jinja2 templates in charts are escaped to prevent
-    conflicts during import. Use --disable-jinja-escaping for raw export.
+    conflicts during push. Use --disable-jinja-escaping for raw pull.
 
     Examples:
-        sup chart export                             # Export all charts + dependencies
-        sup chart export --mine                      # Export your charts + dependencies
-        sup chart export --id=3586                  # Export specific chart + dependencies
-        sup chart export --name="*sales*"           # Export matching charts + dependencies
-        sup chart export --mine --skip-dependencies # Export your charts only (no deps)
+        sup chart pull                               # Pull all charts + dependencies
+        sup chart pull --mine                        # Pull your charts + dependencies
+        sup chart pull --id=3586                    # Pull specific chart + dependencies
+        sup chart pull --name="*sales*"             # Pull matching charts + dependencies
+        sup chart pull --mine --skip-dependencies   # Pull your charts only (no deps)
     """
     import re
     from pathlib import Path
@@ -1029,12 +1029,12 @@ def export_charts(
         raise typer.Exit(1)
 
 
-@app.command("import")
-def import_charts(
+@app.command("push")
+def push_charts(
     assets_folder: Annotated[
         Optional[str],
         typer.Argument(
-            help="Assets folder to import chart definitions from (defaults to configured folder)",
+            help="Assets folder to push chart definitions from (defaults to configured folder)",
         ),
     ] = None,
     # Import-specific options
@@ -1078,30 +1078,30 @@ def import_charts(
     ] = False,
 ):
     """
-    Import chart definitions from local filesystem to Superset workspace.
+    Push chart definitions from local filesystem to Superset workspace.
 
     Reads chart configurations from YAML files and creates/updates charts in
     the workspace. Automatically handles dependencies (datasets, databases)
     when present in the assets folder.
 
-    The import processes directory structure:
-    • charts/ - Chart definition files to import
-    • datasets/ - Dataset definitions (imported first as dependencies)
-    • databases/ - Database connections (imported first as dependencies)
-    • metadata.yaml - Import metadata and validation
+    The push processes directory structure:
+    • charts/ - Chart definition files to push
+    • datasets/ - Dataset definitions (pushed first as dependencies)
+    • databases/ - Database connections (pushed first as dependencies)
+    • metadata.yaml - Push metadata and validation
 
-    Dependencies are imported in correct order: databases → datasets → charts
+    Dependencies are pushed in correct order: databases → datasets → charts
     to ensure all required objects exist before chart creation.
 
     By default, Jinja2 templating is enabled for parameterized assets.
-    Use --disable-jinja-templating to import raw YAML without processing.
+    Use --disable-jinja-templating to push raw YAML without processing.
 
     Examples:
-        sup chart import                             # Import to configured target workspace
-        sup chart import ./backup                    # Import from specific folder
-        sup chart import --workspace-id=456          # Import to specific workspace
-        sup chart import --overwrite --force         # Overwrite without confirmation
-        sup chart import --continue-on-error         # Skip failed charts, continue
+        sup chart push                               # Push to configured target workspace
+        sup chart push ./backup                      # Push from specific folder
+        sup chart push --workspace-id=456            # Push to specific workspace
+        sup chart push --overwrite --force           # Overwrite without confirmation
+        sup chart push --continue-on-error           # Skip failed charts, continue
     """
     from preset_cli.cli.superset.sync.native.command import ResourceType, native
     from sup.config.settings import SupContext
@@ -1142,7 +1142,7 @@ def import_charts(
 
         # Get source and target workspace context
         source_workspace_id = ctx.get_workspace_id()
-        target_workspace_id = ctx.get_import_target_workspace_id(cli_override=workspace_id)
+        target_workspace_id = ctx.get_target_workspace_id(cli_override=workspace_id)
 
         if not source_workspace_id:
             console.print(

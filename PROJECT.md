@@ -59,12 +59,12 @@ sup database use 5                             # Set default database
 sup dataset list --mine --limit 10             # My datasets
 sup dataset list --database-id=5               # Datasets in specific DB
 
-# Chart analysis & export/import
+# Chart analysis & pull/push (git-like terminology)
 sup chart list -l 5 --name="*revenue*"        # Find revenue charts
 sup chart sql 3628                            # Get SQL behind chart!
 sup chart data 3628 --csv                     # Export chart data!
-sup chart export --mine                       # Export your charts + dependencies
-sup chart import                              # Import charts from assets folder
+sup chart pull --mine                         # Pull your charts + dependencies
+sup chart push                                # Push charts to target workspace
 
 # Dashboard management
 sup dashboard list --mine                      # My dashboards
@@ -116,43 +116,48 @@ Every entity command supports the same powerful filters:
 - **Clickable Links**: Terminal links to Superset dashboards/charts
 - **Smart Data Display**: Actual dataset names, not "Unknown" placeholders
 
-## 🎉 **Phase 3: IN PROGRESS - Import/Export System**
+## 🎉 **Phase 3: IN PROGRESS - Pull/Push System**
 
-### **🚀 BREAKTHROUGH: Chart Export Complete!**
-**Pattern Established for All Entities:**
-- ✅ **`sup chart export`** - FULLY IMPLEMENTED with production testing
-- ✅ **Universal Filtering Integration** - All sup filters work with export
+### **🚀 BREAKTHROUGH: Chart Pull/Push Complete!**
+**Git-like Pattern Established for All Entities:**
+- ✅ **`sup chart pull`** - FULLY IMPLEMENTED with production testing (was export)
+- ✅ **`sup chart push`** - Enterprise-grade with target workspace system (was import)
+- ✅ **Universal Filtering Integration** - All sup filters work with pull/push
 - ✅ **Smart Dependency Management** - Complete packages by default, opt-out available
 - ✅ **Assets Folder Integration** - Uses SUP_ASSETS_FOLDER config with override
-- ✅ **Full Feature Parity** - All preset-cli export flags supported
+- ✅ **Cross-Workspace Support** - target-workspace-id for enterprise workflows
 
-### **🎯 Chart Export Commands (Live & Working!)**
+### **🎯 Chart Pull/Push Commands (Live & Working!)**
 ```bash
-# Complete package exports (NEW DEFAULT - dependencies included!)
-sup chart export --mine                       # Your charts + datasets + databases
-sup chart export --name="*revenue*"           # Revenue charts + dependencies
-sup chart export --id=3586                    # Specific chart + dependencies
+# Pull from workspace to filesystem (git-like)
+sup chart pull --mine                         # Pull your charts + datasets + databases
+sup chart pull --name="*revenue*"             # Pull revenue charts + dependencies
+sup chart pull --id=3586                      # Pull specific chart + dependencies
+sup chart pull --mine --skip-dependencies     # Pull charts only (no deps)
 
-# Charts-only exports (when needed)
-sup chart export --mine --skip-dependencies   # Charts only, no dependencies
+# Push from filesystem to workspace (git-like)
+sup chart push                                # Push to configured target workspace
+sup chart push --workspace-id=456             # Push to specific workspace
+sup chart push --overwrite --force            # Push with overwrite, skip confirmations
 ```
 
-### **📋 Next: Chart Import to Complete the Pattern**
-- 🎯 **`sup chart import`** - Reuse existing native() function for maximum safety
-- 🎯 **Same filtering/assets folder patterns** - Consistent UX across import/export
-- 🎯 **Establish replicable pattern** for dashboard, dataset, database
+### **📋 Git-like Terminology Benefits**
+- ✅ **Intuitive Direction** - pull FROM workspace, push TO workspace
+- ✅ **Developer Familiar** - matches git pull/push semantics exactly
+- ✅ **Clear Metaphor** - workspace as remote repo, filesystem as local
+- ✅ **Consistent Language** - eliminates import/export confusion
 
 ### **🔄 Pattern Replication Plan**
-Once chart import is complete, replicate exact pattern for:
+Replicate exact pull/push pattern for:
 ```bash
-sup dashboard export/import                    # Dashboard lifecycle management
-sup dataset export/import                     # Dataset migration
-sup database export/import                    # Database connection management
+sup dashboard pull/push                        # Dashboard lifecycle management
+sup dataset pull/push                         # Dataset migration
+sup database pull/push                        # Database connection management
 ```
 
 ### **Key Features**
 - **YAML-Only**: Perfect for version control and Jinja templating
-- **Universal Filtering**: All sup filter patterns work with import/export
+- **Universal Filtering**: All sup filter patterns work with pull/push
 - **Dependency Resolution**: Automatic handling of asset relationships
 - **Beautiful Progress**: Rich spinners and progress bars
 - **Agent-Friendly**: JSON/porcelain modes for automation

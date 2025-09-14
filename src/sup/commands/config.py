@@ -103,13 +103,13 @@ def show_config():
         # Context info
         workspace_id = ctx.get_workspace_id()
         database_id = ctx.get_database_id()
-        import_target_id = ctx.get_import_target_workspace_id()
+        target_workspace_id = ctx.get_target_workspace_id()
 
         # Create info panel with actual config keys
         info_lines = [
             f"Authentication: {auth_status}",
             f"workspace-id: {workspace_id or 'None'}",
-            f"import-target-workspace-id: {import_target_id or 'Same as workspace-id'}",
+            f"target-workspace-id: {target_workspace_id or 'Same as workspace-id'}",
             f"database-id: {database_id or 'None'}",
             f"assets-folder: {ctx.get_assets_folder()}",
             f"output-format: {ctx.global_config.output_format.value}",
@@ -159,10 +159,10 @@ def set_config(
     Set a configuration value.
 
     Available configuration keys:
-        • workspace-id - Default workspace for exports, queries, listings
-        • import-target-workspace-id - Target workspace for imports (cross-workspace sync)
+        • workspace-id - Default workspace for pull, queries, listings
+        • target-workspace-id - Target workspace for push operations (cross-workspace sync)
         • database-id - Default database for SQL queries
-        • assets-folder - Default folder for export/import operations
+        • assets-folder - Default folder for pull/push operations
         • output-format - Default output format (table, json, yaml)
         • max-rows - Maximum rows to display in queries
         • show-query-time - Show query execution time
@@ -171,7 +171,7 @@ def set_config(
 
     Examples:
         sup config set workspace-id 123                      # Set source workspace
-        sup config set import-target-workspace-id 456        # Set import target
+        sup config set target-workspace-id 456              # Set push target
         sup config set database-id 5 --global               # Set global database
         sup config set assets-folder ./my-assets/            # Set assets folder
         sup config set output-format json                   # Set output format
@@ -190,8 +190,8 @@ def set_config(
         # Handle different config keys
         if key == "workspace-id":
             ctx.set_workspace_context(int(value), persist=global_config)
-        elif key == "import-target-workspace-id":
-            ctx.set_import_target_workspace_id(int(value), persist=global_config)
+        elif key == "target-workspace-id":
+            ctx.set_target_workspace_id(int(value), persist=global_config)
         elif key == "database-id":
             ctx.set_database_context(int(value), persist=global_config)
         elif key == "assets-folder":

@@ -813,11 +813,11 @@ def export_charts(
         bool,
         typer.Option("--force-unix-eol", help="Force Unix end-of-line characters"),
     ] = False,
-    include_dependencies: Annotated[
+    skip_dependencies: Annotated[
         bool,
         typer.Option(
-            "--include-dependencies",
-            help="Include related datasets and database connections (auto-enabled for --id/--ids)",
+            "--skip-dependencies",
+            help="Export charts only, without related datasets and database connections",
         ),
     ] = False,
     porcelain: Annotated[
@@ -840,19 +840,18 @@ def export_charts(
     • databases/ - Database connection configs (when dependencies included)
     • metadata.yaml - Export metadata
 
-    Dependencies (datasets & databases) are automatically included when exporting
-    specific charts (--id/--ids), or can be explicitly requested with
-    --include-dependencies for broader exports.
+    Dependencies (datasets & databases) are included by default for complete,
+    importable chart packages. Use --skip-dependencies to export charts only.
 
     By default, existing {{ }} Jinja2 templates in charts are escaped to prevent
     conflicts during import. Use --disable-jinja-escaping for raw export.
 
     Examples:
-        sup chart export                             # Export all charts (charts only)
-        sup chart export --mine --include-dependencies  # Export your charts + dependencies
+        sup chart export                             # Export all charts + dependencies
+        sup chart export --mine                      # Export your charts + dependencies
         sup chart export --id=3586                  # Export specific chart + dependencies
-        sup chart export --ids=1,2,3 --overwrite   # Export charts + dependencies, overwrite
-        sup chart export --name="*sales*"           # Export matching charts (charts only)
+        sup chart export --name="*sales*"           # Export matching charts + dependencies
+        sup chart export --mine --skip-dependencies # Export your charts only (no deps)
     """
     import re
     from pathlib import Path
@@ -955,9 +954,8 @@ def export_charts(
             )
             return
 
-        # Determine if we should include dependencies (smart logic from original preset-cli)
-        specific_ids_requested = bool(id_filter or ids_filter)
-        should_include_dependencies = include_dependencies or specific_ids_requested
+        # Consistent dependency policy - all filters work the same way
+        should_include_dependencies = not skip_dependencies
 
         if not porcelain:
             dependency_msg = " (with dependencies)" if should_include_dependencies else ""

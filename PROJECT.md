@@ -147,12 +147,27 @@ sup chart push --overwrite --force            # Push with overwrite, skip confir
 - ✅ **Clear Metaphor** - workspace as remote repo, filesystem as local
 - ✅ **Consistent Language** - eliminates import/export confusion
 
-### **🔄 Pattern Replication Plan**
-Replicate exact pull/push pattern for:
+### **🎯 Next: Chart Sync (Advanced Workflows)**
+Bridge the gap between simple pull/push and advanced preset-cli capabilities:
 ```bash
-sup dashboard pull/push                        # Dashboard lifecycle management
-sup dataset pull/push                         # Dataset migration
-sup database pull/push                        # Database connection management
+sup chart sync ./templates --option env=prod  # Jinja2 templating for multi-environment
+sup chart sync --bidirectional                # Two-way sync with conflict resolution
+sup chart sync --dbt-integration              # Enrich with dbt metadata
+```
+
+**Chart Sync Features (Planned):**
+- ✅ **Jinja2 Templating** - Environment-specific customization
+- ✅ **Override Files** - .overrides.yaml for per-environment changes
+- ✅ **Bidirectional Sync** - Smart conflict resolution
+- ✅ **dbt Integration** - Metadata enrichment workflows
+- ✅ **Beautiful sup UX** - Wrapping existing 421 test-covered functions
+
+### **🔄 Pattern Replication Plan**
+Once chart pull/push/sync is complete, replicate exact pattern for:
+```bash
+sup dashboard pull/push/sync                   # Complete dashboard lifecycle
+sup dataset pull/push/sync                     # Dataset migration + sync
+sup database pull/push/sync                    # Database connection management
 ```
 
 ### **Key Features**
@@ -251,15 +266,17 @@ sup dashboard list --mine            # Your dashboards
 **Current Achievement:**
 - ✅ **7 Entity Types** fully implemented with consistent UX (workspace, database, dataset, chart, dashboard, query, user)
 - ✅ **Revolutionary Data Access** not available anywhere else
-- ✅ **Chart Export System** - First complete import/export implementation with dependency management
+- ✅ **Chart Pull/Push System** - Complete asset lifecycle with git-like terminology
+- ✅ **Enterprise Cross-Workspace Support** - target-workspace-id for safe multi-instance sync
+- ✅ **Working Configuration System** - All config keys functional (was broken!)
 - ✅ **Consistent Filter Architecture** - All filters resolve to IDs with same behavior
 - ✅ **Production-Grade Quality** with full type safety and zero warnings
 - ✅ **Agent-Optimized** with perfect JSON/porcelain modes
 
-**Next Milestone:**
-- 🎯 Complete import/export system by wrapping existing 421 test-covered functions
-- 🎯 Full asset lifecycle management with beautiful sup UX
-- 🎯 Perfect cross-workspace migration capabilities
+**Next Strategic Step:**
+- 🎯 **`sup chart sync`** - Advanced templating and bidirectional workflows
+- 🎯 **Complete preset-cli replacement** - Absorb all existing CLI capabilities with sup UX
+- 🎯 **Pattern replication** - Apply chart pull/push/sync to dashboard, dataset, database
 
 ---
 

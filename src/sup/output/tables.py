@@ -277,28 +277,10 @@ DASHBOARD_TABLE_CONFIG = (
         transform_func=lambda published, _: "Published" if published else "Draft",
     )
     .add_column(
-        "owners",
-        "Owners",
-        style=COLORS.info,
-        transform_func=lambda owners, _: (
-            ", ".join(
-                [
-                    f"{owner.get('first_name', '')} {owner.get('last_name', '')}".strip()
-                    for owner in (owners or [])[:2]
-                ],
-            )
-            + (f" (+{len(owners) - 2} more)" if len(owners or []) > 2 else "")
-            if owners
-            else "None"
-        ),
-    )
-    .add_column(
-        "created_on",
+        "created_on_delta_humanized",
         "Created",
         style="dim",
-        transform_func=lambda created_on, _: (
-            created_on.split("T")[0] if created_on else "Unknown"
-        ),
+        transform_func=lambda created_delta, _: created_delta or "Unknown",
     )
 )
 

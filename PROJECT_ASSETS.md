@@ -264,12 +264,33 @@ sup assets import ./workspace-backup/     # Import with dependency resolution
 - **Machine-readable**: Tab-separated porcelain for automation
 - **Structured data**: JSON/YAML for config and API consumption
 
+### **Table Layout & UX Design (Latest Learnings)**
+- **4-column maximum**: Terminal width constraints require max 4 columns for readability
+- **min_width only**: Let Rich auto-scale to fill terminal space (no max_width constraints)
+- **Essential column priorities**: ID (8 chars), Name (15 chars), Type (8 chars), Dataset (12 chars)
+- **Smart data display**: Show actual names (datasource_name_text) with ID fallbacks
+- **Text wrapping enabled**: Long content like chart names wrap beautifully
+- **Centralized color system**: All UI uses COLORS.* constants for consistent branding
+
+### **Color System Architecture**
+- **Zero hardcoded colors**: All "blue", "green", "cyan" replaced with semantic constants
+- **Emerald green branding**: COLORS.primary (#10B981) throughout for Preset identity
+- **Semantic color meanings**: success, warning, error, info, secondary for consistent UX
+- **External library compatibility**: Halo spinners still use "cyan" string (library limitation)
+
+### **Production Quality Improvements**
+- **Type safety**: All mypy errors resolved, strict type checking enabled
+- **Warning elimination**: Zero dotenv parsing warnings via proper pydantic-settings config
+- **Short option consistency**: `-l` available across all entity commands that support --limit
+- **Rich data experience**: Dataset names, clickable links, intelligent spacing
+
 ### **Proven Patterns for Replication**
 1. **Create `{entity}_filters.py`** extending universal system
 2. **Add `get_{entities}()` method** to SupSupersetClient
 3. **Copy dataset command structure** - just change display fields
 4. **Register in main.py** - One line addition
 5. **Test with spinners and filtering** - Verify all formats work
+6. **Follow 4-column table pattern** - ID, Name, Type, Primary Info for optimal readability
 
 ## DRY Improvement Recommendations
 

@@ -1,4 +1,4 @@
-# `sup` - The Ultimate Superset CLI 🚀
+# `sup` - Probably the Best Unofficial Apache Superset CLI 🚀
 
 ## Vision: Modern CLI for Superset & Preset
 

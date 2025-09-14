@@ -51,17 +51,22 @@ BANNER = """\
    ███████║╚██████╔╝██║     ██╗
    ╚══════╝ ╚═════╝ ╚═╝     ╚═╝"""
 
+# App title for consistent usage
+APP_TITLE = "🚀 sup - probably the best unofficial Apache Superset CLI 📊"
+
 # Use cases for consistent display
 USE_CASES = [
-    "Access all/any of your data from the command line",
-    "Manage & sync data assets across Superset instances",
-    "Export/import dashboards and charts to/from filesystem",
+    "Run any SQL through Superset's data access layer - "
+    + "get results as rich table, CSV, YAML or JSON",
+    "Backup and restore charts, dashboards, and datasets with full dependency tracking",
+    "Synchronize assets across Superset instances with Jinja2 templating for customization",
+    "Enrich metadata to/from dbt Core/Cloud - more integrations to come",
     "Automate workflows and integrate with CI/CD pipelines",
     "Perfect for scripting and AI-assisted data exploration",
 ]
 
 # Help text template - will be formatted with actual colors
-HELP_TEMPLATE = """🚀 [bold {primary}]The Ultimate Superset/Preset CLI[/bold {primary}] 📊
+HELP_TEMPLATE = """{app_title}
    [bold {primary}]Brought to you and fully compatible with Preset[/bold {primary}]
    [dim]For power users and AI agents[/dim]
 
@@ -81,7 +86,17 @@ def format_help():
 
     capabilities = "\n".join(f"• [bright_white]{use_case}[/bright_white]" for use_case in USE_CASES)
 
-    return HELP_TEMPLATE.format(primary=COLORS.primary, capabilities=capabilities)
+    # Format APP_TITLE with colors for consistent usage
+    formatted_title = APP_TITLE.replace(
+        "sup",
+        f"[bold {COLORS.primary}]sup[/bold {COLORS.primary}]",
+    )
+
+    return HELP_TEMPLATE.format(
+        app_title=formatted_title,
+        primary=COLORS.primary,
+        capabilities=capabilities,
+    )
 
 
 # Initialize the main Typer app with -h support
@@ -99,7 +114,7 @@ def show_banner():
     from sup.output.styles import COLORS
 
     console.print(BANNER, style=f"bold {COLORS.primary}")  # Beautiful emerald green
-    console.print("🚀 The Ultimate Superset/Preset CLI 📊", style=RICH_STYLES["info"])
+    console.print(APP_TITLE, style=RICH_STYLES["info"])
     console.print(
         "   Brought to you and fully compatible with Preset",
         style=f"bold {COLORS.primary}",

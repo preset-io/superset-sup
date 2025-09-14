@@ -93,7 +93,6 @@ def display_entity_table(
             style=column["style"],
             no_wrap=column["no_wrap"],
             min_width=column.get("min_width"),
-            max_width=column.get("max_width"),
         )
 
     # Add rows
@@ -161,7 +160,6 @@ DATASET_TABLE_CONFIG = (
         style="bright_white",
         no_wrap=False,
         min_width=15,
-        max_width=40,
         link_template="https://{hostname}{explore_url}",
         transform_func=lambda name, item: name,  # Could add explore_url handling
     )
@@ -170,7 +168,6 @@ DATASET_TABLE_CONFIG = (
         "Database",
         style=COLORS.warning,
         min_width=20,
-        max_width=35,
         transform_func=lambda _, item: item.get("database", {}).get("database_name", "Unknown"),
     )
     .add_column(
@@ -205,7 +202,6 @@ CHART_TABLE_CONFIG = (
         "ID",
         style=COLORS.secondary,
         min_width=8,
-        max_width=12,
         link_template="https://{hostname}/api/v1/chart/{id}",
     )
     .add_column(
@@ -214,42 +210,24 @@ CHART_TABLE_CONFIG = (
         style="bright_white",
         no_wrap=False,
         min_width=15,
-        max_width=30,
         link_template="https://{hostname}/superset/explore/?slice_id={id}",
     )
     .add_column(
         "viz_type",
         "Type",
         style=COLORS.warning,
-        min_width=6,
-        max_width=15,
+        min_width=8,
         transform_func=lambda viz_type, _: viz_type or "Unknown",
     )
     .add_column(
         "datasource_name",
         "Dataset",
         style=COLORS.info,
-        min_width=10,
-        max_width=18,
+        min_width=12,
         transform_func=lambda ds_name, item: (
             item.get("datasource_name_text")
             or ds_name
             or (f"ID:{item.get('datasource_id')}" if item.get("datasource_id") else "Unknown")
-        ),
-    )
-    .add_column(
-        "dashboards",
-        "Dashboards",
-        style=COLORS.success,
-        min_width=10,
-        max_width=18,
-        transform_func=lambda dashboards, _: (
-            ", ".join(
-                [str(d.get("dashboard_title", d.get("id", ""))) for d in (dashboards or [])[:2]],
-            )
-            + (f" (+{len(dashboards) - 2} more)" if len(dashboards or []) > 2 else "")
-            if dashboards
-            else "None"
         ),
     )
 )

@@ -405,7 +405,10 @@ class SupSupersetClient:
             raise
 
     def get_chart_data(
-        self, chart_id: int, result_type: str = "results", silent: bool = False,
+        self,
+        chart_id: int,
+        result_type: str = "results",
+        silent: bool = False,
     ) -> Dict[str, Any]:
         """
         Get chart data or SQL query using the chart data endpoint.
@@ -443,7 +446,8 @@ class SupSupersetClient:
             import json
 
             response = self.client.session.post(
-                url, data={"form_data": json.dumps(form_data_payload)},
+                url,
+                data={"form_data": json.dumps(form_data_payload)},
             )
             validate_response(response)
 

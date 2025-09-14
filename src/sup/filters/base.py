@@ -220,6 +220,7 @@ def get_universal_filter_options():
             Optional[int],
             typer.Option(
                 "--limit",
+                "-l",
                 help="Maximum number of results (default: 50, use 0 for unlimited)",
             ),
         ],

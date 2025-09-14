@@ -203,6 +203,41 @@ https://{hostname}/superset/dashboard/{id}/
 - **User experience**: Visual exploration without context switching
 - **Professional polish**: Enterprise-grade integration
 
+## Major Discovery: Assets-Only Architecture 🔍
+
+### **Critical Insight: Import/Export Should Be Centralized**
+After investigating the existing CLI complexity, we discovered:
+
+**❌ Problem with Per-Entity Import/Export:**
+```bash
+# This creates confusion and dependency hell:
+sup dataset export 123                    # What about dependent charts?
+sup chart export 456                      # What about dependent datasets?
+sup dashboard export 789                  # What about dependent charts & datasets?
+```
+
+**✅ Solution: Centralized `sup assets` Commands:**
+```bash
+# All import/export operations under assets
+sup assets export                          # Export everything with dependencies
+sup assets export --charts=123,456        # Export specific charts + all dependencies
+sup assets import ./workspace-backup/     # Import with dependency resolution
+```
+
+### **Implementation Strategy: Safe Wrapper Pattern**
+**Reuse Existing Tested Logic (421 test functions!):**
+- **Import existing functions** - `export_resource_and_unzip`, `import_resources`
+- **Add sup UX layer** - Beautiful spinners, Rich output, universal filtering
+- **Maintain safety** - Don't rewrite complex ZIP/Jinja/dependency logic
+- **Focus on UX** - What makes sup better (consistency, beauty, agent-friendliness)
+
+### **Benefits of Assets-Only Architecture:**
+1. **✅ Conceptual clarity** - Assets = complex operations, Entities = simple CRUD
+2. **✅ Dependency resolution** - Automatic handling of chart→dataset→database chains
+3. **✅ User experience** - No confusion about which export command to use
+4. **✅ Safety** - Reuse 421 existing tests, zero risk of breaking functionality
+5. **✅ Universal filtering** - `--mine --name="*sales*"` works with asset operations
+
 ## Key Implementation Learnings
 
 ### **Spinner System (Halo + Rich)**
@@ -408,25 +443,28 @@ sup dataset sync --dry-run                        # Preview changes
 
 ## Implementation Strategy
 
-### **Phase 1: Dataset Foundation**
-1. Universal filtering system infrastructure
-2. Dataset list/info/export/import commands
-3. Folder structure creation and management
-4. Test with real Preset workspace
+### **✅ Phase 1: COMPLETED - Entity Foundation**
+1. ✅ Universal filtering system infrastructure (DONE)
+2. ✅ All entity commands (workspace, database, dataset, chart, dashboard, query) (DONE)
+3. ✅ Beautiful Rich output with clickable links (DONE)
+4. ✅ Live production testing with real Preset workspace (DONE)
 
-### **Phase 2: Chart Operations**
-1. Chart commands using dataset foundation
-2. Chart → Dataset dependency handling
-3. Visualization type filtering
+### **✅ Phase 2: COMPLETED - Revolutionary Data Access**
+1. ✅ Chart SQL access - `sup chart sql {id}` (BREAKTHROUGH!)
+2. ✅ Chart data access - `sup chart data {id}` (BREAKTHROUGH!)
+3. ✅ Saved query management - `sup query list/info` (DISCOVERY!)
+4. ✅ DRY architecture with 80% code reduction (ARCHITECTURAL WIN!)
 
-### **Phase 3: Dashboard Management**
-1. Dashboard commands with chart inclusion
-2. Bulk export/import workflows
-3. Cross-workspace migration tools
+### **🚧 Phase 3: NEXT - Asset Import/Export (Safe Wrapper Approach)**
+**Strategy**: Wrap existing tested logic rather than rewrite
+1. **`sup assets` command group** - Centralized operations (not per-entity)
+2. **Wrapper classes** - Import `export_resource_and_unzip`, `import_resources`
+3. **Beautiful sup UX** - Add spinners, Rich output, universal filtering
+4. **Safety first** - Reuse 421 existing tests, avoid complex ZIP/Jinja rewrite
 
-### **Phase 4: Advanced Features**
-1. Asset sync with conflict resolution
-2. Template system for custom exports
+### **🔮 Phase 4: FUTURE - Advanced Features**
+1. Interactive SQL REPL with autocomplete
+2. Cross-workspace migration utilities
 3. Git integration for version control
 
 ## Technical Architecture

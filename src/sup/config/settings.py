@@ -79,7 +79,7 @@ class SupersetInstanceConfig(BaseModel):
 class SupGlobalConfig(BaseSettings):
     """Global configuration settings stored in ~/.sup/config.yml."""
 
-    model_config = SettingsConfigDict(env_prefix="SUP_", env_file=".env", extra="ignore")
+    model_config = SettingsConfigDict(env_prefix="SUP_", extra="ignore")
 
     # Preset Authentication (Primary Focus)
     preset_api_token: Optional[str] = None
@@ -130,7 +130,7 @@ class SupGlobalConfig(BaseSettings):
 class SupProjectState(BaseSettings):
     """Project-specific state stored in .sup/state.yml."""
 
-    model_config = SettingsConfigDict(env_file=".sup/state.yml", extra="ignore")
+    model_config = SettingsConfigDict(extra="ignore")
 
     # Current context
     current_workspace_id: Optional[int] = None

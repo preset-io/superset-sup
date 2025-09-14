@@ -28,6 +28,10 @@ def list_workspaces(
         Optional[str],
         typer.Option("--team", "-t", help="Filter by team name"),
     ] = None,
+    limit: Annotated[
+        Optional[int],
+        typer.Option("--limit", "-l", help="Maximum number of results"),
+    ] = None,
 ):
     """
     List all available workspaces.
@@ -54,6 +58,10 @@ def list_workspaces(
                     workspace["team_name"] = team
             else:
                 workspaces = client.get_all_workspaces(silent=True)
+
+            # Apply limit if specified
+            if limit and limit > 0:
+                workspaces = workspaces[:limit]
 
             # Update spinner with results
             if sp:

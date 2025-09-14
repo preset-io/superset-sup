@@ -392,7 +392,10 @@ def show_env_vars():
         # Let the theme handle border colors
     )
     table.add_column(
-        "Environment Variable", style=COLORS.secondary, no_wrap=False, width=25,
+        "Environment Variable",
+        style=COLORS.secondary,
+        no_wrap=False,
+        width=25,
     )  # Cyan
     table.add_column("Description", style="bright_white", no_wrap=False)
 

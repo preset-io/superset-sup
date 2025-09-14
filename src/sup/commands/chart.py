@@ -58,7 +58,7 @@ def list_charts(
     ] = None,
     limit_filter: Annotated[
         Optional[int],
-        typer.Option("--limit", help="Maximum number of results"),
+        typer.Option("--limit", "-l", help="Maximum number of results"),
     ] = None,
     offset_filter: Annotated[
         Optional[int],

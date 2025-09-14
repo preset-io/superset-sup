@@ -115,7 +115,7 @@ def show_config():
         ]
 
         panel_content = "\n".join(info_lines)
-        console.print(Panel(panel_content, title="Configuration", border_style="green"))
+        console.print(Panel(panel_content, title="Configuration", border_style=COLORS.success))
 
         # Show config file locations
         from sup.config.paths import get_global_config_file, get_project_state_file

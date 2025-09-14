@@ -13,7 +13,7 @@ from typing_extensions import Annotated
 
 from sup.filters.dataset import apply_dataset_filters, parse_dataset_filters
 from sup.output.formatters import display_porcelain_list
-from sup.output.styles import EMOJIS, RICH_STYLES
+from sup.output.styles import COLORS, EMOJIS, RICH_STYLES
 
 app = typer.Typer(help="Manage datasets", no_args_is_help=True)
 console = Console()
@@ -327,14 +327,14 @@ def display_datasets_table(
         title=f"{EMOJIS['table']} Available Datasets",
         show_header=True,
         header_style=RICH_STYLES["header"],
-        border_style="cyan",
+        border_style=COLORS.secondary,
     )
 
-    table.add_column("ID", style="cyan", no_wrap=True)
+    table.add_column("ID", style=COLORS.secondary, no_wrap=True)
     table.add_column("Name", style="bright_white", no_wrap=False)
-    table.add_column("Database", style="yellow", no_wrap=True)
-    table.add_column("Schema", style="blue", no_wrap=True)
-    table.add_column("Type", style="green", no_wrap=True)
+    table.add_column("Database", style=COLORS.warning, no_wrap=True)
+    table.add_column("Schema", style=COLORS.info, no_wrap=True)
+    table.add_column("Type", style=COLORS.success, no_wrap=True)
     table.add_column("Columns", style=RICH_STYLES["accent"], no_wrap=True)
 
     for dataset in datasets:
@@ -410,7 +410,7 @@ def display_dataset_details(dataset: Dict[str, Any]) -> None:
         info_lines.append(f"Description: {dataset['description']}")
 
     panel_content = "\n".join(info_lines)
-    console.print(Panel(panel_content, title=f"Dataset: {name}", border_style="cyan"))
+    console.print(Panel(panel_content, title=f"Dataset: {name}", border_style=COLORS.secondary))
 
     # Show columns if available
     columns = dataset.get("columns", [])
@@ -422,8 +422,8 @@ def display_dataset_details(dataset: Dict[str, Any]) -> None:
             header_style=RICH_STYLES["header"],
             border_style="dim",
         )
-        col_table.add_column("Name", style="cyan")
-        col_table.add_column("Type", style="yellow")
+        col_table.add_column("Name", style=COLORS.secondary)
+        col_table.add_column("Type", style=COLORS.warning)
         col_table.add_column("Description", style="dim")
 
         for col in columns[:20]:  # Limit to first 20 columns

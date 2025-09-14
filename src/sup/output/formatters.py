@@ -16,7 +16,7 @@ from rich.panel import Panel
 from rich.syntax import Syntax
 from rich.table import Table
 
-from sup.output.styles import EMOJIS, RICH_STYLES
+from sup.output.styles import COLORS, EMOJIS, RICH_STYLES
 
 console = Console()
 
@@ -73,7 +73,7 @@ def display_query_results(
 
     # Display the SQL query with syntax highlighting
     sql_syntax = Syntax(result.query, "sql", theme="monokai", line_numbers=False)
-    console.print(Panel(sql_syntax, title="SQL Query", border_style="blue"))
+    console.print(Panel(sql_syntax, title="SQL Query", border_style=COLORS.info))
 
     # Show execution time if available
     if result.execution_time:
@@ -125,11 +125,11 @@ def display_table(
     # Add columns with smart width management
     for col in df.columns:
         # Determine column styling based on data type
-        style = "cyan"
+        style = COLORS.secondary
         if df[col].dtype in ["int64", "int32", "float64", "float32"]:
-            style = "green"
+            style = COLORS.success
         elif df[col].dtype == "bool":
-            style = "yellow"
+            style = COLORS.warning
         elif pd.api.types.is_datetime64_any_dtype(df[col]):
             style = RICH_STYLES["accent"]
 
@@ -353,7 +353,7 @@ def display_entity_results(
                 sample_item = items[0]
                 columns = list(sample_item.keys())[:5]  # Limit to 5 columns
                 for col in columns:
-                    table.add_column(str(col), style="cyan")
+                    table.add_column(str(col), style=COLORS.secondary)
 
                 # Add rows
                 for item in items[:50]:  # Limit to 50 rows

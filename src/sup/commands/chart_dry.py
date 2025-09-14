@@ -54,13 +54,28 @@ def list_charts(
     from sup.output.spinners import data_spinner
 
     try:
-        # Add chart-specific filters
-        chart_filters = filters.copy(
-            update={
-                "dashboard_id": dashboard_id,
-                "viz_type": viz_type,
-                "dataset_id": dataset_id,
-            },
+        # Create ChartFilters from universal filters with chart-specific fields
+        from sup.filters.chart import ChartFilters
+
+        chart_filters = ChartFilters(
+            # Copy universal filters
+            id=filters.id,
+            ids=filters.ids,
+            name=filters.name,
+            mine=filters.mine,
+            team_id=filters.team_id,
+            created_after=filters.created_after,
+            modified_after=filters.modified_after,
+            limit=filters.limit,
+            offset=filters.offset,
+            page=filters.page,
+            page_size=filters.page_size,
+            order=filters.order,
+            desc=filters.desc,
+            # Chart-specific filters
+            dashboard_id=dashboard_id,
+            viz_type=viz_type,
+            dataset_id=dataset_id,
         )
 
         # Get charts with spinner
@@ -91,7 +106,8 @@ def list_charts(
                 "dashboards",
             ],
             table_display_func=lambda items: display_charts_table(
-                items, ctx.get_workspace_hostname(),
+                items,
+                ctx.get_workspace_hostname(),
             ),
         )
 

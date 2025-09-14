@@ -7,7 +7,7 @@ Beautiful data formatting for query results and other outputs.
 import json
 import time
 from io import StringIO
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 import pandas as pd
 import yaml
@@ -312,7 +312,7 @@ def display_entity_results(
     output_format: str = "table",
     porcelain: bool = False,
     porcelain_fields: Optional[List[str]] = None,
-    table_display_func: Optional[callable] = None,
+    table_display_func: Optional[Callable[..., Any]] = None,
 ) -> None:
     """
     Consolidated output handler for all entity results.

@@ -6,7 +6,7 @@ and clickable links, eliminating the need for separate table display functions
 in dataset.py, chart.py, workspace.py, etc.
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 from rich.console import Console
 from rich.table import Table
@@ -30,7 +30,7 @@ class EntityTableConfig:
         self.title_name = title_name
         self.border_style = border_style
         self.info_command = info_command
-        self.columns = []
+        self.columns: List[Dict[str, Any]] = []
 
     def add_column(
         self,
@@ -39,7 +39,7 @@ class EntityTableConfig:
         style: str = "cyan",
         no_wrap: bool = True,
         link_template: Optional[str] = None,
-        transform_func: Optional[callable] = None,
+        transform_func: Optional[Callable[..., Any]] = None,
     ):
         """Add a column to the table configuration."""
         self.columns.append(
@@ -388,7 +388,8 @@ def display_dashboards_table(items: List[Dict[str, Any]], hostname: Optional[str
 
 
 def display_saved_queries_table(
-    items: List[Dict[str, Any]], hostname: Optional[str] = None,
+    items: List[Dict[str, Any]],
+    hostname: Optional[str] = None,
 ) -> None:
     """Display saved queries using the standard configuration."""
     display_entity_table(items, SAVED_QUERY_TABLE_CONFIG, hostname)

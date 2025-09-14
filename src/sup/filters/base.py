@@ -37,23 +37,42 @@ class UniversalFilters:
 
     def copy(self, **updates) -> "UniversalFilters":
         """Create a copy of filters with optional updates."""
-        current_values = {
-            "id": self.id,
-            "ids": self.ids,
-            "name": self.name,
-            "mine": self.mine,
-            "team_id": self.team_id,
-            "created_after": self.created_after,
-            "modified_after": self.modified_after,
-            "limit": self.limit,
-            "offset": self.offset,
-            "page": self.page,
-            "page_size": self.page_size,
-            "order": self.order,
-            "desc": self.desc,
+        # Only include valid UniversalFilters fields from updates
+        valid_fields = {
+            "id",
+            "ids",
+            "name",
+            "mine",
+            "team_id",
+            "created_after",
+            "modified_after",
+            "limit",
+            "offset",
+            "page",
+            "page_size",
+            "order",
+            "desc",
         }
-        current_values.update(updates)
-        return UniversalFilters(**current_values)
+
+        # Only update with valid fields
+        filtered_updates = {k: v for k, v in updates.items() if k in valid_fields}
+
+        # Create new instance with current values updated
+        return UniversalFilters(
+            id=filtered_updates.get("id", self.id),
+            ids=filtered_updates.get("ids", self.ids),
+            name=filtered_updates.get("name", self.name),
+            mine=filtered_updates.get("mine", self.mine),
+            team_id=filtered_updates.get("team_id", self.team_id),
+            created_after=filtered_updates.get("created_after", self.created_after),
+            modified_after=filtered_updates.get("modified_after", self.modified_after),
+            limit=filtered_updates.get("limit", self.limit),
+            offset=filtered_updates.get("offset", self.offset),
+            page=filtered_updates.get("page", self.page),
+            page_size=filtered_updates.get("page_size", self.page_size),
+            order=filtered_updates.get("order", self.order),
+            desc=filtered_updates.get("desc", self.desc),
+        )
 
     @classmethod
     def parse_ids(cls, ids_str: str) -> List[int]:

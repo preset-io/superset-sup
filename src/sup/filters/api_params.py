@@ -20,7 +20,7 @@ def build_api_params(filters: UniversalFilters, entity_type: str) -> Dict[str, A
     Returns:
         Dictionary of API parameters for server-side filtering
     """
-    api_params = {}
+    api_params: Dict[str, Any] = {}
 
     # Pagination (always use for performance)
     page_size = filters.limit if filters.limit else 50
@@ -60,7 +60,8 @@ def build_api_params(filters: UniversalFilters, entity_type: str) -> Dict[str, A
             },
         }
         field_map = order_mapping.get(entity_type, {})
-        api_params["order_column"] = field_map.get(filters.order, filters.order)
+        mapped_field = field_map.get(filters.order, filters.order)
+        api_params["order_column"] = str(mapped_field) if mapped_field is not None else "changed_on"
         api_params["order_direction"] = "desc" if filters.desc else "asc"
     else:
         # Default ordering by modification date (most recent first)

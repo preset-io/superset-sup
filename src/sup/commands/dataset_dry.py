@@ -65,13 +65,28 @@ def list_datasets(
     from sup.output.spinners import data_spinner
 
     try:
-        # Add dataset-specific filters to the universal filters
-        dataset_filters = filters.copy(
-            update={
-                "database_id": database_id,
-                "schema": schema,
-                "table_type": table_type,
-            },
+        # Create DatasetFilters from universal filters with dataset-specific fields
+        from sup.filters.dataset import DatasetFilters
+
+        dataset_filters = DatasetFilters(
+            # Copy universal filters
+            id=filters.id,
+            ids=filters.ids,
+            name=filters.name,
+            mine=filters.mine,
+            team_id=filters.team_id,
+            created_after=filters.created_after,
+            modified_after=filters.modified_after,
+            limit=filters.limit,
+            offset=filters.offset,
+            page=filters.page,
+            page_size=filters.page_size,
+            order=filters.order,
+            desc=filters.desc,
+            # Dataset-specific filters
+            database_id=database_id,
+            schema=schema,
+            table_type=table_type,
         )
 
         # Get datasets from API with spinner
@@ -103,7 +118,8 @@ def list_datasets(
             porcelain=output.porcelain,
             porcelain_fields=["id", "table_name", "database_name", "schema", "kind"],
             table_display_func=lambda items: display_datasets_table(
-                items, ctx.get_workspace_hostname(),
+                items,
+                ctx.get_workspace_hostname(),
             ),
         )
 
@@ -144,7 +160,8 @@ def dataset_info(
         # Consolidated output handling
         if output.porcelain:
             print(
-                f"{dataset_id}\t{dataset.get('table_name', '')}\t{dataset.get('database_name', '')}",
+                f"{dataset_id}\t{dataset.get('table_name', '')}"
+                f"\t{dataset.get('database_name', '')}",
             )
         elif output.json_output:
             import json

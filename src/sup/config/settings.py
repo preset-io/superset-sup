@@ -10,7 +10,7 @@ from typing import Dict, Optional
 
 import yaml
 from pydantic import BaseModel, ConfigDict, Field
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from sup.config.paths import (
     ensure_config_dir,
@@ -79,7 +79,7 @@ class SupersetInstanceConfig(BaseModel):
 class SupGlobalConfig(BaseSettings):
     """Global configuration settings stored in ~/.sup/config.yml."""
 
-    model_config = ConfigDict(env_prefix="SUP_", env_file=".env", extra="ignore")
+    model_config = SettingsConfigDict(env_prefix="SUP_", env_file=".env", extra="ignore")
 
     # Preset Authentication (Primary Focus)
     preset_api_token: Optional[str] = None
@@ -130,7 +130,7 @@ class SupGlobalConfig(BaseSettings):
 class SupProjectState(BaseSettings):
     """Project-specific state stored in .sup/state.yml."""
 
-    model_config = ConfigDict(config_file=".sup/state.yml", extra="ignore")
+    model_config = SettingsConfigDict(env_file=".sup/state.yml", extra="ignore")
 
     # Current context
     current_workspace_id: Optional[int] = None
@@ -189,20 +189,20 @@ class SupContext:
 
     def get_workspace_id(self, cli_override: Optional[int] = None) -> Optional[int]:
         """Get workspace ID with proper precedence."""
+        env_workspace_id = get_env_var("workspace_id")
         return (
             cli_override
-            or get_env_var("workspace_id")
-            and int(get_env_var("workspace_id"))
+            or (int(env_workspace_id) if env_workspace_id is not None else None)
             or self.project_state.current_workspace_id
             or self.global_config.current_workspace_id
         )
 
     def get_database_id(self, cli_override: Optional[int] = None) -> Optional[int]:
         """Get database ID with proper precedence."""
+        env_database_id = get_env_var("database_id")
         return (
             cli_override
-            or get_env_var("database_id")
-            and int(get_env_var("database_id"))
+            or (int(env_database_id) if env_database_id is not None else None)
             or self.project_state.current_database_id
             or self.global_config.current_database_id
         )

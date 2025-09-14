@@ -11,6 +11,7 @@ from rich.console import Console
 from rich.table import Table
 from typing_extensions import Annotated
 
+from sup.commands.template_params import DisableJinjaOption, LoadEnvOption, TemplateOptions
 from sup.filters.chart import apply_chart_filters, parse_chart_filters
 from sup.output.formatters import display_porcelain_list
 from sup.output.styles import COLORS, EMOJIS, RICH_STYLES
@@ -1050,13 +1051,10 @@ def push_charts(
         bool,
         typer.Option("--overwrite", help="Overwrite existing charts"),
     ] = False,
-    disable_jinja_templating: Annotated[
-        bool,
-        typer.Option(
-            "--disable-jinja-templating",
-            help="Disable Jinja2 template processing in YAML files",
-        ),
-    ] = False,
+    # Template processing options
+    template_options: TemplateOptions = None,
+    load_env: LoadEnvOption = False,
+    disable_jinja_templating: DisableJinjaOption = False,
     continue_on_error: Annotated[
         bool,
         typer.Option(
@@ -1096,12 +1094,18 @@ def push_charts(
     By default, Jinja2 templating is enabled for parameterized assets.
     Use --disable-jinja-templating to push raw YAML without processing.
 
+    Template Support:
+    • --option key=value: Pass template variables (can be used multiple times)
+    • --load-env: Make environment variables available as env['VAR_NAME']
+    • chart.overrides.yaml files are automatically applied
+
     Examples:
         sup chart push                               # Push to configured target workspace
         sup chart push ./backup                      # Push from specific folder
         sup chart push --workspace-id=456            # Push to specific workspace
         sup chart push --overwrite --force           # Overwrite without confirmation
         sup chart push --continue-on-error           # Skip failed charts, continue
+        sup chart push --option env=prod --load-env  # Template with variables
     """
     from preset_cli.cli.superset.sync.native.command import ResourceType, native
     from sup.config.settings import SupContext
@@ -1228,7 +1232,9 @@ def push_charts(
         auth = SupPresetAuth.from_sup_config(ctx, silent=True)
 
         # Create mock click context that native() expects
-        mock_ctx = click.Context(click.Command("import"))
+        # Use a minimal command for the context
+        import_command = click.Command("import")
+        mock_ctx = click.Context(import_command)
         mock_ctx.obj = {
             "AUTH": auth,
             "INSTANCE": workspace_url,
@@ -1243,20 +1249,24 @@ def push_charts(
         # Call the existing native() function with chart-specific settings
         # This gives us ALL the existing functionality: dependency resolution,
         # Jinja2 templating, database password handling, error management, etc.
-        native(
-            ctx=mock_ctx,
-            directory=resolved_assets_folder,
-            option=(),  # No custom template variables
-            asset_type=ResourceType.CHART,
-            overwrite=overwrite,
-            disable_jinja_templating=disable_jinja_templating,
-            disallow_edits=True,  # Mark as externally managed
-            external_url_prefix="",  # No external URL prefix
-            load_env=False,  # Don't load .env files
-            split=False,  # Import as bundle, not individually
-            continue_on_error=continue_on_error,
-            db_password=(),  # No database passwords specified
-        )
+        #
+        # NOTE: native() is decorated with @click.pass_context, so we need to
+        # manually pass the context using click's invoke() method
+        with mock_ctx:
+            mock_ctx.invoke(
+                native,
+                directory=resolved_assets_folder,
+                option=template_options or (),  # Pass custom template variables
+                asset_type=ResourceType.CHART,
+                overwrite=overwrite,
+                disable_jinja_templating=disable_jinja_templating,
+                disallow_edits=True,  # Mark as externally managed
+                external_url_prefix="",  # No external URL prefix
+                load_env=load_env,  # Load environment variables if requested
+                split=True,  # Import individually with dependency resolution
+                continue_on_error=continue_on_error,
+                db_password=(),  # No database passwords specified
+            )
 
         if not porcelain:
             console.print(

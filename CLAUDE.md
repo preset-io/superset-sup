@@ -53,8 +53,11 @@ src/preset_cli/
 
 ### Environment Setup
 ```bash
-# Create pyenv virtual environment and install dependencies
-make pyenv
+# Using uv (preferred for fastest installation)
+uv pip install -e '.[testing]'
+
+# Or using make (which uses uv)
+make install
 ```
 
 ### Testing

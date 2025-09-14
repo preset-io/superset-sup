@@ -96,9 +96,7 @@ def import_ownership(  # pylint: disable=too-many-locals
     users = {user["email"]: user["id"] for user in client.export_users()}
     with open(log_file_path, "w", encoding="utf-8") as log_file:
         for resource_name, resources in config.items():
-            resource_ids = {
-                str(v): k for k, v in client.get_uuids(resource_name).items()
-            }
+            resource_ids = {str(v): k for k, v in client.get_uuids(resource_name).items()}
             for ownership in resources:
                 if ownership["uuid"] not in assets_to_skip:
                     _logger.info(

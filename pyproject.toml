@@ -1,9 +1,102 @@
 [build-system]
-# AVOID CHANGING REQUIRES: IT WILL BE UPDATED BY PYSCAFFOLD!
 requires = ["setuptools>=46.1.0", "setuptools_scm[toml]>=5", "wheel"]
 build-backend = "setuptools.build_meta"
 
+[project]
+name = "preset-cli"
+description = "A CLI to interact with Preset (https://preset.io/) workspaces."
+authors = [
+    {name = "Beto Dealmeida", email = "beto@preset.io"},
+    {name = "Max Beauchemin", email = "max@preset.io"},
+]
+license = {text = "Other/Proprietary License"}
+readme = "README.rst"
+requires-python = ">=3.8"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "License :: Other/Proprietary License",
+]
+dependencies = [
+    "importlib-metadata; python_version<'3.8'",
+    "Cython>=0.29.26",
+    "PyYAML>=6.0",
+    "appdirs>=1.4.4",
+    "backoff>=1.10.0",
+    "beautifulsoup4>=4.10.0",
+    "click>=8.0.3",
+    "jinja2>=3.0.3",
+    "marshmallow>=3.17.0",
+    "numpy>=1.21.5",
+    "pandas>=1.3.5",
+    "prison>=0.2.1",
+    "prompt-toolkit>=3.0.24",
+    "pygments>=2.11.2",
+    "python-graphql-client>=0.4.3",
+    "requests>=2.26.0",
+    "rich>=12.3.0",
+    "sqlalchemy>=1.4,<2",
+    "sqlglot>=26",
+    "tabulate>=0.8.9",
+    "typing-extensions>=4.0.1",
+    "yarl>=1.7.2",
+    "greenlet>=1.1.3",
+    "aiohttp>=3.8.3",
+    "typer>=0.12.0",
+    "pydantic>=2.0.0",
+    "pydantic-settings>=2.0.0",
+    "halo>=0.0.31",
+]
+dynamic = ["version"]
+
+[project.urls]
+Documentation = "https://github.com/preset-io/backend-sdk/blob/master/README.rst"
+
+[project.optional-dependencies]
+snowflake = ["snowflake-sqlalchemy==1.4.4"]
+testing = [
+    "setuptools",
+    "freezegun",
+    "pytest",
+    "pytest-cov",
+    "pytest-mock",
+    "pyfakefs",
+    "requests-mock",
+    "codespell",
+    "pre-commit",
+    "pip-tools>=6.6.0",
+    "ruff>=0.8.0",
+]
+
+[project.scripts]
+preset-cli = "preset_cli.cli.main:preset_cli"
+superset-cli = "preset_cli.cli.superset.main:superset_cli"
+sup = "sup.main:app"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+exclude = ["tests"]
+
 [tool.setuptools_scm]
-# For smarter version schemes and other configuration options,
-# check out https://github.com/pypa/setuptools_scm
 version_scheme = "no-guess-dev"
+
+[tool.pytest.ini_options]
+addopts = "--cov preset_cli --cov-report term-missing --verbose"
+norecursedirs = ["dist", "build", ".tox"]
+testpaths = ["tests"]
+
+[tool.ruff]
+target-version = "py38"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+ignore = ["E203"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"

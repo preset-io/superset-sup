@@ -223,7 +223,7 @@ def test_dbt_client_get_projects(requests_mock: Mocker) -> None:
                             "id": 84338,
                             "account_id": 72449,
                             "state": 1,
-                            "public_key": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQCsuzl8uH0z0395SmYnlNuyeOCUqF7UhDVrIpUe+Vsyjin35cfnPop19k9l7nr+AZma+p2lf4NW9K1ugErB7hr5VUsSEoNjFk292z6dIhQVSLXrMJr3Kc0PixgXuDMgHUPQTU3T8zWeUmHQsslK0jTiRT/zH5ZdLc36AW9U2X9KriNHAfDHpx8b6eAgx2Prsvn/rnVqyolGlk9QBAPFqPzWbw231ORvWozUd94gklxJpWzIOvhZqVluuPs32FLquPfdkkRDjoVoLR1TQtriBBjaKsx6TK/frwtiOvrmbRm9l2ufXmHlahgTusbPru99z1rEwGlrqOI+DVo5VqM0ksavSz4auTJmzoIDhVXPgF2snwdnpfDeXiW9N/GQ90KGHGienBXnMeDCu+XcQrn+gUDimJfnRsSPSgU27eG/zWl6dEerlprV60g5WAViJ/MF1hBHZW+dpGJAipobvhA9NOA53xOHXYdVNn9uk9092/lQeiIBowhr8PKYezKMIf8z8cPKqL0BtUpBbYR/UpnmeWx9CmFbx9GxITiIWx+qOxZAzrLHwHrTfu1Rb20dXcE3XHSgmRFyyitOHn2+JN+rdZBT3XNePM++vygImnHoDCkJ/q11xmJWOEshsKESz0JrxGIkvXOJ3/2/Gw2Iujs17dFtXJADBzkNyuqGj4mD1Z/8gQ==",
+                            "public_key": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQCsuzl8uH0z0395SmYnlNuyeOCUqF7UhDVrIpUe+Vsyjin35cfnPop19k9l7nr+AZma+p2lf4NW9K1ugErB7hr5VUsSEoNjFk292z6dIhQVSLXrMJr3Kc0PixgXuDMgHUPQTU3T8zWeUmHQsslK0jTiRT/zH5ZdLc36AW9U2X9KriNHAfDHpx8b6eAgx2Prsvn/rnVqyolGlk9QBAPFqPzWbw231ORvWozUd94gklxJpWzIOvhZqVluuPs32FLquPfdkkRDjoVoLR1TQtriBBjaKsx6TK/frwtiOvrmbRm9l2ufXmHlahgTusbPru99z1rEwGlrqOI+DVo5VqM0ksavSz4auTJmzoIDhVXPgF2snwdnpfDeXiW9N/GQ90KGHGienBXnMeDCu+XcQrn+gUDimJfnRsSPSgU27eG/zWl6dEerlprV60g5WAViJ/MF1hBHZW+dpGJAipobvhA9NOA53xOHXYdVNn9uk9092/lQeiIBowhr8PKYezKMIf8z8cPKqL0BtUpBbYR/UpnmeWx9CmFbx9GxITiIWx+qOxZAzrLHwHrTfu1Rb20dXcE3XHSgmRFyyitOHn2+JN+rdZBT3XNePM++vygImnHoDCkJ/q11xmJWOEshsKESz0JrxGIkvXOJ3/2/Gw2Iujs17dFtXJADBzkNyuqGj4mD1Z/8gQ==",  # noqa: E501
                         },
                         "github_repo": "shreesham/preset-dbt-demo",
                         "name": "preset-dbt-demo",
@@ -362,7 +362,7 @@ def test_dbt_client_get_projects(requests_mock: Mocker) -> None:
                             "id": 84339,
                             "account_id": 72449,
                             "state": 1,
-                            "public_key": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQCQ6NWTsb48rEVFc7/Ihsz1XQ6dFa0TQEntuDu6uOPUxBVadup83vhKNqI9xRuOnDDEm/YqhcUZqx6OFB0BFmxSeEoRwTkDkURfBKh1nQ1kSbq0xbKwoRXyvwyfqs1HeTEtSZuPcKelMOWK3R5evCE3ZcKvLQw6oHf32JhHThuaOw/AG5OtvSLlWSxlQ6b7hW64K2kdsf+KODnD9+6PhEMludcBtIwTcZQdhHbyz/UMo3fGas59+LsxhBzjVyF1jmi3XrKLHJ+5oTlvz+Jr2EI2Srvftcciy/DvyGvG/biqrG1KjrCYoqzwjCFhBy4jJBU421QTjBtYLABVJC9hEtlsSFCFMJMubUhKELo3HhX6vbn5E8TF+UCP7wc7JEACyICzxeROk2QAb0aV7gmL/Zrc6mVNou5Cb5mVuv5NIUBjpx7m69rsHRR+lb4H41gZCeeh7dQmV08rZk0L47n8Clcuc55v99o8H7ekk+I9dOhHpeKvbW90XMGtDnZZLfw+o2wG/9S4js1b142nvFP55TfAb6+wOa4W+ZidaH5E3Mp41uk2wgLE2CsRVjAP5vM3OFTU6iyDY/obOMERNEhThKUS83ixR67s5haoWLRy+q36SvLn1oYQYlJ0UZp3SxZUnUTV1m20L2oQ4jAhnr5j3zzsNWCZLW4SxgdOq7Mi16Bqow==",
+                            "public_key": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQCQ6NWTsb48rEVFc7/Ihsz1XQ6dFa0TQEntuDu6uOPUxBVadup83vhKNqI9xRuOnDDEm/YqhcUZqx6OFB0BFmxSeEoRwTkDkURfBKh1nQ1kSbq0xbKwoRXyvwyfqs1HeTEtSZuPcKelMOWK3R5evCE3ZcKvLQw6oHf32JhHThuaOw/AG5OtvSLlWSxlQ6b7hW64K2kdsf+KODnD9+6PhEMludcBtIwTcZQdhHbyz/UMo3fGas59+LsxhBzjVyF1jmi3XrKLHJ+5oTlvz+Jr2EI2Srvftcciy/DvyGvG/biqrG1KjrCYoqzwjCFhBy4jJBU421QTjBtYLABVJC9hEtlsSFCFMJMubUhKELo3HhX6vbn5E8TF+UCP7wc7JEACyICzxeROk2QAb0aV7gmL/Zrc6mVNou5Cb5mVuv5NIUBjpx7m69rsHRR+lb4H41gZCeeh7dQmV08rZk0L47n8Clcuc55v99o8H7ekk+I9dOhHpeKvbW90XMGtDnZZLfw+o2wG/9S4js1b142nvFP55TfAb6+wOa4W+ZidaH5E3Mp41uk2wgLE2CsRVjAP5vM3OFTU6iyDY/obOMERNEhThKUS83ixR67s5haoWLRy+q36SvLn1oYQYlJ0UZp3SxZUnUTV1m20L2oQ4jAhnr5j3zzsNWCZLW4SxgdOq7Mi16Bqow==",  # noqa: E501
                         },
                         "github_repo": "preset-io/dbt-integration-blog-post",
                         "name": "dbt-integration-blog-post",
@@ -500,7 +500,7 @@ def test_dbt_client_get_projects(requests_mock: Mocker) -> None:
                     "id": 84338,
                     "account_id": 72449,
                     "state": 1,
-                    "public_key": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQCsuzl8uH0z0395SmYnlNuyeOCUqF7UhDVrIpUe+Vsyjin35cfnPop19k9l7nr+AZma+p2lf4NW9K1ugErB7hr5VUsSEoNjFk292z6dIhQVSLXrMJr3Kc0PixgXuDMgHUPQTU3T8zWeUmHQsslK0jTiRT/zH5ZdLc36AW9U2X9KriNHAfDHpx8b6eAgx2Prsvn/rnVqyolGlk9QBAPFqPzWbw231ORvWozUd94gklxJpWzIOvhZqVluuPs32FLquPfdkkRDjoVoLR1TQtriBBjaKsx6TK/frwtiOvrmbRm9l2ufXmHlahgTusbPru99z1rEwGlrqOI+DVo5VqM0ksavSz4auTJmzoIDhVXPgF2snwdnpfDeXiW9N/GQ90KGHGienBXnMeDCu+XcQrn+gUDimJfnRsSPSgU27eG/zWl6dEerlprV60g5WAViJ/MF1hBHZW+dpGJAipobvhA9NOA53xOHXYdVNn9uk9092/lQeiIBowhr8PKYezKMIf8z8cPKqL0BtUpBbYR/UpnmeWx9CmFbx9GxITiIWx+qOxZAzrLHwHrTfu1Rb20dXcE3XHSgmRFyyitOHn2+JN+rdZBT3XNePM++vygImnHoDCkJ/q11xmJWOEshsKESz0JrxGIkvXOJ3/2/Gw2Iujs17dFtXJADBzkNyuqGj4mD1Z/8gQ==",
+                    "public_key": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQCsuzl8uH0z0395SmYnlNuyeOCUqF7UhDVrIpUe+Vsyjin35cfnPop19k9l7nr+AZma+p2lf4NW9K1ugErB7hr5VUsSEoNjFk292z6dIhQVSLXrMJr3Kc0PixgXuDMgHUPQTU3T8zWeUmHQsslK0jTiRT/zH5ZdLc36AW9U2X9KriNHAfDHpx8b6eAgx2Prsvn/rnVqyolGlk9QBAPFqPzWbw231ORvWozUd94gklxJpWzIOvhZqVluuPs32FLquPfdkkRDjoVoLR1TQtriBBjaKsx6TK/frwtiOvrmbRm9l2ufXmHlahgTusbPru99z1rEwGlrqOI+DVo5VqM0ksavSz4auTJmzoIDhVXPgF2snwdnpfDeXiW9N/GQ90KGHGienBXnMeDCu+XcQrn+gUDimJfnRsSPSgU27eG/zWl6dEerlprV60g5WAViJ/MF1hBHZW+dpGJAipobvhA9NOA53xOHXYdVNn9uk9092/lQeiIBowhr8PKYezKMIf8z8cPKqL0BtUpBbYR/UpnmeWx9CmFbx9GxITiIWx+qOxZAzrLHwHrTfu1Rb20dXcE3XHSgmRFyyitOHn2+JN+rdZBT3XNePM++vygImnHoDCkJ/q11xmJWOEshsKESz0JrxGIkvXOJ3/2/Gw2Iujs17dFtXJADBzkNyuqGj4mD1Z/8gQ==",  # noqa: E501
                 },
                 "full_name": "shreesham/preset-dbt-demo",
                 "updated_at": "2022-07-25 21:53:44.205413+00:00",
@@ -581,7 +581,7 @@ def test_dbt_client_get_projects(requests_mock: Mocker) -> None:
                     "id": 84339,
                     "account_id": 72449,
                     "state": 1,
-                    "public_key": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQCQ6NWTsb48rEVFc7/Ihsz1XQ6dFa0TQEntuDu6uOPUxBVadup83vhKNqI9xRuOnDDEm/YqhcUZqx6OFB0BFmxSeEoRwTkDkURfBKh1nQ1kSbq0xbKwoRXyvwyfqs1HeTEtSZuPcKelMOWK3R5evCE3ZcKvLQw6oHf32JhHThuaOw/AG5OtvSLlWSxlQ6b7hW64K2kdsf+KODnD9+6PhEMludcBtIwTcZQdhHbyz/UMo3fGas59+LsxhBzjVyF1jmi3XrKLHJ+5oTlvz+Jr2EI2Srvftcciy/DvyGvG/biqrG1KjrCYoqzwjCFhBy4jJBU421QTjBtYLABVJC9hEtlsSFCFMJMubUhKELo3HhX6vbn5E8TF+UCP7wc7JEACyICzxeROk2QAb0aV7gmL/Zrc6mVNou5Cb5mVuv5NIUBjpx7m69rsHRR+lb4H41gZCeeh7dQmV08rZk0L47n8Clcuc55v99o8H7ekk+I9dOhHpeKvbW90XMGtDnZZLfw+o2wG/9S4js1b142nvFP55TfAb6+wOa4W+ZidaH5E3Mp41uk2wgLE2CsRVjAP5vM3OFTU6iyDY/obOMERNEhThKUS83ixR67s5haoWLRy+q36SvLn1oYQYlJ0UZp3SxZUnUTV1m20L2oQ4jAhnr5j3zzsNWCZLW4SxgdOq7Mi16Bqow==",
+                    "public_key": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQCQ6NWTsb48rEVFc7/Ihsz1XQ6dFa0TQEntuDu6uOPUxBVadup83vhKNqI9xRuOnDDEm/YqhcUZqx6OFB0BFmxSeEoRwTkDkURfBKh1nQ1kSbq0xbKwoRXyvwyfqs1HeTEtSZuPcKelMOWK3R5evCE3ZcKvLQw6oHf32JhHThuaOw/AG5OtvSLlWSxlQ6b7hW64K2kdsf+KODnD9+6PhEMludcBtIwTcZQdhHbyz/UMo3fGas59+LsxhBzjVyF1jmi3XrKLHJ+5oTlvz+Jr2EI2Srvftcciy/DvyGvG/biqrG1KjrCYoqzwjCFhBy4jJBU421QTjBtYLABVJC9hEtlsSFCFMJMubUhKELo3HhX6vbn5E8TF+UCP7wc7JEACyICzxeROk2QAb0aV7gmL/Zrc6mVNou5Cb5mVuv5NIUBjpx7m69rsHRR+lb4H41gZCeeh7dQmV08rZk0L47n8Clcuc55v99o8H7ekk+I9dOhHpeKvbW90XMGtDnZZLfw+o2wG/9S4js1b142nvFP55TfAb6+wOa4W+ZidaH5E3Mp41uk2wgLE2CsRVjAP5vM3OFTU6iyDY/obOMERNEhThKUS83ixR67s5haoWLRy+q36SvLn1oYQYlJ0UZp3SxZUnUTV1m20L2oQ4jAhnr5j3zzsNWCZLW4SxgdOq7Mi16Bqow==",  # noqa: E501
                 },
                 "full_name": "preset-io/dbt-integration-blog-post",
                 "updated_at": "2022-07-25 21:57:36.748299+00:00",
@@ -1161,7 +1161,7 @@ def test_dbt_client_get_sl_metrics_no_semantic_layer(mocker: MockerFixture) -> N
         "data": None,
         "errors": [
             {
-                "message": "Empty semantic manifest was found. Ensure that you have semantic models defined.",
+                "message": "Empty semantic manifest was found. Ensure that you have semantic models defined.",  # noqa: E501
                 "locations": [{"line": 3, "column": 17}],
                 "path": ["metrics"],
             },

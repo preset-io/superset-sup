@@ -11,10 +11,7 @@ from rich.console import Console
 from rich.table import Table
 from typing_extensions import Annotated
 
-from sup.filters.dataset import (
-    apply_dataset_filters,
-    parse_dataset_filters,
-)
+from sup.filters.dataset import apply_dataset_filters, parse_dataset_filters
 from sup.output.formatters import display_porcelain_list
 from sup.output.styles import EMOJIS, RICH_STYLES
 
@@ -168,7 +165,10 @@ def list_datasets(
             # Update spinner with results
             if sp:
                 if filtered_datasets != datasets:
-                    sp.text = f"Found {len(datasets)} datasets, showing {len(filtered_datasets)} after filtering"
+                    sp.text = (
+                        f"Found {len(datasets)} datasets, "
+                        f"showing {len(filtered_datasets)} after filtering"
+                    )
                 else:
                     sp.text = f"Found {len(datasets)} datasets"
 
@@ -238,7 +238,7 @@ def dataset_info(
         if porcelain:
             # Simple key-value output
             print(
-                f"{dataset_id}\t{dataset.get('table_name', '')}\t{dataset.get('database_name', '')}",
+                f"{dataset_id}\t{dataset.get('table_name', '')}\t{dataset.get('database_name', '')}",  # noqa: E501
             )
         elif json_output:
             import json
@@ -357,7 +357,9 @@ def display_datasets_table(
                 name_link = f"https://{workspace_hostname}{explore_url}"
             else:
                 # Fallback to table list with filter
-                name_link = f"https://{workspace_hostname}/tablemodelview/list/?_flt_1_table_name={name}"
+                name_link = (
+                    f"https://{workspace_hostname}/tablemodelview/list/?_flt_1_table_name={name}"
+                )
             name_display = f"[link={name_link}]{name}[/link]"
         else:
             # No clickable links if no hostname

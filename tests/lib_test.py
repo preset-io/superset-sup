@@ -126,7 +126,7 @@ def test_raise_cli_errors_decorator_when_raising(
     with pytest.raises(SystemExit) as excinfo:
         mock_function()
 
-    assert excinfo.type == SystemExit
+    assert excinfo.type == SystemExit  # noqa: E721
     assert excinfo.value.code == 1
 
     output_content = capsys.readouterr()

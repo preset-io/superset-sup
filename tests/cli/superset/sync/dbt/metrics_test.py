@@ -107,7 +107,7 @@ def test_get_metric_expression() -> None:
         get_metric_expression("four", metrics)
     assert str(excinfo.value) == (
         "Unable to generate metric expression from: "
-        "{'dialect': 'postgres', 'meta': {}, 'sql': 'user_id', 'superset_meta': {}, 'type': 'hllsketch'}"
+        "{'dialect': 'postgres', 'meta': {}, 'sql': 'user_id', 'superset_meta': {}, 'type': 'hllsketch'}"  # noqa: E501
     )
 
     with pytest.raises(Exception) as excinfo:
@@ -243,7 +243,7 @@ SAFE_DIVIDE(
     result = get_metric_expression(unique_id, metrics)
     assert (
         result
-        == "SAFE_DIVIDE(SUM(IF(`product_line` = 'Classic Cars', price_each * 0.80, price_each * 0.70)), SUM(price_each))"
+        == "SAFE_DIVIDE(SUM(IF(`product_line` = 'Classic Cars', price_each * 0.80, price_each * 0.70)), SUM(price_each))"  # noqa: E501
     )
 
 
@@ -685,10 +685,10 @@ WHERE order_id__order_total_dim >= 20
                 SELECT
                     CAST(SUM(case when is_food_item = 1 then product_price else 0 end) AS FLOAT64) / CAST(NULLIF(SUM(product_price), 0) AS FLOAT64) AS food_revenue_pct
                 FROM `dbt-tutorial-347100`.`dbt_beto`.`order_items` order_item_src_98
-            """,
+            """,  # noqa: E501
             MFSQLEngine.BIGQUERY,
         )
-        == "CAST(SUM(CASE WHEN is_food_item = 1 THEN product_price ELSE 0 END) AS FLOAT64) / CAST(NULLIF(SUM(product_price), 0) AS FLOAT64)"
+        == "CAST(SUM(CASE WHEN is_food_item = 1 THEN product_price ELSE 0 END) AS FLOAT64) / CAST(NULLIF(SUM(product_price), 0) AS FLOAT64)"  # noqa: E501
     )
 
     assert (
@@ -763,10 +763,7 @@ WHERE order_id__order_total_dim >= 20
             "SELECT COUNT(*), COUNT(DISTINCT user_id) FROM t",
             MFSQLEngine.BIGQUERY,
         )
-    assert (
-        str(excinfo.value)
-        == "Unable to convert metrics with multiple selected expressions"
-    )
+    assert str(excinfo.value) == "Unable to convert metrics with multiple selected expressions"
 
 
 def test_convert_metric_flow_to_superset(mocker: MockerFixture) -> None:
@@ -853,9 +850,7 @@ def test_get_models_from_sql() -> None:
         model_map,  # type: ignore
     ) == [{"name": "a"}, {"name": "b"}]
 
-    assert (
-        get_models_from_sql("SELECT 1 FROM schema.c", MFSQLEngine.BIGQUERY, {}) is None
-    )
+    assert get_models_from_sql("SELECT 1 FROM schema.c", MFSQLEngine.BIGQUERY, {}) is None
 
 
 def test_get_superset_metrics_per_model() -> None:
@@ -1135,7 +1130,7 @@ SUM(
     result = get_superset_metrics_per_model(og_metrics, [])
     output_content = caplog.text
     assert (
-        "Metric derived_metric_missing_model_info cannot be calculated because it's not associated with any model"
+        "Metric derived_metric_missing_model_info cannot be calculated because it's not associated with any model"  # noqa: E501
         in output_content
     )
 
@@ -1253,7 +1248,4 @@ def test_replace_metric_syntax() -> None:
     }
     print(metrics)
     result = replace_metric_syntax(sql, ["revenue", "cost"], metrics)
-    assert (
-        result
-        == "SUM({{ url_param['aggregator'] }}) - SUM({{ filter_values['test'] }})"
-    )
+    assert result == "SUM({{ url_param['aggregator'] }}) - SUM({{ filter_values['test'] }})"

@@ -876,10 +876,7 @@ def test_detect_users_file_format() -> None:
             },
         },
     ]
-    assert (
-        detect_users_file_format(workspace_roles_users)
-        == UserFileFormat.WORKSPACE_ROLES
-    )
+    assert detect_users_file_format(workspace_roles_users) == UserFileFormat.WORKSPACE_ROLES
 
     # Test empty list
     assert detect_users_file_format([]) == UserFileFormat.SIMPLE
@@ -958,9 +955,7 @@ def test_import_users_workspace_roles_error_handling(
         catch_exceptions=False,
     )
     assert result.exit_code == 0
-    assert (
-        "Warning: Failed to process workspace roles for team TestTeam" in result.output
-    )
+    assert "Warning: Failed to process workspace roles for team TestTeam" in result.output
 
 
 def test_import_users_with_workspace_roles_user_without_workspaces(
@@ -1614,9 +1609,7 @@ def test_sync_user_roles_to_team(mocker: MockerFixture) -> None:
     }
     with pytest.raises(Exception) as excinfo:
         sync_user_roles_to_team(client, "team1", user, workspaces)
-    assert (
-        str(excinfo.value) == "Invalid role Super Mega Admin for user adoe@example.com"
-    )
+    assert str(excinfo.value) == "Invalid role Super Mega Admin for user adoe@example.com"
 
     user = {
         "id": 1001,

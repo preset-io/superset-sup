@@ -331,9 +331,7 @@ class SupersetClient:  # pylint: disable=too-many-public-methods
 
         if time_column is None:
             time_columns = [
-                column["column_name"]
-                for column in dataset["columns"]
-                if column["is_dttm"]
+                column["column_name"] for column in dataset["columns"] if column["is_dttm"]
             ]
             if len(time_columns) > 1:
                 options = ", ".join(time_columns)
@@ -344,9 +342,7 @@ class SupersetClient:  # pylint: disable=too-many-public-methods
             time_column = time_columns[0]
 
         time_range = (
-            "No filter"
-            if start is None and end is None
-            else f"{start or ''} : {end or ''}"
+            "No filter" if start is None and end is None else f"{start or ''} : {end or ''}"
         )
 
         # convert adhoc metrics to a proper object, if needed
@@ -436,9 +432,7 @@ class SupersetClient:  # pylint: disable=too-many-public-methods
         Return one or more of a resource, possibly filtered.
         """
         resources = []
-        operations = {
-            k: v if isinstance(v, Operator) else Equal(v) for k, v in kwargs.items()
-        }
+        operations = {k: v if isinstance(v, Operator) else Equal(v) for k, v in kwargs.items()}
 
         # paginate endpoint until no results are returned
         page = 0
@@ -892,8 +886,7 @@ class SupersetClient:  # pylint: disable=too-many-public-methods
                 users = [
                     user_email_map[int(option.attrs["value"])]
                     for option in soup.find("select", id="user").find_all("option")
-                    if "selected" in option.attrs
-                    and int(option.attrs["value"]) in user_email_map
+                    if "selected" in option.attrs and int(option.attrs["value"]) in user_email_map
                 ]
 
                 yield {
@@ -932,11 +925,7 @@ class SupersetClient:  # pylint: disable=too-many-public-methods
                 # extract the ID to fetch each RLS in a separate request, since the list
                 # view doesn't have all the columns we need
                 rule_id = int(tds[0].find("input").attrs["id"])
-                rule_url = (
-                    self.baseurl
-                    / "rowlevelsecurityfiltersmodelview/show"
-                    / str(rule_id)
-                )
+                rule_url = self.baseurl / "rowlevelsecurityfiltersmodelview/show" / str(rule_id)
 
                 _logger.debug("GET %s", rule_url)
                 response = self.session.get(rule_url)
@@ -990,9 +979,7 @@ class SupersetClient:  # pylint: disable=too-many-public-methods
                             for inner_item in rule.get(key, [])
                         ]
                     elif key == "roles":
-                        data[key] = [
-                            inner_item["name"] for inner_item in rule.get(key, [])
-                        ]
+                        data[key] = [inner_item["name"] for inner_item in rule.get(key, [])]
                     else:
                         data[key] = rule.get(key)
                 yield cast(RuleType, data)
@@ -1008,9 +995,7 @@ class SupersetClient:  # pylint: disable=too-many-public-methods
         Superset permissions to the Preset permissions.
         """
         user_id_map = {user["email"]: user["id"] for user in self.export_users()}
-        user_ids = [
-            user_id_map[email] for email in role["users"] if email in user_id_map
-        ]
+        user_ids = [user_id_map[email] for email in role["users"] if email in user_id_map]
 
         url = self.baseurl / "roles/add"
         _logger.debug("GET %s", url)
@@ -1018,8 +1003,7 @@ class SupersetClient:  # pylint: disable=too-many-public-methods
         soup = BeautifulSoup(response.text, features="html.parser")
         select = soup.find("select", id="permissions")
         permission_id_map = {
-            option.text: int(option.attrs["value"])
-            for option in select.find_all("option")
+            option.text: int(option.attrs["value"]) for option in select.find_all("option")
         }
 
         permission_ids: List[int] = []
@@ -1028,9 +1012,7 @@ class SupersetClient:  # pylint: disable=too-many-public-methods
             if permission in PERMISSION_MAP:
                 permission = PERMISSION_MAP[permission]
             elif match_ := DATABASE_PERMISSION.match(permission):
-                permission = "Database access on {database_name}".format(
-                    **match_.groupdict()
-                )
+                permission = "Database access on {database_name}".format(**match_.groupdict())
             elif match_ := SCHEMA_PERMISSION.match(permission):
                 permission = "Schema access on {database_name}.{schema_name}".format(
                     **match_.groupdict()

@@ -108,9 +108,7 @@ class PresetClient:  # pylint: disable=too-few-public-methods
         for team in teams:
             url = self.get_base_url() / "teams" / team / "invites/many"
             payload = {
-                "invites": [
-                    {"team_role_id": role_id, "email": email} for email in emails
-                ],
+                "invites": [{"team_role_id": role_id, "email": email} for email in emails],
             }
             _logger.debug("POST %s\n%s", url, json.dumps(payload, indent=4))
             response = self.session.post(url, json=payload)
@@ -191,10 +189,7 @@ class PresetClient:  # pylint: disable=too-few-public-methods
 
             # Teams with SAML SSO might have emails with uppercase characters
             ids.update(
-                {
-                    user["extra"]["email"].lower(): user["value"]
-                    for user in payload["result"]
-                },
+                {user["extra"]["email"].lower(): user["value"] for user in payload["result"]},
             )
 
             page += 1
@@ -294,11 +289,7 @@ class PresetClient:  # pylint: disable=too-few-public-methods
         Lists all user/SCIM groups associated with a team
         """
         url = (
-            self.get_base_url()
-            / "teams"
-            / team_name
-            / "scim/v2/Groups"
-            % {"startIndex": str(page)}
+            self.get_base_url() / "teams" / team_name / "scim/v2/Groups" % {"startIndex": str(page)}
         )
         self.session.headers["Accept"] = "application/scim+json"
         _logger.debug("GET %s", url)

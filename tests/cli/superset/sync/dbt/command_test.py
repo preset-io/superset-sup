@@ -234,7 +234,7 @@ dbt_metricflow_metrics = [
 dbt_metricflow_models = [
     {
         "unique_id": "model.jaffle_shop.stg_products",
-        "description": "Product (food and drink items that can be ordered) data with basic cleaning and transformation applied, one row per product.",
+        "description": "Product (food and drink items that can be ordered) data with basic cleaning and transformation applied, one row per product.",  # noqa: E501
         "tags": [],
         "columns": [
             {
@@ -280,7 +280,7 @@ dbt_metricflow_models = [
         "metrics": [],
         "docs": {"show": True, "node_color": None},
         "package_name": "jaffle_shop",
-        "raw_code": "with\n\nsource as (\n\n    select * from {{ source('ecom', 'raw_products') }}\n\n),\n\nrenamed as (\n\n    select\n\n        ----------  ids\n        sku as product_id,\n\n        ---------- text\n        name as product_name,\n        type as product_type,\n        description as product_description,\n\n\n        ---------- numerics\n        (price / 100.0) as product_price,\n\n        ---------- booleans\n        case\n            when type = 'jaffle' then 1\n            else 0\n        end as is_food_item,\n\n        case\n            when type = 'beverage' then 1\n            else 0\n        end as is_drink_item\n\n    from source\n\n)\n\nselect * from renamed",
+        "raw_code": "with\n\nsource as (\n\n    select * from {{ source('ecom', 'raw_products') }}\n\n),\n\nrenamed as (\n\n    select\n\n        ----------  ids\n        sku as product_id,\n\n        ---------- text\n        name as product_name,\n        type as product_type,\n        description as product_description,\n\n\n        ---------- numerics\n        (price / 100.0) as product_price,\n\n        ---------- booleans\n        case\n            when type = 'jaffle' then 1\n            else 0\n        end as is_food_item,\n\n        case\n            when type = 'beverage' then 1\n            else 0\n        end as is_drink_item\n\n    from source\n\n)\n\nselect * from renamed",  # noqa: E501
         "access": "protected",
         "original_file_path": "models/staging/stg_products.sql",
         "group": None,
@@ -313,13 +313,13 @@ dbt_metricflow_models = [
         "version": None,
         "compiled": True,
         "created_at": 1702514525.401679,
-        "compiled_code": "with\n\nsource as (\n\n    select * from `dbt-tutorial-347100`.`dbt_beto`.`raw_products`\n\n),\n\nrenamed as (\n\n    select\n\n        ----------  ids\n        sku as product_id,\n\n        ---------- text\n        name as product_name,\n        type as product_type,\n        description as product_description,\n\n\n        ---------- numerics\n        (price / 100.0) as product_price,\n\n        ---------- booleans\n        case\n            when type = 'jaffle' then 1\n            else 0\n        end as is_food_item,\n\n        case\n            when type = 'beverage' then 1\n            else 0\n        end as is_drink_item\n\n    from source\n\n)\n\nselect * from renamed",
+        "compiled_code": "with\n\nsource as (\n\n    select * from `dbt-tutorial-347100`.`dbt_beto`.`raw_products`\n\n),\n\nrenamed as (\n\n    select\n\n        ----------  ids\n        sku as product_id,\n\n        ---------- text\n        name as product_name,\n        type as product_type,\n        description as product_description,\n\n\n        ---------- numerics\n        (price / 100.0) as product_price,\n\n        ---------- booleans\n        case\n            when type = 'jaffle' then 1\n            else 0\n        end as is_food_item,\n\n        case\n            when type = 'beverage' then 1\n            else 0\n        end as is_drink_item\n\n    from source\n\n)\n\nselect * from renamed",  # noqa: E501
         "constraints": [],
         "depends_on": {"macros": [], "nodes": ["source.jaffle_shop.ecom.raw_products"]},
     },
     {
         "unique_id": "model.jaffle_shop.stg_customers",
-        "description": "Customer data with basic cleaning and transformation applied, one row per customer.",
+        "description": "Customer data with basic cleaning and transformation applied, one row per customer.",  # noqa: E501
         "tags": [],
         "columns": [
             {
@@ -365,7 +365,7 @@ dbt_metricflow_models = [
         "metrics": [],
         "docs": {"show": True, "node_color": None},
         "package_name": "jaffle_shop",
-        "raw_code": "with\n\nsource as (\n\n    select * from {{ source('ecom', 'raw_customers') }}\n\n),\n\nrenamed as (\n\n    select\n\n        ----------  ids\n        id as customer_id,\n\n        ---------- text\n        name as customer_name\n\n    from source\n\n)\n\nselect * from renamed",
+        "raw_code": "with\n\nsource as (\n\n    select * from {{ source('ecom', 'raw_customers') }}\n\n),\n\nrenamed as (\n\n    select\n\n        ----------  ids\n        id as customer_id,\n\n        ---------- text\n        name as customer_name\n\n    from source\n\n)\n\nselect * from renamed",  # noqa: E501
         "access": "protected",
         "original_file_path": "models/staging/stg_customers.sql",
         "group": None,
@@ -398,7 +398,7 @@ dbt_metricflow_models = [
         "version": None,
         "compiled": True,
         "created_at": 1702514525.416814,
-        "compiled_code": "with\n\nsource as (\n\n    select * from `dbt-tutorial-347100`.`dbt_beto`.`raw_customers`\n\n),\n\nrenamed as (\n\n    select\n\n        ----------  ids\n        id as customer_id,\n\n        ---------- text\n        name as customer_name\n\n    from source\n\n)\n\nselect * from renamed",
+        "compiled_code": "with\n\nsource as (\n\n    select * from `dbt-tutorial-347100`.`dbt_beto`.`raw_customers`\n\n),\n\nrenamed as (\n\n    select\n\n        ----------  ids\n        id as customer_id,\n\n        ---------- text\n        name as customer_name\n\n    from source\n\n)\n\nselect * from renamed",  # noqa: E501
         "constraints": [],
         "depends_on": {
             "macros": [],
@@ -407,7 +407,7 @@ dbt_metricflow_models = [
     },
     {
         "unique_id": "model.jaffle_shop.stg_supplies",
-        "description": "List of our supply expenses data with basic cleaning and transformation applied.\nOne row per supply cost, not per supply. As supply costs fluctuate they receive a new row with a new UUID. Thus there can be multiple rows per supply_id.\n",
+        "description": "List of our supply expenses data with basic cleaning and transformation applied.\nOne row per supply cost, not per supply. As supply costs fluctuate they receive a new row with a new UUID. Thus there can be multiple rows per supply_id.\n",  # noqa: E501
         "tags": [],
         "columns": [
             {
@@ -453,7 +453,7 @@ dbt_metricflow_models = [
         "metrics": [],
         "docs": {"show": True, "node_color": None},
         "package_name": "jaffle_shop",
-        "raw_code": "with\n\nsource as (\n\n    select * from {{ source('ecom', 'raw_supplies') }}\n\n),\n\nrenamed as (\n\n    select\n\n        ----------  ids\n        {{ dbt_utils.generate_surrogate_key(['id', 'sku']) }} as supply_uuid,\n        id as supply_id,\n        sku as product_id,\n\n        ---------- text\n        name as supply_name,\n\n---------- numerics\n        (cost / 100.0) as supply_cost,\n\n        ---------- booleans\n        perishable as is_perishable_supply\n\n    from source\n\n)\n\nselect * from renamed",
+        "raw_code": "with\n\nsource as (\n\n    select * from {{ source('ecom', 'raw_supplies') }}\n\n),\n\nrenamed as (\n\n    select\n\n        ----------  ids\n        {{ dbt_utils.generate_surrogate_key(['id', 'sku']) }} as supply_uuid,\n        id as supply_id,\n        sku as product_id,\n\n        ---------- text\n        name as supply_name,\n\n---------- numerics\n        (cost / 100.0) as supply_cost,\n\n        ---------- booleans\n        perishable as is_perishable_supply\n\n    from source\n\n)\n\nselect * from renamed",  # noqa: E501
         "access": "protected",
         "original_file_path": "models/staging/stg_supplies.sql",
         "group": None,
@@ -485,7 +485,7 @@ dbt_metricflow_models = [
         "version": None,
         "compiled": True,
         "created_at": 1702514525.3776808,
-        "compiled_code": "with\n\nsource as (\n\n    select * from `dbt-tutorial-347100`.`dbt_beto`.`raw_supplies`\n\n),\n\nrenamed as (\n\n    select\n\n        ----------  ids\n        \n    \nto_hex(md5(cast(coalesce(cast(id as STRING), '_dbt_utils_surrogate_key_null_') || '-' || coalesce(cast(sku as STRING), '_dbt_utils_surrogate_key_null_') as STRING))) as supply_uuid,\n        id as supply_id,\n        sku as product_id,\n\n        ---------- text\n        name as supply_name,\n\n        ---------- numerics\n        (cost / 100.0) as supply_cost,\n\n        ---------- booleans\n        perishable as is_perishable_supply\n\n    from source\n\n)\n\nselect * from renamed",
+        "compiled_code": "with\n\nsource as (\n\n    select * from `dbt-tutorial-347100`.`dbt_beto`.`raw_supplies`\n\n),\n\nrenamed as (\n\n    select\n\n        ----------  ids\n        \n    \nto_hex(md5(cast(coalesce(cast(id as STRING), '_dbt_utils_surrogate_key_null_') || '-' || coalesce(cast(sku as STRING), '_dbt_utils_surrogate_key_null_') as STRING))) as supply_uuid,\n        id as supply_id,\n        sku as product_id,\n\n        ---------- text\n        name as supply_name,\n\n        ---------- numerics\n        (cost / 100.0) as supply_cost,\n\n        ---------- booleans\n        perishable as is_perishable_supply\n\n    from source\n\n)\n\nselect * from renamed",  # noqa: E501
         "constraints": [],
         "depends_on": {
             "macros": ["macro.dbt_utils.generate_surrogate_key"],
@@ -494,7 +494,7 @@ dbt_metricflow_models = [
     },
     {
         "unique_id": "model.jaffle_shop.stg_orders",
-        "description": "Order data with basic cleaning and transformation applied, one row per order.",
+        "description": "Order data with basic cleaning and transformation applied, one row per order.",  # noqa: E501
         "tags": [],
         "columns": [
             {
@@ -540,7 +540,7 @@ dbt_metricflow_models = [
         "metrics": [],
         "docs": {"show": True, "node_color": None},
         "package_name": "jaffle_shop",
-        "raw_code": "with\n\nsource as (\n\n    select * from {{ source('ecom', 'raw_orders') }}\n    -- if you generate a larger dataset, you can limit the timespan to the current time with the following line\n    -- where ordered_at <= {{ var('truncate_timespan_to') }}\n\n),\n\nrenamed as (\n\n    select\n\n        ----------  ids\n        id as order_id,\n        store_id as location_id,\n        customer as customer_id,\n\n        ---------- numerics\n        (order_total / 100.0) as order_total,\n(tax_paid / 100.0) as tax_paid,\n\n        ---------- timestamps\n        {{dbt.date_trunc('day','ordered_at')}} as ordered_at\n\n    from source\n\n)\n\nselect * from renamed",
+        "raw_code": "with\n\nsource as (\n\n    select * from {{ source('ecom', 'raw_orders') }}\n    -- if you generate a larger dataset, you can limit the timespan to the current time with the following line\n    -- where ordered_at <= {{ var('truncate_timespan_to') }}\n\n),\n\nrenamed as (\n\n    select\n\n        ----------  ids\n        id as order_id,\n        store_id as location_id,\n        customer as customer_id,\n\n        ---------- numerics\n        (order_total / 100.0) as order_total,\n(tax_paid / 100.0) as tax_paid,\n\n        ---------- timestamps\n        {{dbt.date_trunc('day','ordered_at')}} as ordered_at\n\n    from source\n\n)\n\nselect * from renamed",  # noqa: E501
         "access": "protected",
         "original_file_path": "models/staging/stg_orders.sql",
         "group": None,
@@ -573,7 +573,7 @@ dbt_metricflow_models = [
         "version": None,
         "compiled": True,
         "created_at": 1702514525.396977,
-        "compiled_code": "with\n\nsource as (\n\n    select * from `dbt-tutorial-347100`.`dbt_beto`.`raw_orders`\n    -- if you generate a larger dataset, you can limit the timespan to the current time with the following line\n    -- where ordered_at <= current_timestamp()\n\n),\n\nrenamed as (\n\n    select\n\n        ---------ids\n        id as order_id,\n        store_id as location_id,\n        customer as customer_id,\n\n        ---------- numerics\n        (order_total / 100.0) as order_total,\n        (tax_paid / 100.0) as tax_paid,\n\n        ---------- timestamps\n        timestamp_trunc(\n        cast(ordered_at as timestamp),\n        day\n    ) as ordered_at\n\n    from source\n\n)\n\nselect * from renamed",
+        "compiled_code": "with\n\nsource as (\n\n    select * from `dbt-tutorial-347100`.`dbt_beto`.`raw_orders`\n    -- if you generate a larger dataset, you can limit the timespan to the current time with the following line\n    -- where ordered_at <= current_timestamp()\n\n),\n\nrenamed as (\n\n    select\n\n        ---------ids\n        id as order_id,\n        store_id as location_id,\n        customer as customer_id,\n\n        ---------- numerics\n        (order_total / 100.0) as order_total,\n        (tax_paid / 100.0) as tax_paid,\n\n        ---------- timestamps\n        timestamp_trunc(\n        cast(ordered_at as timestamp),\n        day\n    ) as ordered_at\n\n    from source\n\n)\n\nselect * from renamed",  # noqa: E501
         "constraints": [],
         "depends_on": {
             "macros": ["macro.dbt.current_timestamp", "macro.dbt.date_trunc"],
@@ -628,7 +628,7 @@ dbt_metricflow_models = [
         "metrics": [],
         "docs": {"show": True, "node_color": None},
         "package_name": "jaffle_shop",
-        "raw_code": "with\n\nsource as (\n\n    select * from {{ source('ecom', 'raw_items') }}\n\n),\n\nrenamed as (\n\n    select\n\n        ----------  ids\n        id as order_item_id,\n        order_id,\n        sku as product_id\n\n    from source\n\n)\n\nselect * from renamed",
+        "raw_code": "with\n\nsource as (\n\n    select * from {{ source('ecom', 'raw_items') }}\n\n),\n\nrenamed as (\n\n    select\n\n        ----------  ids\n        id as order_item_id,\n        order_id,\n        sku as product_id\n\n    from source\n\n)\n\nselect * from renamed",  # noqa: E501
         "access": "protected",
         "original_file_path": "models/staging/stg_order_items.sql",
         "group": None,
@@ -660,13 +660,13 @@ dbt_metricflow_models = [
         "version": None,
         "compiled": True,
         "created_at": 1702514525.436424,
-        "compiled_code": "with\n\nsource as (\n\n    select * from `dbt-tutorial-347100`.`dbt_beto`.`raw_items`\n\n),\n\nrenamed as (\n\n    select\n\n        ----------  ids\n        id as order_item_id,\n        order_id,\n        sku as product_id\n\n    from source\n\n)\n\nselect * from renamed",
+        "compiled_code": "with\n\nsource as (\n\n    select * from `dbt-tutorial-347100`.`dbt_beto`.`raw_items`\n\n),\n\nrenamed as (\n\n    select\n\n        ----------  ids\n        id as order_item_id,\n        order_id,\n        sku as product_id\n\n    from source\n\n)\n\nselect * from renamed",  # noqa: E501
         "constraints": [],
         "depends_on": {"macros": [], "nodes": ["source.jaffle_shop.ecom.raw_items"]},
     },
     {
         "unique_id": "model.jaffle_shop.stg_locations",
-        "description": "List of open locations with basic cleaning and transformation applied, one row per location.",
+        "description": "List of open locations with basic cleaning and transformation applied, one row per location.",  # noqa: E501
         "tags": [],
         "columns": [
             {
@@ -712,7 +712,7 @@ dbt_metricflow_models = [
         "metrics": [],
         "docs": {"show": True, "node_color": None},
         "package_name": "jaffle_shop",
-        "raw_code": "with\n\nsource as (\n\n    select * from {{ source('ecom', 'raw_stores') }}\n\n    -- if you generate a larger dataset, you can limit the timespan to the current time with the following line\n    -- where ordered_at <= {{ var('truncate_timespan_to') }}\n),\n\nrenamed as (\n\n    select\n\n        ----------  ids\n        id as location_id,\n\n        ---------- text\n        name as location_name,\n\n        ---------- numerics\n        tax_rate,\n\n        ---------- timestamps\n        {{dbt.date_trunc('day', 'opened_at')}} as opened_at\n\n    from source\n\n)\n\nselect * from renamed",
+        "raw_code": "with\n\nsource as (\n\n    select * from {{ source('ecom', 'raw_stores') }}\n\n    -- if you generate a larger dataset, you can limit the timespan to the current time with the following line\n    -- where ordered_at <= {{ var('truncate_timespan_to') }}\n),\n\nrenamed as (\n\n    select\n\n        ----------  ids\n        id as location_id,\n\n        ---------- text\n        name as location_name,\n\n        ---------- numerics\n        tax_rate,\n\n        ---------- timestamps\n        {{dbt.date_trunc('day', 'opened_at')}} as opened_at\n\n    from source\n\n)\n\nselect * from renamed",  # noqa: E501
         "access": "protected",
         "original_file_path": "models/staging/stg_locations.sql",
         "group": None,
@@ -744,7 +744,7 @@ dbt_metricflow_models = [
         "version": None,
         "compiled": True,
         "created_at": 1702514525.44064,
-        "compiled_code": "with\n\nsource as (\n\n    select * from `dbt-tutorial-347100`.`dbt_beto`.`raw_stores`\n\n    -- if you generate a larger dataset, you can limit the timespan to the current time with the following line\n    -- where ordered_at <= current_timestamp()\n),\n\nrenamed as (\n\n    select\n\n        ----------  ids\n        id as location_id,\n\n        ---------- text\n        name as location_name,\n\n        ---------- numerics\n        tax_rate,\n\n        ---------- timestamps\n        timestamp_trunc(\n        cast(opened_at as timestamp),\n        day\n    ) as opened_at\n\n    from source\n\n)\n\nselect * from renamed",
+        "compiled_code": "with\n\nsource as (\n\n    select * from `dbt-tutorial-347100`.`dbt_beto`.`raw_stores`\n\n    -- if you generate a larger dataset, you can limit the timespan to the current time with the following line\n    -- where ordered_at <= current_timestamp()\n),\n\nrenamed as (\n\n    select\n\n        ----------  ids\n        id as location_id,\n\n        ---------- text\n        name as location_name,\n\n        ---------- numerics\n        tax_rate,\n\n        ---------- timestamps\n        timestamp_trunc(\n        cast(opened_at as timestamp),\n        day\n    ) as opened_at\n\n    from source\n\n)\n\nselect * from renamed",  # noqa: E501
         "constraints": [],
         "depends_on": {
             "macros": ["macro.dbt.current_timestamp", "macro.dbt.date_trunc"],
@@ -753,7 +753,7 @@ dbt_metricflow_models = [
     },
     {
         "unique_id": "model.jaffle_shop.customers",
-        "description": "Customer overview data mart, offering key details for each unique customer. One row per customer.",
+        "description": "Customer overview data mart, offering key details for each unique customer. One row per customer.",  # noqa: E501
         "tags": [],
         "columns": [
             {
@@ -803,7 +803,7 @@ dbt_metricflow_models = [
             },
             {
                 "name": "lifetime_spend_pretax",
-                "description": "The sum of all the pre-tax subtotals of every order a customer has placed.",
+                "description": "The sum of all the pre-tax subtotals of every order a customer has placed.",  # noqa: E501
                 "meta": {},
                 "data_type": None,
                 "constraints": [],
@@ -812,7 +812,7 @@ dbt_metricflow_models = [
             },
             {
                 "name": "lifetime_spend",
-                "description": "The sum of all the order totals (including tax) that a customer has ever placed.",
+                "description": "The sum of all the order totals (including tax) that a customer has ever placed.",  # noqa: E501
                 "meta": {},
                 "data_type": None,
                 "constraints": [],
@@ -821,7 +821,7 @@ dbt_metricflow_models = [
             },
             {
                 "name": "customer_type",
-                "description": "Options are 'new' or 'returning', indicating if a customer has ordered more than once or has only placed their first order to date.",
+                "description": "Options are 'new' or 'returning', indicating if a customer has ordered more than once or has only placed their first order to date.",  # noqa: E501
                 "meta": {},
                 "data_type": None,
                 "constraints": [],
@@ -862,7 +862,7 @@ dbt_metricflow_models = [
         "metrics": [],
         "docs": {"show": True, "node_color": None},
         "package_name": "jaffle_shop",
-        "raw_code": "with\n\ncustomers as (\n\n    select * from {{ ref('stg_customers') }}\n\n),\n\norders_table as (\n\n    select * from {{ ref('orders') }}\n\n),\n\norder_items_table as (\n\n    select * from {{ ref('order_items') }}\n),\n\norder_summary as (\n\n    select\n        customer_id,\n\n        count(distinct orders.order_id) as count_lifetime_orders,\n        count(distinct orders.order_id) > 1 as is_repeat_buyer,\n        min(orders.ordered_at) as first_ordered_at,\n        max(orders.ordered_at) as last_ordered_at,\n        sum(order_items.product_price) as lifetime_spend_pretax,\n        sum(orders.order_total) as lifetime_spend\n\n    from orders_table as orders\n    \n    left join order_items_table as order_items on orders.order_id = order_items.order_id\n    \n    group by 1\n\n),\n\njoined as (\n\n    select\n        customers.*,\n        order_summary.count_lifetime_orders,\n        order_summary.first_ordered_at,\n        order_summary.last_ordered_at,\n        order_summary.lifetime_spend_pretax,\n        order_summary.lifetime_spend,\n\n        case\n            when order_summary.is_repeat_buyer then 'returning'\n            else 'new'\n        end as customer_type\n\n    from customers\n\n    left join order_summary\n        on customers.customer_id = order_summary.customer_id\n\n)\n\nselect * from joined",
+        "raw_code": "with\n\ncustomers as (\n\n    select * from {{ ref('stg_customers') }}\n\n),\n\norders_table as (\n\n    select * from {{ ref('orders') }}\n\n),\n\norder_items_table as (\n\n    select * from {{ ref('order_items') }}\n),\n\norder_summary as (\n\n    select\n        customer_id,\n\n        count(distinct orders.order_id) as count_lifetime_orders,\n        count(distinct orders.order_id) > 1 as is_repeat_buyer,\n        min(orders.ordered_at) as first_ordered_at,\n        max(orders.ordered_at) as last_ordered_at,\n        sum(order_items.product_price) as lifetime_spend_pretax,\n        sum(orders.order_total) as lifetime_spend\n\n    from orders_table as orders\n    \n    left join order_items_table as order_items on orders.order_id = order_items.order_id\n    \n    group by 1\n\n),\n\njoined as (\n\n    select\n        customers.*,\n        order_summary.count_lifetime_orders,\n        order_summary.first_ordered_at,\n        order_summary.last_ordered_at,\n        order_summary.lifetime_spend_pretax,\n        order_summary.lifetime_spend,\n\n        case\n            when order_summary.is_repeat_buyer then 'returning'\n            else 'new'\n        end as customer_type\n\n    from customers\n\n    left join order_summary\n        on customers.customer_id = order_summary.customer_id\n\n)\n\nselect * from joined",  # noqa: E501
         "access": "protected",
         "original_file_path": "models/marts/customers.sql",
         "group": None,
@@ -899,7 +899,7 @@ dbt_metricflow_models = [
         "version": None,
         "compiled": True,
         "created_at": 1702514525.450856,
-        "compiled_code": "with\n\ncustomers as (\n\n    select * from `dbt-tutorial-347100`.`dbt_beto`.`stg_customers`\n\n),\n\norders_table as (\n\n    select * from `dbt-tutorial-347100`.`dbt_beto`.`orders`\n\n),\n\norder_items_table as (\n\n    select * from `dbt-tutorial-347100`.`dbt_beto`.`order_items`\n),\n\norder_summary as (\n\n    select\n        customer_id,\n\n        count(distinct orders.order_id) as count_lifetime_orders,\n        count(distinct orders.order_id) > 1 as is_repeat_buyer,\n        min(orders.ordered_at) as first_ordered_at,\n        max(orders.ordered_at) as last_ordered_at,\n        sum(order_items.product_price) as lifetime_spend_pretax,\n        sum(orders.order_total) as lifetime_spend\n\n    from orders_table as orders\n    \n    left join order_items_table as order_items on orders.order_id = order_items.order_id\n    \n    group by 1\n\n),\n\njoined as (\n\n    select\n        customers.*,\norder_summary.count_lifetime_orders,\n        order_summary.first_ordered_at,\n        order_summary.last_ordered_at,\n        order_summary.lifetime_spend_pretax,\n        order_summary.lifetime_spend,\n\n        case\n            when order_summary.is_repeat_buyer then 'returning'\n            else 'new'\n        end as customer_type\n\n    from customers\n\n    left join order_summary\n        on customers.customer_id = order_summary.customer_id\n\n)\n\nselect * from joined",
+        "compiled_code": "with\n\ncustomers as (\n\n    select * from `dbt-tutorial-347100`.`dbt_beto`.`stg_customers`\n\n),\n\norders_table as (\n\n    select * from `dbt-tutorial-347100`.`dbt_beto`.`orders`\n\n),\n\norder_items_table as (\n\n    select * from `dbt-tutorial-347100`.`dbt_beto`.`order_items`\n),\n\norder_summary as (\n\n    select\n        customer_id,\n\n        count(distinct orders.order_id) as count_lifetime_orders,\n        count(distinct orders.order_id) > 1 as is_repeat_buyer,\n        min(orders.ordered_at) as first_ordered_at,\n        max(orders.ordered_at) as last_ordered_at,\n        sum(order_items.product_price) as lifetime_spend_pretax,\n        sum(orders.order_total) as lifetime_spend\n\n    from orders_table as orders\n    \n    left join order_items_table as order_items on orders.order_id = order_items.order_id\n    \n    group by 1\n\n),\n\njoined as (\n\n    select\n        customers.*,\norder_summary.count_lifetime_orders,\n        order_summary.first_ordered_at,\n        order_summary.last_ordered_at,\n        order_summary.lifetime_spend_pretax,\n        order_summary.lifetime_spend,\n\n        case\n            when order_summary.is_repeat_buyer then 'returning'\n            else 'new'\n        end as customer_type\n\n    from customers\n\n    left join order_summary\n        on customers.customer_id = order_summary.customer_id\n\n)\n\nselect * from joined",  # noqa: E501
         "constraints": [],
         "depends_on": {
             "macros": [],
@@ -912,7 +912,7 @@ dbt_metricflow_models = [
     },
     {
         "unique_id": "model.jaffle_shop.orders",
-        "description": "Order overview data mart, offering key details for each order inlcluding if it's a customer's first order and a food vs. drink item breakdown. One row per order.",
+        "description": "Order overview data mart, offering key details for each order inlcluding if it's a customer's first order and a food vs. drink item breakdown. One row per order.",  # noqa: E501
         "tags": [],
         "columns": [
             {
@@ -1025,7 +1025,7 @@ dbt_metricflow_models = [
             },
             {
                 "name": "location_name",
-                "description": "The full location name of where this order was placed. Denormalized from `stg_locations`.",
+                "description": "The full location name of where this order was placed. Denormalized from `stg_locations`.",  # noqa: E501
                 "meta": {},
                 "data_type": None,
                 "constraints": [],
@@ -1034,7 +1034,7 @@ dbt_metricflow_models = [
             },
             {
                 "name": "is_first_order",
-                "description": "A boolean indicating if this order is from a new customer placing their first order.",
+                "description": "A boolean indicating if this order is from a new customer placing their first order.",  # noqa: E501
                 "meta": {},
                 "data_type": None,
                 "constraints": [],
@@ -1093,7 +1093,7 @@ dbt_metricflow_models = [
         "metrics": [],
         "docs": {"show": True, "node_color": None},
         "package_name": "jaffle_shop",
-        "raw_code": "with \n\norders as (\n    \n    select * from {{ ref('stg_orders')}}\n\n),\n\norder_items_table as (\n    \n    select * from {{ ref('order_items')}}\n\n),\n\norder_items_summary as (\n\n    select\n\n        order_items.order_id,\n\n        sum(supply_cost) as order_cost,\n        sum(is_food_item) as count_food_items,\n        sum(is_drink_item) as count_drink_items\n\n\n    from order_items_table as order_items\n\n    group by 1\n\n),\n\n\ncompute_booleans as (\n    select\n\n        orders.*,\n        count_food_items > 0 as is_food_order,\n        count_drink_items > 0 as is_drink_order,\n        order_cost\n\n    from orders\n    \n    left join order_items_summary on orders.order_id = order_items_summary.order_id\n)\n\nselect * from compute_booleans",
+        "raw_code": "with \n\norders as (\n    \n    select * from {{ ref('stg_orders')}}\n\n),\n\norder_items_table as (\n    \n    select * from {{ ref('order_items')}}\n\n),\n\norder_items_summary as (\n\n    select\n\n        order_items.order_id,\n\n        sum(supply_cost) as order_cost,\n        sum(is_food_item) as count_food_items,\n        sum(is_drink_item) as count_drink_items\n\n\n    from order_items_table as order_items\n\n    group by 1\n\n),\n\n\ncompute_booleans as (\n    select\n\n        orders.*,\n        count_food_items > 0 as is_food_order,\n        count_drink_items > 0 as is_drink_order,\n        order_cost\n\n    from orders\n    \n    left join order_items_summary on orders.order_id = order_items_summary.order_id\n)\n\nselect * from compute_booleans",  # noqa: E501
         "access": "protected",
         "original_file_path": "models/marts/orders.sql",
         "group": None,
@@ -1130,7 +1130,7 @@ dbt_metricflow_models = [
         "version": None,
         "compiled": True,
         "created_at": 1702514525.4792378,
-        "compiled_code": "with \n\norders as (\n    \n    select * from `dbt-tutorial-347100`.`dbt_beto`.`stg_orders`\n\n),\n\norder_items_table as (\n    \n    select * from `dbt-tutorial-347100`.`dbt_beto`.`order_items`\n\n),\n\norder_items_summary as (\n\n    select\n\n        order_items.order_id,\n\n        sum(supply_cost) as order_cost,\n        sum(is_food_item) as count_food_items,\n        sum(is_drink_item) as count_drink_items\n\n\n    from order_items_table as order_items\n\n    group by 1\n\n),\n\n\ncompute_booleans as (\n    select\n\n        orders.*,\n        count_food_items > 0 as is_food_order,\n        count_drink_items > 0 as is_drink_order,\n        order_cost\n\n    from orders\n    \n    left join order_items_summary on orders.order_id = order_items_summary.order_id\n)\n\nselect * from compute_booleans",
+        "compiled_code": "with \n\norders as (\n    \n    select * from `dbt-tutorial-347100`.`dbt_beto`.`stg_orders`\n\n),\n\norder_items_table as (\n    \n    select * from `dbt-tutorial-347100`.`dbt_beto`.`order_items`\n\n),\n\norder_items_summary as (\n\n    select\n\n        order_items.order_id,\n\n        sum(supply_cost) as order_cost,\n        sum(is_food_item) as count_food_items,\n        sum(is_drink_item) as count_drink_items\n\n\n    from order_items_table as order_items\n\n    group by 1\n\n),\n\n\ncompute_booleans as (\n    select\n\n        orders.*,\n        count_food_items > 0 as is_food_order,\n        count_drink_items > 0 as is_drink_order,\n        order_cost\n\n    from orders\n    \n    left join order_items_summary on orders.order_id = order_items_summary.order_id\n)\n\nselect * from compute_booleans",  # noqa: E501
         "constraints": [],
         "depends_on": {
             "macros": [],
@@ -1175,7 +1175,7 @@ dbt_metricflow_models = [
         "metrics": [],
         "docs": {"show": True, "node_color": None},
         "package_name": "jaffle_shop",
-        "raw_code": "-- metricflow_time_spine.sql\nwith \n\ndays as (\n    \n    --for BQ adapters use \"DATE('01/01/2000','mm/dd/yyyy')\"\n    {{ dbt_date.get_base_dates(n_dateparts=365*10, datepart=\"day\") }}\n\n),\n\ncast_to_date as (\n\n    select \n        cast(date_day as date) as date_day\n    \n    from days\n\n)\n\nselect * from cast_to_date",
+        "raw_code": "-- metricflow_time_spine.sql\nwith \n\ndays as (\n    \n    --for BQ adapters use \"DATE('01/01/2000','mm/dd/yyyy')\"\n    {{ dbt_date.get_base_dates(n_dateparts=365*10, datepart=\"day\") }}\n\n),\n\ncast_to_date as (\n\n    select \n        cast(date_day as date) as date_day\n    \n    from days\n\n)\n\nselect * from cast_to_date",  # noqa: E501
         "access": "protected",
         "original_file_path": "models/marts/metricflow_time_spine.sql",
         "group": None,
@@ -1203,7 +1203,7 @@ dbt_metricflow_models = [
         "version": None,
         "compiled": True,
         "created_at": 1702514525.26042,
-        "compiled_code": "-- metricflow_time_spine.sql\nwith \n\ndays as (\n    \n    --for BQ adapters use \"DATE('01/01/2000','mm/dd/yyyy')\"\n    \n    with date_spine as\n(\n\n    \n\n\n\n\n\nwith rawdata as (\n\n    \n\n    \n\n    with p as (\n        select 0 as generated_number union all select 1\n    ), unioned as (\n\n    select\n\n    \n    p0.generated_number * power(2, 0)\n     + \n    \n    p1.generated_number * power(2, 1)\n     + \n    \n    p2.generated_number * power(2, 2)\n     + \n    \n    p3.generated_number * power(2, 3)\n     + \n    \n    p4.generated_number * power(2, 4)\n     + \n    \n    p5.generated_number * power(2, 5)\n     + \n    \n    p6.generated_number * power(2, 6)\n     + \n    \n    p7.generated_number * power(2, 7)\n     + \n    \n    p8.generated_number * power(2, 8)\n     + \n    \n    p9.generated_number * power(2, 9)\n     + \n    \n    p10.generated_number * power(2, 10)\n     + \n    \n    p11.generated_number * power(2, 11)\n    \n    \n    + 1\n    as generated_number\n\n    from\n\n    \n    p as p0\n     cross join \n    \n    p as p1\n     cross join \n    \n    p as p2\n     cross join \n    \n    p as p3\n     cross join \n    \n    p as p4\n     cross join \n    \n    p as p5\n     cross join \n    \n    p as p6\n     cross join \n    \n    p as p7\n     cross join \n    \n    p as p8\n     cross join \n    \n    p as p9\n     cross join \n    \n    p as p10\n     cross join \n    \n    p as p11\n    \n    \n\n    )\n\n    select *\n    from unioned\n    where generated_number <= 3651\n    order by generated_number\n\n\n\n),\n\nall_periods as (\n\n    select (\n        \n\n        datetime_add(\n            cast( \n\n        datetime_add(\n            cast( cast(timestamp(datetime(current_timestamp(), 'America/Los_Angeles')) as date) as datetime),\n        interval -3650 day\n        )\n\n as datetime),\n        interval row_number() over (order by 1) - 1 day\n        )\n\n\n    ) as date_day\n    from rawdata\n\n),\n\nfiltered as (\n\n    select *\n    from all_periods\n    where date_day <= cast(\n\n        datetime_add(\n            cast( cast(timestamp(datetime(current_timestamp(), 'America/Los_Angeles')) as date) as datetime),\n        interval 1 day\n        )\n\n as date)\n\n)\n\nselect * from filtered\n\n\n\n)\nselect\n    cast(d.date_day as TIMESTAMP) as date_day\nfrom\n    date_spine d\n\n\n\n),\n\ncast_to_date as (\n\n    select \n        cast(date_day as date) as date_day\n    \n    from days\n\n)\n\nselect * from cast_to_date",
+        "compiled_code": "-- metricflow_time_spine.sql\nwith \n\ndays as (\n    \n    --for BQ adapters use \"DATE('01/01/2000','mm/dd/yyyy')\"\n    \n    with date_spine as\n(\n\n    \n\n\n\n\n\nwith rawdata as (\n\n    \n\n    \n\n    with p as (\n        select 0 as generated_number union all select 1\n    ), unioned as (\n\n    select\n\n    \n    p0.generated_number * power(2, 0)\n     + \n    \n    p1.generated_number * power(2, 1)\n     + \n    \n    p2.generated_number * power(2, 2)\n     + \n    \n    p3.generated_number * power(2, 3)\n     + \n    \n    p4.generated_number * power(2, 4)\n     + \n    \n    p5.generated_number * power(2, 5)\n     + \n    \n    p6.generated_number * power(2, 6)\n     + \n    \n    p7.generated_number * power(2, 7)\n     + \n    \n    p8.generated_number * power(2, 8)\n     + \n    \n    p9.generated_number * power(2, 9)\n     + \n    \n    p10.generated_number * power(2, 10)\n     + \n    \n    p11.generated_number * power(2, 11)\n    \n    \n    + 1\n    as generated_number\n\n    from\n\n    \n    p as p0\n     cross join \n    \n    p as p1\n     cross join \n    \n    p as p2\n     cross join \n    \n    p as p3\n     cross join \n    \n    p as p4\n     cross join \n    \n    p as p5\n     cross join \n    \n    p as p6\n     cross join \n    \n    p as p7\n     cross join \n    \n    p as p8\n     cross join \n    \n    p as p9\n     cross join \n    \n    p as p10\n     cross join \n    \n    p as p11\n    \n    \n\n    )\n\n    select *\n    from unioned\n    where generated_number <= 3651\n    order by generated_number\n\n\n\n),\n\nall_periods as (\n\n    select (\n        \n\n        datetime_add(\n            cast( \n\n        datetime_add(\n            cast( cast(timestamp(datetime(current_timestamp(), 'America/Los_Angeles')) as date) as datetime),\n        interval -3650 day\n        )\n\n as datetime),\n        interval row_number() over (order by 1) - 1 day\n        )\n\n\n    ) as date_day\n    from rawdata\n\n),\n\nfiltered as (\n\n    select *\n    from all_periods\n    where date_day <= cast(\n\n        datetime_add(\n            cast( cast(timestamp(datetime(current_timestamp(), 'America/Los_Angeles')) as date) as datetime),\n        interval 1 day\n        )\n\n as date)\n\n)\n\nselect * from filtered\n\n\n\n)\nselect\n    cast(d.date_day as TIMESTAMP) as date_day\nfrom\n    date_spine d\n\n\n\n),\n\ncast_to_date as (\n\n    select \n        cast(date_day as date) as date_day\n    \n    from days\n\n)\n\nselect * from cast_to_date",  # noqa: E501
         "constraints": [],
         "depends_on": {"macros": ["macro.dbt_date.get_base_dates"], "nodes": []},
     },
@@ -1245,7 +1245,7 @@ dbt_metricflow_models = [
         "metrics": [],
         "docs": {"show": True, "node_color": None},
         "package_name": "jaffle_shop",
-        "raw_code": "with \n\norder_items as (\n\n    select * from {{ ref('stg_order_items') }}\n\n),\n\n\norders as (\n    \n    select * from {{ ref('stg_orders')}}\n),\n\nproducts as (\n\n    select * from {{ ref('stg_products') }}\n\n),\n\nsupplies as (\n\n  select * from {{ ref('stg_supplies') }}\n\n),\n\norder_supplies_summary as (\n\n  select\n    product_id,\n    sum(supply_cost) as supply_cost\n\n  from supplies\n\ngroup by 1\n),\n\njoined as (\n    select\n        order_items.*,\n        products.product_price,\n        order_supplies_summary.supply_cost,\n        products.is_food_item,\n        products.is_drink_item,\n        orders.ordered_at\n\n    from order_items\n\n    left join orders on order_items.order_id  = orders.order_id\n    \n    left join products on order_items.product_id = products.product_id\n    \n    left join order_supplies_summary on order_items.product_id = order_supplies_summary.product_id\n    \n)\n\nselect * from joined",
+        "raw_code": "with \n\norder_items as (\n\n    select * from {{ ref('stg_order_items') }}\n\n),\n\n\norders as (\n    \n    select * from {{ ref('stg_orders')}}\n),\n\nproducts as (\n\n    select * from {{ ref('stg_products') }}\n\n),\n\nsupplies as (\n\n  select * from {{ ref('stg_supplies') }}\n\n),\n\norder_supplies_summary as (\n\n  select\n    product_id,\n    sum(supply_cost) as supply_cost\n\n  from supplies\n\ngroup by 1\n),\n\njoined as (\n    select\n        order_items.*,\n        products.product_price,\n        order_supplies_summary.supply_cost,\n        products.is_food_item,\n        products.is_drink_item,\n        orders.ordered_at\n\n    from order_items\n\n    left join orders on order_items.order_id  = orders.order_id\n    \n    left join products on order_items.product_id = products.product_id\n    \n    left join order_supplies_summary on order_items.product_id = order_supplies_summary.product_id\n    \n)\n\nselect * from joined",  # noqa: E501
         "access": "protected",
         "original_file_path": "models/marts/order_items.sql",
         "group": None,
@@ -1282,7 +1282,7 @@ dbt_metricflow_models = [
         "version": None,
         "compiled": True,
         "created_at": 1702514525.303211,
-        "compiled_code": "with \n\norder_items as (\n\n    select * from `dbt-tutorial-347100`.`dbt_beto`.`stg_order_items`\n\n),\n\n\norders as (\n    \n    select * from `dbt-tutorial-347100`.`dbt_beto`.`stg_orders`\n),\n\nproducts as (\n\n    select * from `dbt-tutorial-347100`.`dbt_beto`.`stg_products`\n\n),\n\nsupplies as (\n\n  select * from `dbt-tutorial-347100`.`dbt_beto`.`stg_supplies`\n\n),\n\norder_supplies_summary as (\n\n  select\n    product_id,\n    sum(supply_cost) as supply_cost\n\n  from supplies\n\n  group by 1\n),\n\njoined as (\n    select\n        order_items.*,\n        products.product_price,\n        order_supplies_summary.supply_cost,\n        products.is_food_item,\n        products.is_drink_item,\n        orders.ordered_at\n\n    from order_items\n\n    left join orders on order_items.order_id  = orders.order_id\n    \n    left join products on order_items.product_id = products.product_id\n    \n    left join order_supplies_summary on order_items.product_id = order_supplies_summary.product_id\n    \n)\n\nselect * from joined",
+        "compiled_code": "with \n\norder_items as (\n\n    select * from `dbt-tutorial-347100`.`dbt_beto`.`stg_order_items`\n\n),\n\n\norders as (\n    \n    select * from `dbt-tutorial-347100`.`dbt_beto`.`stg_orders`\n),\n\nproducts as (\n\n    select * from `dbt-tutorial-347100`.`dbt_beto`.`stg_products`\n\n),\n\nsupplies as (\n\n  select * from `dbt-tutorial-347100`.`dbt_beto`.`stg_supplies`\n\n),\n\norder_supplies_summary as (\n\n  select\n    product_id,\n    sum(supply_cost) as supply_cost\n\n  from supplies\n\n  group by 1\n),\n\njoined as (\n    select\n        order_items.*,\n        products.product_price,\n        order_supplies_summary.supply_cost,\n        products.is_food_item,\n        products.is_drink_item,\n        orders.ordered_at\n\n    from order_items\n\n    left join orders on order_items.order_id  = orders.order_id\n    \n    left join products on order_items.product_id = products.product_id\n    \n    left join order_supplies_summary on order_items.product_id = order_supplies_summary.product_id\n    \n)\n\nselect * from joined",  # noqa: E501
         "constraints": [],
         "depends_on": {
             "macros": [],
@@ -1358,7 +1358,7 @@ superset_metricflow_metrics = {
             "description": "The revenue from food in each order",
         },
         {
-            "expression": "CAST(SUM(CASE WHEN is_food_item = 1 THEN product_price ELSE 0 END) AS DOUBLE) / CAST(NULLIF(SUM(product_price), 0) AS DOUBLE)",
+            "expression": "CAST(SUM(CASE WHEN is_food_item = 1 THEN product_price ELSE 0 END) AS DOUBLE) / CAST(NULLIF(SUM(product_price), 0) AS DOUBLE)",  # noqa: E501
             "metric_name": "food_revenue_pct",
             "metric_type": "ratio",
             "verbose_name": "food_revenue_pct",
@@ -1482,7 +1482,7 @@ def test_dbt_core_metricflow(mocker: MockerFixture, fs: FakeFilesystem) -> None:
 🔎 SQL (remove --explain to see data or add --show-dataflow-plan to see the generated dataflow plan):
 SELECT
   COUNT(DISTINCT customer_id) AS customers_with_orders
-FROM `dbt-tutorial-347100`.`dbt_beto`.`orders` orders_src_3""",
+FROM `dbt-tutorial-347100`.`dbt_beto`.`orders` orders_src_3""",  # noqa: E501
             ),
             mocker.MagicMock(
                 stdout="""✔ Success 🦄 - query completed after 0.37 seconds
@@ -1499,14 +1499,14 @@ FROM (
   ON
     orders_src_3.customer_id = customers_src_0.customer_id
 ) subq_7
-WHERE customer__customer_type  = 'new'""",
+WHERE customer__customer_type  = 'new'""",  # noqa: E501
             ),
             mocker.MagicMock(
                 stdout="""✔ Success 🦄 - query completed after 0.29 seconds
 🔎 SQL (remove --explain to see data or add --show-dataflow-plan to see the generated dataflow plan):
 SELECT
   SUM(order_total) AS order_total
-FROM `dbt-tutorial-347100`.`dbt_beto`.`orders` orders_src_3""",
+FROM `dbt-tutorial-347100`.`dbt_beto`.`orders` orders_src_3""",  # noqa: E501
             ),
             mocker.MagicMock(
                 stdout="""✔ Success 🦄 - query completed after 0.35 seconds
@@ -1519,14 +1519,14 @@ FROM (
     , 1 AS order_count
   FROM `dbt-tutorial-347100`.`dbt_beto`.`orders` orders_src_3
 ) subq_2
-WHERE order_id__order_total_dim >= 20""",
+WHERE order_id__order_total_dim >= 20""",  # noqa: E501
             ),
             mocker.MagicMock(
                 stdout="""✔ Success 🦄 - query completed after 0.28 seconds
 🔎 SQL (remove --explain to see data or add --show-dataflow-plan to see the generated dataflow plan):
 SELECT
   SUM(1) AS orders
-FROM `dbt-tutorial-347100`.`dbt_beto`.`orders` orders_src_3""",
+FROM `dbt-tutorial-347100`.`dbt_beto`.`orders` orders_src_3""",  # noqa: E501
             ),
             mocker.MagicMock(
                 stdout="""✔ Success 🦄 - query completed after 0.31 seconds
@@ -1539,21 +1539,21 @@ FROM (
     , 1 AS order_count
   FROM `dbt-tutorial-347100`.`dbt_beto`.`orders` orders_src_3
 ) subq_2
-WHERE order_id__is_food_order = true""",
+WHERE order_id__is_food_order = true""",  # noqa: E501
             ),
             mocker.MagicMock(
                 stdout="""✔ Success 🦄 - query completed after 0.24 seconds
 🔎 SQL (remove --explain to see data or add --show-dataflow-plan to see the generated dataflow plan):
 SELECT
   SUM(product_price) AS revenue
-FROM `dbt-tutorial-347100`.`dbt_beto`.`order_items` order_item_src_2""",
+FROM `dbt-tutorial-347100`.`dbt_beto`.`order_items` order_item_src_2""",  # noqa: E501
             ),
             mocker.MagicMock(
                 stdout="""✔ Success 🦄 - query completed after 0.28 seconds
 🔎 SQL (remove --explain to see data or add --show-dataflow-plan to see the generated dataflow plan):
 SELECT
   SUM(order_cost) AS order_cost
-FROM `dbt-tutorial-347100`.`dbt_beto`.`orders` orders_src_3""",
+FROM `dbt-tutorial-347100`.`dbt_beto`.`orders` orders_src_3""",  # noqa: E501
             ),
             CalledProcessError(1, cmd="mf", output="Error occurred"),
             mocker.MagicMock(
@@ -1561,14 +1561,14 @@ FROM `dbt-tutorial-347100`.`dbt_beto`.`orders` orders_src_3""",
 🔎 SQL (remove --explain to see data or add --show-dataflow-plan to see the generated dataflow plan):
 SELECT
   SUM(case when is_food_item = 1 then product_price else 0 end) AS food_revenue
-FROM `dbt-tutorial-347100`.`dbt_beto`.`order_items` order_item_src_2""",
+FROM `dbt-tutorial-347100`.`dbt_beto`.`order_items` order_item_src_2""",  # noqa: E501
             ),
             mocker.MagicMock(
                 stdout="""✔ Success 🦄 - query completed after 0.31 seconds
 🔎 SQL (remove --explain to see data or add --show-dataflow-plan to see the generated dataflow plan):
 SELECT
   CAST(SUM(case when is_food_item = 1 then product_price else 0 end) AS FLOAT64) / CAST(NULLIF(SUM(product_price), 0) AS FLOAT64) AS food_revenue_pct
-FROM `dbt-tutorial-347100`.`dbt_beto`.`order_items` order_item_src_2""",
+FROM `dbt-tutorial-347100`.`dbt_beto`.`order_items` order_item_src_2""",  # noqa: E501
             ),
             CalledProcessError(1, cmd="mf", output="Error occurred"),
             mocker.MagicMock(
@@ -1590,14 +1590,14 @@ FROM (
       SUM(order_cost) AS cost
     FROM `dbt-tutorial-347100`.`dbt_beto`.`orders` orders_src_3
   ) subq_9
-) subq_10""",
+) subq_10""",  # noqa: E501
             ),
             mocker.MagicMock(
                 stdout="""✔ Success 🦄 - query completed after 0.30 seconds
 🔎 SQL (remove --explain to see data or add --show-dataflow-plan to see the generated dataflow plan):
 SELECT
   SUM(product_price) AS cumulative_revenue
-FROM `dbt-tutorial-347100`.`dbt_beto`.`order_items` order_item_src_2""",
+FROM `dbt-tutorial-347100`.`dbt_beto`.`order_items` order_item_src_2""",  # noqa: E501
             ),
         ],
     )
@@ -2200,8 +2200,7 @@ def test_dbt_core_raise_failures_flag_with_failures(
     )
     assert result.exit_code == 1
     assert (
-        "Below model(s) failed to sync:\n - failed_dataset\n - another_failure\n"
-        in result.output
+        "Below model(s) failed to sync:\n - failed_dataset\n - another_failure\n" in result.output
     )
     sync_database.assert_called_with(
         client,
@@ -2271,8 +2270,7 @@ def test_dbt_core_raise_failures_flag_with_failures_and_deprecation(
     )
     assert result.exit_code == 1
     assert (
-        "Below model(s) failed to sync:\n - failed_dataset\n - another_failure\n"
-        in result.output
+        "Below model(s) failed to sync:\n - failed_dataset\n - another_failure\n" in result.output
     )
     sync_database.assert_called_with(
         client,
@@ -2422,10 +2420,7 @@ def test_dbt_core_invalid_argument(mocker: MockerFixture, fs: FakeFilesystem) ->
         catch_exceptions=False,
     )
     assert result.exit_code == 1
-    assert (
-        result.output
-        == "FILE should be either ``manifest.json`` or ``dbt_project.yml``\n"
-    )
+    assert result.output == "FILE should be either ``manifest.json`` or ``dbt_project.yml``\n"
 
 
 def test_dbt(mocker: MockerFixture, fs: FakeFilesystem) -> None:
@@ -3259,8 +3254,7 @@ def test_dbt_cloud_raise_failures_flag_with_failures(mocker: MockerFixture) -> N
     )
     assert result.exit_code == 1
     assert (
-        "Below model(s) failed to sync:\n - failed_dataset\n - another_failure\n"
-        in result.output
+        "Below model(s) failed to sync:\n - failed_dataset\n - another_failure\n" in result.output
     )
     sync_datasets.assert_called_with(
         superset_client,

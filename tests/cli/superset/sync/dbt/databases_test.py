@@ -218,10 +218,7 @@ def test_sync_database_no_project(mocker: MockerFixture, fs: FakeFilesystem) -> 
             disallow_edits=False,
             external_url_prefix="",
         )
-    assert (
-        str(excinfo.value)
-        == "Project my_other_project not found in /path/to/.dbt/profiles.yml"
-    )
+    assert str(excinfo.value) == "Project my_other_project not found in /path/to/.dbt/profiles.yml"
 
 
 def test_sync_database_no_target(mocker: MockerFixture, fs: FakeFilesystem) -> None:
@@ -247,8 +244,7 @@ def test_sync_database_no_target(mocker: MockerFixture, fs: FakeFilesystem) -> N
             external_url_prefix="",
         )
     assert (
-        str(excinfo.value)
-        == "Target prod not found in the outputs of /path/to/.dbt/profiles.yml"
+        str(excinfo.value) == "Target prod not found in the outputs of /path/to/.dbt/profiles.yml"
     )
 
 

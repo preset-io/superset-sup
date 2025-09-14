@@ -128,9 +128,7 @@ def apply_filters(sql: str, filters: List[FilterSchema]) -> str:
     """
     Apply filters to SQL expression.
     """
-    condition = " AND ".join(
-        "{field} {operator} {value}".format(**filter_) for filter_ in filters
-    )
+    condition = " AND ".join("{field} {operator} {value}".format(**filter_) for filter_ in filters)
     return f"CASE WHEN {condition} THEN {sql} END"
 
 
@@ -189,11 +187,7 @@ def get_metric_models(unique_id: str, metrics: List[OGMetricSchema]) -> Set[str]
     depends_on = metric["depends_on"]
 
     if is_derived(metric):
-        return {
-            model
-            for parent in depends_on
-            for model in get_metric_models(parent, metrics)
-        }
+        return {model for parent in depends_on for model in get_metric_models(parent, metrics)}
 
     return set(depends_on)
 
@@ -303,9 +297,7 @@ def convert_query_to_projection(sql: str, dialect: MFSQLEngine) -> str:
     if len(projection) > 1:
         raise ValueError("Unable to convert metrics with multiple selected expressions")
 
-    metric_expression = (
-        projection[0].this if isinstance(projection[0], Alias) else projection[0]
-    )
+    metric_expression = projection[0].this if isinstance(projection[0], Alias) else projection[0]
 
     # replace aliases with their original expressions
     for node in metric_expression.walk():
@@ -366,9 +358,7 @@ def convert_metric_flow_to_superset(
         SUM(CASE WHEN order_total > 20 THEN 1 END)
 
     """
-    final_metric_name = (
-        sl_metric["superset_meta"].pop("metric_name", None) or sl_metric["name"]
-    )
+    final_metric_name = sl_metric["superset_meta"].pop("metric_name", None) or sl_metric["name"]
     return {
         "expression": convert_query_to_projection(
             sl_metric["sql"],

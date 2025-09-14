@@ -48,7 +48,4 @@ def test_jwt_auth_from_stored_credentials(mocker: MockerFixture) -> None:
     get_credentials_path().exists.return_value = False
     with pytest.raises(Exception) as excinfo:
         JWTAuth.from_stored_credentials()
-    assert (
-        str(excinfo.value)
-        == "Could not load credentials from /path/to/credentials.yaml"
-    )
+    assert str(excinfo.value) == "Could not load credentials from /path/to/credentials.yaml"

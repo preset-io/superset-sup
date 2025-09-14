@@ -6,12 +6,73 @@ Handles authentication, settings, and persistent configuration.
 
 import typer
 from rich.console import Console
+from rich.theme import Theme
 from typing_extensions import Annotated
 
-from sup.output.styles import EMOJIS, RICH_STYLES
+from sup.output.styles import COLORS, EMOJIS, RICH_STYLES
 
-app = typer.Typer(help="Manage configuration", name="config", no_args_is_help=True)
-console = Console()
+config_help = (
+    "Manage configuration (files: ~/.sup/config.yml, env vars: SUP_*, use 'sup config env')"
+)
+
+app = typer.Typer(help=config_help, name="config", no_args_is_help=False)
+
+# Use themed console to match main app styling
+
+preset_theme = Theme(
+    {
+        "table.header": f"bold {COLORS.primary}",
+        "table.border": COLORS.primary,
+        "panel.border": COLORS.primary,
+        "panel.title": f"bold {COLORS.primary}",
+    },
+)
+
+console = Console(theme=preset_theme)
+
+
+@app.callback(invoke_without_command=True)
+def config_main(ctx: typer.Context):
+    """
+    sup Configuration Management
+
+    Quick configuration overview and pointers to detailed commands.
+    """
+    if ctx.invoked_subcommand is None:
+        from sup.output.styles import COLORS
+
+        # Show helpful configuration overview when no subcommand is provided
+        console.print(f"{EMOJIS['config']} sup Configuration", style=f"bold {COLORS.primary}")
+        console.print()
+
+        console.print("📁 Configuration Files:", style=f"bold {COLORS.primary}")
+        console.print("  • Global: ~/.sup/config.yml", style=RICH_STYLES["secondary"])
+        console.print("  • Project: .sup/state.yml", style=RICH_STYLES["secondary"])
+        console.print()
+
+        console.print("⚙️ Environment Variables (override files):", style=f"bold {COLORS.primary}")
+        console.print("  • SUP_PRESET_API_TOKEN", style=RICH_STYLES["secondary"])
+        console.print("  • SUP_WORKSPACE_ID", style=RICH_STYLES["secondary"])
+        console.print("  • SUP_DATABASE_ID", style=RICH_STYLES["secondary"])
+        console.print("  • And more...", style=RICH_STYLES["muted"])
+        console.print()
+
+        console.print("🚀 Quick Commands:", style=f"bold {COLORS.primary}")
+        console.print(
+            "  sup config show      # Show current settings",
+            style=RICH_STYLES["accent"],
+        )
+        console.print(
+            "  sup config env       # Complete environment variable reference",
+            style=RICH_STYLES["accent"],
+        )
+        console.print(
+            "  sup config auth      # Set up authentication",
+            style=RICH_STYLES["accent"],
+        )
+        console.print()
+
+        console.print("💡 For complete help: sup config --help", style=RICH_STYLES["muted"])
 
 
 @app.command("show")
@@ -20,6 +81,8 @@ def show_config():
     Display current configuration settings.
 
     Shows authentication status, default workspace, database, and preferences.
+
+    💡 Tip: Use 'sup config env' to see all available SUP_* environment variables
     """
     from rich.panel import Panel
 
@@ -281,4 +344,79 @@ def init_project():
     console.print(
         f"{EMOJIS['success']} Project initialized! Use 'sup config show' to see settings.",
         style=RICH_STYLES["success"],
+    )
+
+
+@app.command("env")
+def show_env_vars():
+    """
+    Show available environment variables for sup configuration.
+
+    Displays all SUP_* environment variables that can be used to configure
+    sup without modifying config files. Perfect for CI/CD and containers!
+    """
+    from sup.config.paths import get_global_config_file, get_project_state_file
+    from sup.output.styles import COLORS
+
+    console.print(f"{EMOJIS['config']} sup Configuration Guide", style=f"bold {COLORS.primary}")
+    console.print(
+        "sup can be configured via environment variables OR config files:",
+        style=RICH_STYLES["info"],
+    )
+    console.print()
+
+    # Show config file locations
+    console.print("📁 Configuration File Locations:", style=f"bold {COLORS.primary}")
+    console.print(f"  Global config: {get_global_config_file()}", style="white")
+    console.print(f"  Project state: {get_project_state_file()}", style="white")
+    console.print()
+
+    console.print("⚙️ Environment Variables (take precedence):", style=f"bold {COLORS.primary}")
+
+    env_vars = [
+        ("SUP_PRESET_API_TOKEN", "Preset API token for authentication"),
+        ("SUP_PRESET_API_SECRET", "Preset API secret for authentication"),
+        ("SUP_WORKSPACE_ID", "Default workspace ID for commands"),
+        ("SUP_DATABASE_ID", "Default database ID for SQL commands"),
+        ("SUP_OUTPUT_FORMAT", "Default output format (table, json, yaml, csv)"),
+        ("SUP_MAX_ROWS", "Maximum rows to display (default: 1000)"),
+        ("SUP_SHOW_QUERY_TIME", "Show query execution time (true/false)"),
+        ("SUP_COLOR_OUTPUT", "Enable colored output (true/false)"),
+    ]
+
+    from rich.table import Table
+
+    table = Table(
+        show_header=True,
+        header_style=f"bold {COLORS.primary}",  # Emerald green headers
+        # Let the theme handle border colors
+    )
+    table.add_column(
+        "Environment Variable", style=COLORS.secondary, no_wrap=False, width=25,
+    )  # Cyan
+    table.add_column("Description", style="bright_white", no_wrap=False)
+
+    for var_name, description in env_vars:
+        table.add_row(var_name, description)
+
+    console.print(table)
+    console.print()
+
+    # Show examples
+    console.print("Examples:", style=f"bold {COLORS.primary}")
+    console.print("  export SUP_PRESET_API_TOKEN=your_token_here", style="white")
+    console.print("  export SUP_WORKSPACE_ID=123", style="white")
+    console.print("  export SUP_OUTPUT_FORMAT=json", style="white")
+    console.print()
+
+    console.print("Perfect for CI/CD and automation:", style=f"bold {COLORS.primary}")
+    console.print(
+        "  docker run -e SUP_PRESET_API_TOKEN=token my-image sup sql 'SELECT 1'",
+        style="white",
+    )
+    console.print()
+
+    console.print(
+        "💡 Environment variables take precedence over config files",
+        style=RICH_STYLES["dim"],
     )

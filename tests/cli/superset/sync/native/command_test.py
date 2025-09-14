@@ -196,8 +196,7 @@ def test_import_resources_overwrite_needed(mocker: MockerFixture) -> None:
                     {
                         "code": 1010,
                         "message": (
-                            "Issue 1010 - Superset encountered an "
-                            "error while running a command."
+                            "Issue 1010 - Superset encountered an " "error while running a command."
                         ),
                     },
                 ],
@@ -231,8 +230,7 @@ def test_import_resources_error(mocker: MockerFixture) -> None:
                     {
                         "code": 1010,
                         "message": (
-                            "Issue 1010 - Superset encountered an "
-                            "error while running a command."
+                            "Issue 1010 - Superset encountered an " "error while running a command."
                         ),
                     },
                 ],
@@ -270,7 +268,7 @@ def test_native(mocker: MockerFixture, fs: FakeFilesystem) -> None:
             "slice_id": 1,
             "metric": {
                 "expressionType": "SQL",
-                "sqlExpression": "{{ '{% if' }} from_dttm {{ '%}' }} count(*) {{ '{% else %}' }} count(*) {{ '{% endif %}' }}",
+                "sqlExpression": "{{ '{% if' }} from_dttm {{ '%}' }} count(*) {{ '{% else %}' }} count(*) {{ '{% endif %}' }}",  # noqa: E501
                 "column": None,
                 "aggregate": None,
                 "datasourceWarning": False,
@@ -295,7 +293,7 @@ def test_native(mocker: MockerFixture, fs: FakeFilesystem) -> None:
 "viz_type":"big_number_total","slice_id":1,"metric":{"expressionType":"SQL","sqlExpression":"{{ '{% if' }} from_dttm {{ '%}' }} count(*) {{ '{% else %}' }} count(*) {{ '{% endif %}' }}",
 "column":null,"aggregate":null,"datasourceWarning":false,"hasCustomLabel":true,"label":"custom_calculation","optionName":"metric_6aq7h4t8b3t_jbp2rak398o"},
 "adhoc_filters":[],"header_font_size":0.4,"subheader_font_size":0.15,"y_axis_format":"SMART_NUMBER","time_format":"smart_date",
-"extra_form_data":{},"dashboards":[],"force":false,"result_format":"json","result_type":"full"},"result_format":"json","result_type":"full"}""",
+"extra_form_data":{},"dashboards":[],"force":false,"result_format":"json","result_type":"full"},"result_format":"json","result_type":"full"}""",  # noqa: E501
         ),
     }
 
@@ -352,7 +350,7 @@ def test_native(mocker: MockerFixture, fs: FakeFilesystem) -> None:
                     "slice_id": 1,
                     "metric": {
                         "expressionType": "SQL",
-                        "sqlExpression": "{% if from_dttm %} count(*) {% else %} count(*) {% endif %}",
+                        "sqlExpression": "{% if from_dttm %} count(*) {% else %} count(*) {% endif %}",  # noqa: E501
                         "column": None,
                         "aggregate": None,
                         "datasourceWarning": False,
@@ -377,7 +375,7 @@ def test_native(mocker: MockerFixture, fs: FakeFilesystem) -> None:
 "slice_id":1,"metric":{"expressionType":"SQL","sqlExpression":"{% if from_dttm %} count(*) {% else %} count(*) {% endif %}","column":null,"aggregate":null,
 "datasourceWarning":false,"hasCustomLabel":true,"label":"custom_calculation","optionName":"metric_6aq7h4t8b3t_jbp2rak398o"},"adhoc_filters":[],"header_font_size":0.4,
 "subheader_font_size":0.15,"y_axis_format":"SMART_NUMBER","time_format":"smart_date","extra_form_data":{},"dashboards":[],"force":false,"result_format":"json","result_type":"full"},
-"result_format":"json","result_type":"full"}""",
+"result_format":"json","result_type":"full"}""",  # noqa: E501
                 ),
                 "is_managed_externally": False,
             },
@@ -642,9 +640,7 @@ def test_native_external_url(mocker: MockerFixture, fs: FakeFilesystem) -> None:
     )
     assert result.exit_code == 0
     database_config["external_url"] = "https://repo.example.com/databases/gsheets.yaml"
-    dataset_config["external_url"] = (
-        "https://repo.example.com/datasets/gsheets/test.yaml"
-    )
+    dataset_config["external_url"] = "https://repo.example.com/datasets/gsheets/test.yaml"
     contents = {
         "bundle/databases/gsheets.yaml": yaml.dump(database_config),
         "bundle/datasets/gsheets/test.yaml": yaml.dump(dataset_config),

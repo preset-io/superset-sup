@@ -42,9 +42,7 @@ def get_logs(log_type: LogType) -> Tuple[Path, Dict[LogType, Any]]:
 
     logs = {LogType(log_type): log_entries for log_type, log_entries in logs.items()}
     dict_merge(base_logs, logs)
-    base_logs[log_type] = [
-        log for log in base_logs[log_type] if log["status"] != "FAILED"
-    ]
+    base_logs[log_type] = [log for log in base_logs[log_type] if log["status"] != "FAILED"]
     return LOG_FILE_PATH, base_logs
 
 

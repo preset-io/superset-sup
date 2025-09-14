@@ -166,8 +166,7 @@ def preset_cli(  # pylint: disable=too-many-branches, too-many-locals, too-many-
             ctx.obj["AUTH"] = PresetAuth(manager_api_url, api_token, api_secret)
         except JWTTokenError as excinfo:
             error_message = (
-                "Failed to auth using the provided credentials."
-                " Please run ``preset-cli auth``"
+                "Failed to auth using the provided credentials." " Please run ``preset-cli auth``"
             )
             raise CLIError(error_message, 1) from excinfo
 
@@ -238,8 +237,7 @@ def auth(baseurl: str, overwrite: bool = False, show: bool = False) -> None:
 
     if credentials_path.exists() and not overwrite:
         error_message = (
-            f"The file {credentials_path} already exists. "
-            "Pass ``--overwrite`` to replace it."
+            f"The file {credentials_path} already exists. " "Pass ``--overwrite`` to replace it."
         )
         raise CLIError(error_message, 1)
 
@@ -478,10 +476,7 @@ def _set_user_workspace_role(
     workspace_ids = {workspace["name"]: workspace["id"] for workspace in workspaces}
 
     for workspace_data in user["workspaces"].values():
-        if (
-            not isinstance(workspace_data, dict)
-            or "workspace_role" not in workspace_data
-        ):
+        if not isinstance(workspace_data, dict) or "workspace_role" not in workspace_data:
             continue  # pragma: no cover
 
         workspace_role = workspace_data["workspace_role"].lower()
@@ -701,12 +696,8 @@ def sync_all_user_roles_to_team(  # pylint: disable=too-many-locals
     """
     Sync all user roles to a given team.
     """
-    workspace_names = {
-        workspace["title"]: workspace["name"] for workspace in workspaces
-    }
-    workspace_hostnames = {
-        workspace["name"]: workspace["hostname"] for workspace in workspaces
-    }
+    workspace_names = {workspace["title"]: workspace["name"] for workspace in workspaces}
+    workspace_hostnames = {workspace["name"]: workspace["hostname"] for workspace in workspaces}
 
     users = client.get_team_members(team_name)
     user_ids = {user["user"]["email"]: user["user"]["id"] for user in users}
@@ -734,9 +725,7 @@ def sync_all_user_roles_to_team(  # pylint: disable=too-many-locals
     for workspace_hostname, workspace_data_access_roles in data_access_roles.items():
         superset_client = SupersetClient(f"https://{workspace_hostname}/", client.auth)
 
-        user_id_map = {
-            user["email"]: user["id"] for user in superset_client.export_users()
-        }
+        user_id_map = {user["email"]: user["id"] for user in superset_client.export_users()}
         for data_access_role, user_emails in workspace_data_access_roles.items():
             role_id = superset_client.get_role_id(data_access_role)
             workspace_user_ids = [user_id_map[email] for email in user_emails]
@@ -752,9 +741,7 @@ def sync_user_roles_to_team(
     """
     Sync roles from a single user to a given team.
     """
-    workspace_names = {
-        workspace["title"]: workspace["name"] for workspace in workspaces
-    }
+    workspace_names = {workspace["title"]: workspace["name"] for workspace in workspaces}
     workspace_ids = {workspace["name"]: workspace["id"] for workspace in workspaces}
 
     team_role = user["team_role"].lower()

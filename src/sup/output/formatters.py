@@ -305,3 +305,62 @@ def display_porcelain_yaml(df: pd.DataFrame, max_rows: int = 100) -> None:
     display_df = df.head(max_rows)
     data = display_df.to_dict("records")
     print(yaml.safe_dump(data, default_flow_style=False, indent=2).rstrip())
+
+
+def display_entity_results(
+    items: List[Dict[str, Any]],
+    output_format: str = "table",
+    porcelain: bool = False,
+    porcelain_fields: Optional[List[str]] = None,
+    table_display_func: Optional[callable] = None,
+) -> None:
+    """
+    Consolidated output handler for all entity results.
+
+    This eliminates the repeated output logic across dataset.py, chart.py, etc.
+
+    Args:
+        items: List of entity dictionaries
+        output_format: "table", "json", "yaml", "porcelain"
+        porcelain: If True, use machine-readable format
+        porcelain_fields: List of field names for porcelain tab-separated output
+        table_display_func: Optional custom table display function
+    """
+    if porcelain:
+        # Tab-separated porcelain output
+        if porcelain_fields:
+            display_porcelain_list(items, porcelain_fields)
+        else:
+            # Fallback: display first few keys as fields
+            if items:
+                keys = list(items[0].keys())[:5]  # First 5 fields
+                display_porcelain_list(items, keys)
+    elif output_format == "json":
+        print(json.dumps(items, indent=2, default=str))
+    elif output_format == "yaml":
+        print(yaml.safe_dump(items, default_flow_style=False, indent=2))
+    else:
+        # Rich table display
+        if table_display_func:
+            table_display_func(items)
+        else:
+            console.print(f"{EMOJIS['info']} Found {len(items)} items")
+            if items:
+                # Generic table fallback
+                table = Table(show_header=True, header_style="bold magenta")
+
+                # Add first few columns
+                sample_item = items[0]
+                columns = list(sample_item.keys())[:5]  # Limit to 5 columns
+                for col in columns:
+                    table.add_column(str(col), style="cyan")
+
+                # Add rows
+                for item in items[:50]:  # Limit to 50 rows
+                    row_values = []
+                    for col in columns:
+                        val = item.get(col, "")
+                        row_values.append(str(val) if val is not None else "")
+                    table.add_row(*row_values)
+
+                console.print(table)

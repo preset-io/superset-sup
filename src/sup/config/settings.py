@@ -37,6 +37,29 @@ class SyncMode(str, Enum):
     bidirectional = "bidirectional"
 
 
+class OutputOptions(BaseModel):
+    """Output format options for commands."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    json_output: bool = False
+    yaml_output: bool = False
+    porcelain: bool = False
+    workspace_id: Optional[int] = None
+
+    @property
+    def format(self) -> OutputFormat:
+        """Get the primary output format."""
+        if self.porcelain:
+            return OutputFormat.table  # Porcelain is still tabular, just plain
+        elif self.json_output:
+            return OutputFormat.json
+        elif self.yaml_output:
+            return OutputFormat.yaml
+        else:
+            return OutputFormat.table
+
+
 class SupersetInstanceConfig(BaseModel):
     """Configuration for a Superset instance."""
 
@@ -187,9 +210,7 @@ class SupContext:
     def get_preset_credentials(self) -> tuple[Optional[str], Optional[str]]:
         """Get Preset API credentials."""
         token = get_env_var("preset_api_token") or self.global_config.preset_api_token
-        secret = (
-            get_env_var("preset_api_secret") or self.global_config.preset_api_secret
-        )
+        secret = get_env_var("preset_api_secret") or self.global_config.preset_api_secret
         return token, secret
 
     def get_output_format(

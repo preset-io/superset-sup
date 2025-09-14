@@ -196,9 +196,7 @@ class DBTClient:  # pylint: disable=too-few-public-methods
         )
 
         model_schema = ModelSchema()
-        models = [
-            model_schema.load(model) for model in payload["data"]["job"]["models"]
-        ]
+        models = [model_schema.load(model) for model in payload["data"]["job"]["models"]]
 
         return models
 
@@ -300,9 +298,7 @@ class DBTClient:  # pylint: disable=too-few-public-methods
         )
 
         if payload["data"] is None:
-            errors = "\n\n".join(
-                error["message"] for error in payload.get("errors", [])
-            )
+            errors = "\n\n".join(error["message"] for error in payload.get("errors", []))
             _logger.warning("Unable to convert metric %s: %s", metric, errors)
             return None
 

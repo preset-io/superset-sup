@@ -7,18 +7,43 @@ Main entry point for the sup command-line interface.
 
 import typer
 from rich.console import Console
+from rich.theme import Theme
 from typing_extensions import Annotated
 
-from sup.commands import chart
+from sup.commands import (
+    chart,
+    dashboard,
+    database,
+    dataset,
+    query,
+    sql,
+    theme,
+    workspace,
+)
 from sup.commands import config as config_cmd
-from sup.commands import database, dataset, sql, workspace
 from sup.output.styles import RICH_STYLES
 
-# Initialize Rich console for beautiful output
-console = Console()
+# Custom Rich theme to eliminate purple/magenta colors
+PRESET_THEME = Theme(
+    {
+        # Override default purple/magenta with emerald green
+        "panel.border": "#10B981",  # Emerald green borders
+        "panel.title": "bold #10B981",  # Emerald green panel titles
+        "rule.line": "#10B981",  # Emerald green lines
+        "table.header": "bold #10B981",  # Emerald green table headers
+        "table.border": "#10B981",  # Emerald green table borders
+        "table.title": "bold #10B981",  # Emerald green table titles
+        "progress.bar": "#10B981",  # Emerald green progress bars
+        "progress.complete": "#10B981",  # Emerald green completion
+    },
+)
+
+# Initialize Rich console with custom theme
+console = Console(theme=PRESET_THEME)
 
 # ASCII Art Banner
-BANNER = """██ ███████╗██╗   ██╗██████╗ ██╗
+BANNER = """\
+██ ███████╗██╗   ██╗██████╗ ██╗
 ██ ██╔════╝██║   ██║██╔══██╗██║
    ███████╗██║   ██║██████╔╝██║
    ╚════██║██║   ██║██╔═══╝ ╚═╝
@@ -34,32 +59,44 @@ USE_CASES = [
     "Perfect for scripting and AI-assisted data exploration",
 ]
 
+# Help text template - will be formatted with actual colors
+HELP_TEMPLATE = """🚀 [bold {primary}]The Ultimate Superset/Preset CLI[/bold {primary}] 📊
+   [bold {primary}]Brought to you and fully compatible with Preset[/bold {primary}]
+   [dim]For power users and AI agents[/dim]
+
+[bold {primary}]Key capabilities:[/bold {primary}]
+{capabilities}"""
+
 
 def format_help():
-    """Create help text without ASCII art but with key messaging - DRY version."""
-    help_text = "🚀 [bold cyan]The Ultimate Superset/Preset CLI[/bold cyan] 📊\n"
-    help_text += "   [dim]For power users and AI agents[/dim]\n\n"
-    help_text += "[bold magenta]Key capabilities:[/bold magenta]\n"
+    """Create help text with beautiful emerald green Preset branding."""
+    from sup.output.styles import COLORS
 
-    for use_case in USE_CASES:
-        help_text += f"• [bright_cyan]{use_case}[/bright_cyan]\n"
+    capabilities = "\n".join(f"• [bright_white]{use_case}[/bright_white]" for use_case in USE_CASES)
 
-    return help_text
+    return HELP_TEMPLATE.format(primary=COLORS.primary, capabilities=capabilities)
 
 
-# Initialize the main Typer app
+# Initialize the main Typer app with -h support
 app = typer.Typer(
     name="sup",
     help=format_help(),
     rich_markup_mode="rich",
     no_args_is_help=False,  # We'll handle this ourselves
+    context_settings={"help_option_names": ["-h", "--help"]},
 )
 
 
 def show_banner():
-    """Display the sup banner with branding."""
-    console.print(BANNER, style=RICH_STYLES["brand"])
+    """Display the sup banner with beautiful Preset emerald green branding."""
+    from sup.output.styles import COLORS
+
+    console.print(BANNER, style=f"bold {COLORS.primary}")  # Beautiful emerald green
     console.print("🚀 The Ultimate Superset/Preset CLI 📊", style=RICH_STYLES["info"])
+    console.print(
+        "   Brought to you and fully compatible with Preset",
+        style=f"bold {COLORS.primary}",
+    )
     console.print("   For power users and AI agents\n", style=RICH_STYLES["dim"])
 
     # High-level use cases
@@ -75,6 +112,9 @@ app.add_typer(workspace.app, name="workspace", help="Manage workspaces")
 app.add_typer(database.app, name="database", help="Manage databases")
 app.add_typer(dataset.app, name="dataset", help="Manage datasets")
 app.add_typer(chart.app, name="chart", help="Manage charts")
+app.add_typer(dashboard.app, name="dashboard", help="Manage dashboards")
+app.add_typer(query.app, name="query", help="Manage saved queries")
+app.add_typer(theme.app, name="theme", help="Test themes and colors", hidden=True)
 app.add_typer(config_cmd.app, name="config", help="Manage configuration")
 
 

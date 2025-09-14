@@ -71,9 +71,5 @@ def query_spinner(query: str, silent: bool = False):
 def data_spinner(entity_type: str, count: Optional[int] = None, silent: bool = False):
     """Specialized spinner for data loading operations."""
     text = f"Loading {entity_type}..."
-    success_text = (
-        f"{EMOJIS['success']} Found {count} {entity_type}"
-        if count is not None
-        else None
-    )
+    success_text = f"{EMOJIS['success']} Found {count} {entity_type}" if count is not None else None
     return spinner(text, success_text=success_text, silent=silent)

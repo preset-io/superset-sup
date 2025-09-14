@@ -262,13 +262,9 @@ def native(  # pylint: disable=too-many-locals, too-many-arguments, too-many-bra
     # newer versions expose the DB UUID in the API response,
     # olders only expose it via export
     try:
-        existing_databases = {
-            db_connection["uuid"] for db_connection in client.get_databases()
-        }
+        existing_databases = {db_connection["uuid"] for db_connection in client.get_databases()}
     except KeyError:
-        existing_databases = {
-            str(uuid) for uuid in client.get_uuids("database").values()
-        }
+        existing_databases = {str(uuid) for uuid in client.get_uuids("database").values()}
 
     # env for Jinja2 templating
     env = dict(pair.split("=", 1) for pair in option if "=" in pair)  # type: ignore
@@ -291,9 +287,7 @@ def native(  # pylint: disable=too-many-locals, too-many-arguments, too-many-bra
             queue.extend(path_name.glob("*"))
         elif is_yaml_config(relative_path):
             config = (
-                load_yaml(path_name)
-                if disable_jinja_templating
-                else render_yaml(path_name, env)
+                load_yaml(path_name) if disable_jinja_templating else render_yaml(path_name, env)
             )
 
             overrides_path = path_name.with_suffix(".overrides" + path_name.suffix)
@@ -401,9 +395,7 @@ def import_resources_individually(  # pylint: disable=too-many-locals
                 assets_to_skip.add(path)
                 write_logs_to_file(log_file, logs)
 
-    if not continue_on_error or not any(
-        log["status"] == "FAILED" for log in logs[LogType.ASSETS]
-    ):
+    if not continue_on_error or not any(log["status"] == "FAILED" for log in logs[LogType.ASSETS]):
         clean_logs(LogType.ASSETS, logs)
 
 
@@ -422,11 +414,7 @@ def get_charts_uuids(config: AssetConfig) -> Iterator[str]:
     Extract chart UUID from a dashboard config.
     """
     for child in config["position"].values():
-        if (
-            isinstance(child, dict)
-            and child["type"] == "CHART"
-            and "uuid" in child["meta"]
-        ):
+        if isinstance(child, dict) and child["type"] == "CHART" and "uuid" in child["meta"]:
             yield child["meta"]["uuid"]
 
 

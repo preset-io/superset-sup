@@ -77,9 +77,7 @@ def sql(  # pylint: disable=too-many-arguments
         click.echo("Invalid choice")
 
     database_name = [
-        database["database_name"]
-        for database in databases
-        if database["id"] == database_id
+        database["database_name"] for database in databases if database["id"] == database_id
     ][0]
 
     if execute:

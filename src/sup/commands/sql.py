@@ -29,11 +29,7 @@ def execute_sql_query(
     """Execute a SQL query - DRY function for reuse."""
     from sup.clients.superset import SupSupersetClient
     from sup.config.settings import SupContext
-    from sup.output.formatters import (
-        QueryResult,
-        QueryTimer,
-        display_query_results,
-    )
+    from sup.output.formatters import QueryResult, QueryTimer, display_query_results
 
     # Get context and resolve IDs
     ctx = SupContext()
@@ -110,9 +106,9 @@ def sql_command(
         Optional[int],
         typer.Option("--database-id", "-d", help="Database ID"),
     ] = None,
-    json_output: Annotated[bool, typer.Option("--json", help="Output as JSON")] = False,
-    csv_output: Annotated[bool, typer.Option("--csv", help="Output as CSV")] = False,
-    yaml_output: Annotated[bool, typer.Option("--yaml", help="Output as YAML")] = False,
+    json_output: Annotated[bool, typer.Option("--json", "-j", help="Output as JSON")] = False,
+    csv_output: Annotated[bool, typer.Option("--csv", "-c", help="Output as CSV")] = False,
+    yaml_output: Annotated[bool, typer.Option("--yaml", "-y", help="Output as YAML")] = False,
     porcelain: Annotated[
         bool,
         typer.Option("--porcelain", help="Machine-readable output (no decorations)"),

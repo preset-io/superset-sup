@@ -59,8 +59,7 @@ def is_sip_40_payload(errors: List[Dict[str, Any]]) -> bool:
     Return if a given error payload comforms with SIP-40.
     """
     return isinstance(errors, list) and all(
-        isinstance(error, dict)
-        and set(error.keys()) <= {"message", "error_type", "level", "extra"}
+        isinstance(error, dict) and set(error.keys()) <= {"message", "error_type", "level", "extra"}
         for error in errors
     )
 

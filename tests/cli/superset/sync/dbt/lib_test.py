@@ -158,10 +158,7 @@ def test_build_sqlalchemy_params_bigquery_no_keyfile() -> None:
     }
     with pytest.raises(Exception) as excinfo:
         build_sqlalchemy_params(config)
-    assert (
-        str(excinfo.value)
-        == "Only service account auth is supported, you MUST pass `keyfile`."
-    )
+    assert str(excinfo.value) == "Only service account auth is supported, you MUST pass `keyfile`."
 
 
 def test_build_snowflake_sqlalchemy_params() -> None:
@@ -478,9 +475,9 @@ def test_filter_models() -> None:
     }
 
     # testing config filtering
-    assert {
-        model["name"] for model in filter_models(models, "config.materialized:view")
-    } == {"three"}
+    assert {model["name"] for model in filter_models(models, "config.materialized:view")} == {
+        "three",
+    }
 
     with pytest.raises(NotImplementedError) as excinfo:
         filter_models(models, "invalid")
@@ -555,43 +552,40 @@ def test_filter_models_config_meta() -> None:
     )
     models = [one, two, three, four, five]
 
-    assert {
-        model["name"] for model in filter_models(models, "config.meta.connection:oauth")
-    } == {"one", "three"}
+    assert {model["name"] for model in filter_models(models, "config.meta.connection:oauth")} == {
+        "one",
+        "three",
+    }
 
     assert {
-        model["name"]
-        for model in filter_models(models, "config.meta.connection:service_account")
+        model["name"] for model in filter_models(models, "config.meta.connection:service_account")
     } == {"two"}
 
-    assert {
-        model["name"] for model in filter_models(models, "config.meta.priority:high")
-    } == {"one"}
+    assert {model["name"] for model in filter_models(models, "config.meta.priority:high")} == {
+        "one",
+    }
+
+    assert {model["name"] for model in filter_models(models, "config.meta.priority:low")} == {"two"}
+
+    assert {model["name"] for model in filter_models(models, "config.meta.team:analytics")} == {
+        "one",
+    }
+
+    assert {model["name"] for model in filter_models(models, "config.meta.team:data_eng")} == {
+        "three",
+    }
 
     assert {
-        model["name"] for model in filter_models(models, "config.meta.priority:low")
-    } == {"two"}
-
-    assert {
-        model["name"] for model in filter_models(models, "config.meta.team:analytics")
-    } == {"one"}
-
-    assert {
-        model["name"] for model in filter_models(models, "config.meta.team:data_eng")
-    } == {"three"}
-
-    assert {
-        model["name"]
-        for model in filter_models(models, "config.meta.nonexistent:value")
+        model["name"] for model in filter_models(models, "config.meta.nonexistent:value")
     } == set()
 
     assert {
         model["name"] for model in filter_models(models, "config.meta.connection:none")
     } == set()
 
-    assert {
-        model["name"] for model in filter_models(models, "config.materialized:table")
-    } == {"four"}
+    assert {model["name"] for model in filter_models(models, "config.materialized:table")} == {
+        "four",
+    }
 
 
 def test_filter_models_deep_nesting() -> None:
@@ -687,18 +681,17 @@ def test_filter_models_deep_nesting() -> None:
     models = [model_one, model_two, model_three, model_four, model_five]
 
     # Test 3-level nesting
-    assert {
-        model["name"] for model in filter_models(models, "config.foo.bar.baz:value1")
-    } == {"model_one"}
+    assert {model["name"] for model in filter_models(models, "config.foo.bar.baz:value1")} == {
+        "model_one",
+    }
 
-    assert {
-        model["name"] for model in filter_models(models, "config.foo.bar.baz:value2")
-    } == {"model_four"}
+    assert {model["name"] for model in filter_models(models, "config.foo.bar.baz:value2")} == {
+        "model_four",
+    }
 
     # Test 4-level nesting
     assert {
-        model["name"]
-        for model in filter_models(models, "config.foo.bar.baz.qux:deep_value")
+        model["name"] for model in filter_models(models, "config.foo.bar.baz.qux:deep_value")
     } == {"model_two"}
 
     # Test 5-level nesting
@@ -712,19 +705,16 @@ def test_filter_models_deep_nesting() -> None:
 
     # Test non-existent deep path
     assert {
-        model["name"]
-        for model in filter_models(models, "config.foo.bar.baz.qux.quux:nonexistent")
+        model["name"] for model in filter_models(models, "config.foo.bar.baz.qux.quux:nonexistent")
     } == set()
 
     # Test partial match (should not match if full path doesn't exist)
-    assert {
-        model["name"] for model in filter_models(models, "config.foo.bar:simple_value")
-    } == {"model_five"}
+    assert {model["name"] for model in filter_models(models, "config.foo.bar:simple_value")} == {
+        "model_five",
+    }
 
     # Test looking for a nested value at wrong level
-    assert {
-        model["name"] for model in filter_models(models, "config.foo.bar:value1")
-    } == set()
+    assert {model["name"] for model in filter_models(models, "config.foo.bar:value1")} == set()
 
 
 def test_filter_models_seen() -> None:
@@ -821,21 +811,14 @@ def test_apply_select() -> None:
         "two",
         "three",
     }
-    assert {
-        model["name"] for model in apply_select(models, ("+two+,tag:test",), ())
-    } == {
+    assert {model["name"] for model in apply_select(models, ("+two+,tag:test",), ())} == {
         "one",
     }
-    assert {
-        model["name"] for model in apply_select(models, ("tag:test,+two+",), ())
-    } == {
+    assert {model["name"] for model in apply_select(models, ("tag:test,+two+",), ())} == {
         "one",
     }
 
-    assert {
-        model["name"]
-        for model in apply_select(models, ("+two+",), ("three", "tag:test"))
-    } == {
+    assert {model["name"] for model in apply_select(models, ("+two+",), ("three", "tag:test"))} == {
         "two",
     }
 
@@ -887,9 +870,11 @@ def test_apply_select_with_config_meta() -> None:
     )
     models = [a, b, c, d]
 
-    assert {
-        model["name"] for model in apply_select(models, ("config.meta.db:oauth",), ())
-    } == {"a", "c", "d"}
+    assert {model["name"] for model in apply_select(models, ("config.meta.db:oauth",), ())} == {
+        "a",
+        "c",
+        "d",
+    }
 
     assert {
         model["name"]
@@ -974,9 +959,7 @@ def test_apply_select_using_path(fs: FakeFilesystem) -> None:
         "two",
         "three",
     }
-    assert {
-        model["name"] for model in apply_select(models, ("models/one.sql",), ())
-    } == {
+    assert {model["name"] for model in apply_select(models, ("models/one.sql",), ())} == {
         "one",
     }
     assert {model["name"] for model in apply_select(models, ("models/",), ())} == {
@@ -984,9 +967,7 @@ def test_apply_select_using_path(fs: FakeFilesystem) -> None:
         "two",
         "three",
     }
-    assert {
-        model["name"] for model in apply_select(models, ("models/test_folder/*",), ())
-    } == {
+    assert {model["name"] for model in apply_select(models, ("models/test_folder/*",), ())} == {
         "two",
         "three",
     }
@@ -1005,10 +986,7 @@ def test_list_failed_models_multiple_models() -> None:
     Test ``list_failed_models`` with multiple failed models
     """
     error_list = list_failed_models(["single_failure", "another_failure"])
-    assert (
-        error_list
-        == "Below model(s) failed to sync:\n - single_failure\n - another_failure"
-    )
+    assert error_list == "Below model(s) failed to sync:\n - single_failure\n - another_failure"
 
 
 def test_get_og_metric_from_config() -> None:

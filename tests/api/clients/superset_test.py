@@ -226,9 +226,7 @@ def test_run_query_error(requests_mock: Mocker) -> None:
                 "issue_codes": [
                     {
                         "code": 1022,
-                        "message": (
-                            "Issue 1022 - Database does not allow data manipulation."
-                        ),
+                        "message": ("Issue 1022 - Database does not allow data manipulation."),
                     },
                 ],
             },
@@ -813,9 +811,7 @@ def test_get_resource(requests_mock: Mocker) -> None:
 
     response = client.get_resource("database", 1)
     assert response == {"Hello": "world"}
-    assert (
-        requests_mock.last_request.headers["Referer"] == "https://superset.example.org/"
-    )
+    assert requests_mock.last_request.headers["Referer"] == "https://superset.example.org/"
 
 
 def test_get_resources(requests_mock: Mocker) -> None:
@@ -847,9 +843,7 @@ def test_get_resources(requests_mock: Mocker) -> None:
 
     response = client.get_resources("database")
     assert response == [1, 2]
-    assert (
-        requests_mock.last_request.headers["Referer"] == "https://superset.example.org/"
-    )
+    assert requests_mock.last_request.headers["Referer"] == "https://superset.example.org/"
 
 
 def test_get_resources_filtered_equal(requests_mock: Mocker) -> None:
@@ -877,9 +871,7 @@ def test_get_resources_filtered_equal(requests_mock: Mocker) -> None:
 
     response = client.get_resources("database", database_name="my_db")
     assert response == [{"Hello": "world"}]
-    assert (
-        requests_mock.last_request.headers["Referer"] == "https://superset.example.org/"
-    )
+    assert requests_mock.last_request.headers["Referer"] == "https://superset.example.org/"
 
 
 def test_get_resources_filtered_one_to_many(requests_mock: Mocker) -> None:
@@ -907,9 +899,7 @@ def test_get_resources_filtered_one_to_many(requests_mock: Mocker) -> None:
 
     response = client.get_resources("database", database=OneToMany(1))
     assert response == [{"Hello": "world"}]
-    assert (
-        requests_mock.last_request.headers["Referer"] == "https://superset.example.org/"
-    )
+    assert requests_mock.last_request.headers["Referer"] == "https://superset.example.org/"
 
 
 def test_create_resource(requests_mock: Mocker) -> None:
@@ -930,9 +920,7 @@ def test_create_resource(requests_mock: Mocker) -> None:
         sqlalchemy_uri="gsheets://",
     )
     assert response == {"Hello": "world"}
-    assert (
-        requests_mock.last_request.headers["Referer"] == "https://superset.example.org/"
-    )
+    assert requests_mock.last_request.headers["Referer"] == "https://superset.example.org/"
     assert requests_mock.last_request.json() == {
         "database_name": "my_db",
         "sqlalchemy_uri": "gsheets://",
@@ -957,9 +945,7 @@ def test_update_resource(requests_mock: Mocker) -> None:
         database_name="my_other_db",
     )
     assert response == {"Hello": "world"}
-    assert (
-        requests_mock.last_request.headers["Referer"] == "https://superset.example.org/"
-    )
+    assert requests_mock.last_request.headers["Referer"] == "https://superset.example.org/"
     assert requests_mock.last_request.json() == {
         "database_name": "my_other_db",
     }
@@ -1343,9 +1329,7 @@ def test_update_resource_with_query_args(requests_mock: Mocker) -> None:
         database_name="my_other_db",
     )
     assert response == {"Hello": "world"}
-    assert (
-        requests_mock.last_request.headers["Referer"] == "https://superset.example.org/"
-    )
+    assert requests_mock.last_request.headers["Referer"] == "https://superset.example.org/"
     assert requests_mock.last_request.json() == {
         "database_name": "my_other_db",
     }
@@ -1631,9 +1615,7 @@ def test_export_zip(requests_mock: Mocker) -> None:
         assert bundle.namelist() == ["test.txt"]
         assert bundle.read("test.txt") == b"Hello!"
 
-    assert (
-        requests_mock.last_request.headers["Referer"] == "https://superset.example.org/"
-    )
+    assert requests_mock.last_request.headers["Referer"] == "https://superset.example.org/"
 
 
 def test_export_zip_pagination(mocker: MockerFixture, requests_mock: Mocker) -> None:
@@ -1671,9 +1653,7 @@ def test_export_zip_pagination(mocker: MockerFixture, requests_mock: Mocker) -> 
     with ZipFile(response) as bundle:
         assert bundle.namelist() == ["test1.txt", "test2.txt"]
 
-    assert (
-        requests_mock.last_request.headers["Referer"] == "https://superset.example.org/"
-    )
+    assert requests_mock.last_request.headers["Referer"] == "https://superset.example.org/"
 
 
 def test_export_zip_error(requests_mock: Mocker) -> None:
@@ -1693,9 +1673,7 @@ def test_export_zip_error(requests_mock: Mocker) -> None:
     with pytest.raises(SupersetError) as excinfo:
         client.export_zip("database", [1, 2, 3])
     assert excinfo.value.errors == [{"message": "An error occurred"}]
-    assert (
-        requests_mock.last_request.headers["Referer"] == "https://superset.example.org/"
-    )
+    assert requests_mock.last_request.headers["Referer"] == "https://superset.example.org/"
 
 
 def test_import_zip(requests_mock: Mocker) -> None:
@@ -1713,16 +1691,11 @@ def test_import_zip(requests_mock: Mocker) -> None:
     data = BytesIO("I'm a ZIP".encode("utf-8"))
     response = client.import_zip("database", data, overwrite=True)
     assert response is True
-    assert (
-        requests_mock.last_request.headers["Referer"] == "https://superset.example.org/"
-    )
+    assert requests_mock.last_request.headers["Referer"] == "https://superset.example.org/"
     assert requests_mock.last_request.headers["Accept"] == "application/json"
 
     boundary = (
-        requests_mock.last_request.headers["Content-type"]
-        .split(";")[1]
-        .split("=")[1]
-        .strip()
+        requests_mock.last_request.headers["Content-type"].split(";")[1].split("=")[1].strip()
     )
     assert requests_mock.last_request.text == (
         f'--{boundary}\r\nContent-Disposition: form-data; name="overwrite"\r\n\r\n'
@@ -1749,9 +1722,7 @@ def test_import_zip_error(requests_mock: Mocker) -> None:
     with pytest.raises(SupersetError) as excinfo:
         client.import_zip("database", data, overwrite=True)
     assert excinfo.value.errors == [{"message": "An error occurred"}]
-    assert (
-        requests_mock.last_request.headers["Referer"] == "https://superset.example.org/"
-    )
+    assert requests_mock.last_request.headers["Referer"] == "https://superset.example.org/"
 
 
 def test_get_rls(mocker: MockerFixture) -> None:
@@ -2359,7 +2330,7 @@ def test_export_rls_legacy(requests_mock: Mocker) -> None:
     </table>
   </body>
 </html>
-        """,
+        """,  # noqa: E501
     )
 
     auth = Auth()
@@ -2669,7 +2640,7 @@ def test_parse_html_array() -> None:
                     
                       [main.test_table]
                     
-                    """,
+                    """,  # noqa: W293
     ) == ["main.test_table"]
     assert parse_html_array(
         """
@@ -2679,7 +2650,7 @@ def test_parse_html_array() -> None:
                             main.sales
                         
                             public.FCC 2018 Survey
-""",
+""",  # noqa: W293
     ) == ["main.sales", "public.FCC 2018 Survey"]
 
 
@@ -2737,10 +2708,7 @@ def test_import_role(mocker: MockerFixture, requests_mock: Mocker) -> None:
     client = SupersetClient("https://superset.example.org/", auth)
     client.import_role(role)
 
-    assert (
-        requests_mock.last_request.text
-        == "name=Admin&user=1&user=2&permissions=1&permissions=2"
-    )
+    assert requests_mock.last_request.text == "name=Admin&user=1&user=2&permissions=1&permissions=2"
 
     assert _logger.warning.mock_calls == [
         mock.call(
@@ -2860,10 +2828,7 @@ def test_import_role_update(mocker: MockerFixture, requests_mock: Mocker) -> Non
     client = SupersetClient("https://superset.example.org/", auth)
     client.import_role(role)
 
-    assert (
-        requests_mock.last_request.text
-        == "name=Admin&user=1&user=2&permissions=1&permissions=2"
-    )
+    assert requests_mock.last_request.text == "name=Admin&user=1&user=2&permissions=1&permissions=2"
 
     assert _logger.warning.mock_calls == [
         mock.call(
@@ -3597,10 +3562,7 @@ def test_update_role(requests_mock: Mocker) -> None:
     assert requests_mock.last_request.text == "name=New+Role&user=1&permissions=1"
 
     client.update_role(1, user=[2], permissions=[1, 2])
-    assert (
-        requests_mock.last_request.text
-        == "name=Old+Role&user=2&permissions=1&permissions=2"
-    )
+    assert requests_mock.last_request.text == "name=Old+Role&user=2&permissions=1&permissions=2"
 
 
 def test_create_virtual_dataset(mocker: MockerFixture) -> None:
@@ -3673,7 +3635,7 @@ def test_create_virtual_dataset_legacy(
                 "db": "jaffle_shop_dev",
                 "endDttm": 1664844864497.491,
                 "errorMessage": None,
-                "executedSql": "-- 6dcd92a04feb50f14bbcf07c661680ba\nSELECT * FROM `dbt-tutorial`.jaffle_shop.customers LIMIT 2\n-- 6dcd92a04feb50f14bbcf07c661680ba",
+                "executedSql": "-- 6dcd92a04feb50f14bbcf07c661680ba\nSELECT * FROM `dbt-tutorial`.jaffle_shop.customers LIMIT 2\n-- 6dcd92a04feb50f14bbcf07c661680ba",  # noqa: E501
                 "id": "eJfI9pxnh",
                 "queryId": 137,
                 "limit": 1,

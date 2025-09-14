@@ -35,6 +35,26 @@ class UniversalFilters:
     order: Optional[str] = None
     desc: bool = False
 
+    def copy(self, **updates) -> "UniversalFilters":
+        """Create a copy of filters with optional updates."""
+        current_values = {
+            "id": self.id,
+            "ids": self.ids,
+            "name": self.name,
+            "mine": self.mine,
+            "team_id": self.team_id,
+            "created_after": self.created_after,
+            "modified_after": self.modified_after,
+            "limit": self.limit,
+            "offset": self.offset,
+            "page": self.page,
+            "page_size": self.page_size,
+            "order": self.order,
+            "desc": self.desc,
+        }
+        current_values.update(updates)
+        return UniversalFilters(**current_values)
+
     @classmethod
     def parse_ids(cls, ids_str: str) -> List[int]:
         """Parse comma-separated IDs string into list of integers."""
@@ -74,14 +94,10 @@ def apply_universal_filters(
 
     # ID filters
     if filters.id is not None:
-        filtered_items = [
-            item for item in filtered_items if item.get("id") == filters.id
-        ]
+        filtered_items = [item for item in filtered_items if item.get("id") == filters.id]
 
     if filters.ids:
-        filtered_items = [
-            item for item in filtered_items if item.get("id") in filters.ids
-        ]
+        filtered_items = [item for item in filtered_items if item.get("id") in filters.ids]
 
     # Name pattern matching
     if filters.name:
@@ -91,10 +107,7 @@ def apply_universal_filters(
             for item in filtered_items
             if fnmatch.fnmatch(
                 (
-                    item.get("name")
-                    or item.get("table_name")
-                    or item.get("slice_name")
-                    or ""
+                    item.get("name") or item.get("table_name") or item.get("slice_name") or ""
                 ).lower(),
                 pattern,
             )
@@ -112,9 +125,7 @@ def apply_universal_filters(
 
     # Team filter
     if filters.team_id:
-        filtered_items = [
-            item for item in filtered_items if item.get("team_id") == filters.team_id
-        ]
+        filtered_items = [item for item in filtered_items if item.get("team_id") == filters.team_id]
 
     # Date filters
     if filters.created_after:
@@ -248,11 +259,7 @@ def parse_universal_filters(
         modified_after_dt = UniversalFilters.parse_date(modified_after)
 
     # Handle special case: limit=0 means unlimited
-    final_limit = (
-        None
-        if limit_filter == 0
-        else (limit_filter if limit_filter is not None else 50)
-    )
+    final_limit = None if limit_filter == 0 else (limit_filter if limit_filter is not None else 50)
 
     return UniversalFilters(
         id=id_filter,

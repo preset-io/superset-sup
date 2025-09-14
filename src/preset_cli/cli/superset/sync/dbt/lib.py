@@ -117,9 +117,7 @@ def build_bigquery_sqlalchemy_params(target: Dict[str, Any]) -> Dict[str, Any]:
         "location": "location",
         "maximum_bytes_billed": "maximum_bytes_billed",
     }
-    query = {
-        kwarg: str(target[key]) for kwarg, key in parameter_map.items() if key in target
-    }
+    query = {kwarg: str(target[key]) for kwarg, key in parameter_map.items() if key in target}
     if "priority" in query:
         query["priority"] = query["priority"].upper()
     parameters["sqlalchemy_uri"] = str(
@@ -363,13 +361,9 @@ def filter_models(models: List[ModelSchema], condition: str) -> List[ModelSchema
         return [model_names[file_path.stem]]
 
     # path/directory
-    if file_path.is_dir() or (
-        str(file_path).endswith("/*") and (file_path := file_path.parent)
-    ):
+    if file_path.is_dir() or (str(file_path).endswith("/*") and (file_path := file_path.parent)):
         sql_files = [file for file in file_path.rglob("*.sql") if file.is_file()]
-        return [
-            model_names[file.stem] for file in sql_files if file.stem in model_names
-        ]
+        return [model_names[file.stem] for file in sql_files if file.stem in model_names]
 
     # plus and n-plus operators
     if "+" in condition:

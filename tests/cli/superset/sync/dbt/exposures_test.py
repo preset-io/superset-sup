@@ -636,9 +636,7 @@ def test_sync_exposures_special_characters(
     client.baseurl = URL("https://superset.example.org/")
 
     chart_with_special_characters = copy.deepcopy(chart_response)
-    chart_with_special_characters["result"]["slice_name"] = (
-        "T!tl3_ w1th $pecial characters()*"  # type: ignore
-    )
+    chart_with_special_characters["result"]["slice_name"] = "T!tl3_ w1th $pecial characters()*"  # type: ignore
     client.get_chart.return_value = chart_with_special_characters["result"]
 
     dashboard_with_special_characters = copy.deepcopy(dashboard_response)
@@ -777,10 +775,7 @@ def test_get_chart_depends_on_exception(
 
     with pytest.raises(Exception) as excinfo:
         get_chart_depends_on(client, chart_response_no_dataset_info["result"], {})
-    assert (
-        str(excinfo.value)
-        == "Unable to find dataset information for Chart Example chart"
-    )
+    assert str(excinfo.value) == "Unable to find dataset information for Chart Example chart"
 
 
 def test_get_dashboard_depends_on_from_dataset(mocker: MockerFixture) -> None:

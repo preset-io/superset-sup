@@ -53,8 +53,7 @@ def apply_dataset_filters(
         filtered_datasets = [
             item
             for item in filtered_datasets
-            if item.get("schema")
-            and fnmatch.fnmatch(item["schema"].lower(), schema_pattern)
+            if item.get("schema") and fnmatch.fnmatch(item["schema"].lower(), schema_pattern)
         ]
 
     if filters.table_type:

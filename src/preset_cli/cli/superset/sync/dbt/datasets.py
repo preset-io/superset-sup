@@ -182,9 +182,7 @@ def compute_metrics(
     merge_metadata: dbt data synced & Superset-only metadata preserved
     if both are false: Superset metadata preserved & dbt-only metadata synced
     """
-    current_dataset_metrics = {
-        metric["metric_name"]: metric for metric in dataset_metrics
-    }
+    current_dataset_metrics = {metric["metric_name"]: metric for metric in dataset_metrics}
     model_metrics = {metric["metric_name"]: metric for metric in dbt_metrics}
     final_dataset_metrics = []
 
@@ -221,12 +219,8 @@ def compute_columns(
     """
     final_dataset_columns = []
 
-    current_dataset_columns = {
-        column["column_name"]: column for column in dataset_columns
-    }
-    refreshed_columns = {
-        column["column_name"]: column for column in refreshed_columns_list
-    }
+    current_dataset_columns = {column["column_name"]: column for column in dataset_columns}
+    refreshed_columns = {column["column_name"]: column for column in refreshed_columns_list}
     for name, column in refreshed_columns.items():
         if name in current_dataset_columns:
             cleaned_column = clean_metadata(current_dataset_columns[name])
@@ -271,8 +265,7 @@ def compute_columns_metadata(  # pylint: disable=too-many-branches, too-many-arg
         dataset_columns = [
             column
             for column in dataset_columns
-            if not column.get("expression")
-            or column["column_name"] in dbt_calc_columns_by_name
+            if not column.get("expression") or column["column_name"] in dbt_calc_columns_by_name
         ]
 
     for column in dataset_columns:
@@ -419,9 +412,7 @@ def sync_datasets(  # pylint: disable=too-many-locals, too-many-arguments
         )
 
         try:
-            client.update_dataset(
-                dataset["id"], override_columns=reload_columns, **update
-            )
+            client.update_dataset(dataset["id"], override_columns=reload_columns, **update)
         except SupersetError:
             failed_datasets.append(model["unique_id"])
             continue

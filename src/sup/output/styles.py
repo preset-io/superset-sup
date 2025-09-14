@@ -1,46 +1,47 @@
 """
 Rich styling and color schemes for sup CLI.
 
-Inspired by Superset's brand colors with modern terminal aesthetics.
+Simple semantic color system with Preset branding.
 """
 
-# Primary color scheme inspired by Superset's brand
-COLORS = {
-    # Primary colors
-    "primary": "#20A7C9",  # Superset blue
-    "secondary": "#1565C0",  # Darker blue
-    "accent": "#00BCD4",  # Cyan accent
-    # Status colors
-    "success": "#4CAF50",  # Green
-    "warning": "#FF9800",  # Orange
-    "error": "#F44336",  # Red
-    "info": "#2196F3",  # Blue
-    # UI colors
-    "text": "#FFFFFF",  # White text
-    "text_dim": "#B0BEC5",  # Dim gray
-    "border": "#37474F",  # Dark gray borders
-    "background": "#263238",  # Dark background
-    # Data visualization
-    "chart_1": "#1F77B4",  # Blue
-    "chart_2": "#FF7F0E",  # Orange
-    "chart_3": "#2CA02C",  # Green
-    "chart_4": "#D62728",  # Red
-    "chart_5": "#9467BD",  # Purple
-}
 
-# Rich style mappings for easy use throughout the CLI
+class COLORS:
+    """Simple, essential colors for sup CLI with authentic Preset branding."""
+
+    # Core colors - using hex for authentic Preset branding
+    primary = "#10B981"  # Emerald green - authentic Preset brand
+    secondary = "#06B6D4"  # Sky cyan - technical/data accent
+    muted = "white"  # Dimmed content (accessible)
+
+    # Status colors
+    success = "#10B981"  # Success (same as brand - emerald green)
+    warning = "#F59E0B"  # Amber warning
+    error = "#EF4444"  # Red errors
+    info = "#3B82F6"  # Blue information
+
+
+# Simple Rich style mappings using core colors
 RICH_STYLES = {
-    "brand": "bold cyan",
-    "success": "bold green",
-    "error": "bold red",
-    "warning": "bold yellow",
-    "info": "bold blue",
-    "dim": "dim white",
-    "header": "bold bright_white",
-    "data": "cyan",
-    "link": "blue underline",
-    "accent": "bright_cyan",
-    "muted": "bright_black",
+    # Brand styles (Preset identity)
+    "brand": f"bold {COLORS.primary}",  # Primary Preset green
+    "brand_secondary": f"bold {COLORS.secondary}",  # Secondary brand style
+    # Semantic status styles
+    "success": f"bold {COLORS.success}",  # Success actions
+    "error": f"bold {COLORS.error}",  # Errors and failures
+    "warning": f"bold {COLORS.warning}",  # Warnings and cautions
+    "info": f"bold {COLORS.info}",  # Information and help
+    # Content hierarchy styles
+    "primary": "bold white",  # Primary content/headers
+    "secondary": "white",  # Secondary content
+    "muted": f"dim {COLORS.muted}",  # Less important content
+    "emphasis": f"bold {COLORS.primary}",  # Emphasized content (brand color)
+    # Interactive styles
+    "link": f"{COLORS.info} underline",  # Clickable links
+    "accent": COLORS.secondary,  # Technical/data accent
+    "data": COLORS.secondary,  # Data values and results
+    # Legacy aliases (for backward compatibility)
+    "header": "bold white",  # Headers
+    "dim": f"dim {COLORS.muted}",  # Dimmed text
 }
 
 # Emoji mappings for consistent usage
@@ -86,4 +87,46 @@ def get_status_style(status: str) -> str:
         "info": RICH_STYLES["info"],
         "loading": RICH_STYLES["accent"],
     }
-    return status_styles.get(status, RICH_STYLES["dim"])
+    return status_styles.get(status, RICH_STYLES["muted"])
+
+
+class SemanticColors:
+    """Semantic color accessor for consistent branding throughout sup CLI."""
+
+    # Brand colors (using enum for clean access)
+    primary = RICH_STYLES["brand"]  # Preset green - main brand
+    secondary = RICH_STYLES["brand_secondary"]  # Secondary brand
+    emphasis = RICH_STYLES["emphasis"]  # Emphasized brand content
+
+    # Status colors
+    success = RICH_STYLES["success"]  # Success states
+    error = RICH_STYLES["error"]  # Error states
+    warning = RICH_STYLES["warning"]  # Warning states
+    info = RICH_STYLES["info"]  # Information
+
+    # Content hierarchy
+    heading = RICH_STYLES["primary"]  # Major headings
+    subheading = RICH_STYLES["secondary"]  # Minor headings
+    text = RICH_STYLES["secondary"]  # Normal text
+    muted = RICH_STYLES["muted"]  # Less important text
+
+    # Interactive elements
+    link = RICH_STYLES["link"]  # Clickable links
+    accent = RICH_STYLES["accent"]  # Data/technical accent
+    data = RICH_STYLES["data"]  # Data values
+
+    @classmethod
+    def get_chart_color(cls, index: int) -> str:
+        """Get chart color by index for data visualization."""
+        chart_colors = [
+            COLORS.primary,  # green
+            COLORS.secondary,  # cyan
+            COLORS.info,  # blue
+            COLORS.warning,  # yellow
+            COLORS.error,  # red
+        ]
+        return chart_colors[index % len(chart_colors)]
+
+
+# Convenience instance for easy imports: colors.primary, colors.success, etc.
+colors = SemanticColors()

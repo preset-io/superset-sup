@@ -17,18 +17,6 @@ repos:
   - id: mixed-line-ending
     args: ['--fix=auto']  # replace 'auto' with 'lf' to enforce Linux/Mac line endings or 'crlf' for Windows
 
-## If you want to avoid flake8 errors due to unused vars or imports:
-# - repo: https://github.com/myint/autoflake.git
-#   rev: v1.4
-#   hooks:
-#   - id: autoflake
-#     args: [
-#       --in-place,
-#       --remove-all-unused-imports,
-#       --remove-unused-variables,
-#     ]
-
-# Replaced isort and black with ruff (all-in-one: linting, formatting, import sorting)
 
 - repo: https://github.com/astral-sh/ruff-pre-commit
   rev: v0.8.0
@@ -58,8 +46,7 @@ repos:
 #  - id: reorder-python-imports
 #    args: [--application-directories=.:src]
 - repo: https://github.com/hadialqattan/pycln
-  rev: v2.5.0 # Possible releases: https://github.com/hadialqattan/pycln/tags
+  rev: v2.5.0
   hooks:
   - id: pycln
     args: [--config=pyproject.toml]
-# Replaced pylint with ruff (faster, more modern)

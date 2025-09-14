@@ -206,10 +206,7 @@ def test_export_users_full_flow(mocker: MockerFixture) -> None:
         assert alice["last_name"] == "Smith"
         assert alice["username"] == "alice"
         assert alice["teams"]["Team One"] == "admin"
-        assert (
-            alice["workspaces"]["Team One/Workspace One"]["workspace_role"]
-            == "workspace admin"
-        )
+        assert alice["workspaces"]["Team One/Workspace One"]["workspace_role"] == "workspace admin"
         assert (
             alice["workspaces"]["Team One/Workspace Two"]["workspace_role"]
             == "secondary contributor"
@@ -222,8 +219,7 @@ def test_export_users_full_flow(mocker: MockerFixture) -> None:
         assert bob["username"] == "bob"
         assert bob["teams"]["Team One"] == "user"
         assert (
-            bob["workspaces"]["Team One/Workspace One"]["workspace_role"]
-            == "primary contributor"
+            bob["workspaces"]["Team One/Workspace One"]["workspace_role"] == "primary contributor"
         )
         assert "Team One/Workspace Two" not in bob["workspaces"]
 
@@ -358,10 +354,7 @@ def test_export_users_error_handling(mocker: MockerFixture) -> None:
 
         assert result.exit_code == 0
         assert "Warning: Failed to get team members: API Error" in result.output
-        assert (
-            "Warning: Failed to get workspace memberships: Connection Error"
-            in result.output
-        )
+        assert "Warning: Failed to get workspace memberships: Connection Error" in result.output
 
         # Should still create empty file
         with open("output.yaml", "r", encoding="utf-8") as file:
@@ -623,7 +616,4 @@ def test_export_users_no_access_filtered_out(mocker: MockerFixture) -> None:
         assert "Team One/Workspace Two" not in alice["workspaces"]
 
         # Verify the workspace we do have has the correct role
-        assert (
-            alice["workspaces"]["Team One/Workspace One"]["workspace_role"]
-            == "workspace admin"
-        )
+        assert alice["workspaces"]["Team One/Workspace One"]["workspace_role"] == "workspace admin"

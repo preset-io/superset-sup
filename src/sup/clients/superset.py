@@ -290,6 +290,181 @@ class SupSupersetClient:
                 )
             raise
 
+    def get_dashboards(
+        self,
+        silent: bool = False,
+        limit: Optional[int] = None,
+        page: int = 0,
+    ) -> List[Dict[str, Any]]:
+        """Get dashboards with fast pagination - only fetch what we need."""
+        try:
+            # Use direct API call to fetch only one page instead of everything
+            import prison
+
+            from preset_cli.lib import validate_response
+
+            # Build query for single page fetch (use API default order)
+            query = prison.dumps(
+                {
+                    "filters": [],
+                    "order_column": "changed_on_delta_humanized",  # API default
+                    "order_direction": "desc",
+                    "page": page,
+                    "page_size": limit or 50,  # Use our limit as page_size
+                },
+            )
+
+            url = self.client.baseurl / "api/v1/dashboard/" % {"q": query}
+            response = self.client.session.get(url)
+            validate_response(response)
+
+            dashboards = response.json()["result"]
+
+            if not silent:
+                console.print(
+                    f"Found {len(dashboards)} dashboards",
+                    style=RICH_STYLES["dim"],
+                )
+            return dashboards
+
+        except Exception as e:
+            if not silent:
+                console.print(
+                    f"{EMOJIS['error']} Failed to fetch dashboards: {e}",
+                    style=RICH_STYLES["error"],
+                )
+            return []
+
+    def get_dashboard(self, dashboard_id: int, silent: bool = False) -> Dict[str, Any]:
+        """Get a specific dashboard by ID."""
+        try:
+            dashboard = self.client.get_dashboard(dashboard_id)
+            return dashboard
+        except Exception as e:
+            if not silent:
+                console.print(
+                    f"{EMOJIS['error']} Failed to fetch dashboard {dashboard_id}: {e}",
+                    style=RICH_STYLES["error"],
+                )
+            raise
+
+    def get_saved_queries(
+        self,
+        silent: bool = False,
+        limit: Optional[int] = None,
+        page: int = 0,
+    ) -> List[Dict[str, Any]]:
+        """Get saved queries with fast pagination."""
+        try:
+            # Use direct API call for saved queries
+            import prison
+
+            from preset_cli.lib import validate_response
+
+            # Build query for single page fetch (use default ordering to avoid API errors)
+            query = prison.dumps(
+                {
+                    "filters": [],
+                    "page": page,
+                    "page_size": limit or 50,
+                },
+            )
+
+            url = self.client.baseurl / "api/v1/saved_query/" % {"q": query}
+            response = self.client.session.get(url)
+            validate_response(response)
+
+            saved_queries = response.json()["result"]
+
+            if not silent:
+                console.print(
+                    f"Found {len(saved_queries)} saved queries",
+                    style=RICH_STYLES["dim"],
+                )
+            return saved_queries
+
+        except Exception as e:
+            if not silent:
+                console.print(
+                    f"{EMOJIS['error']} Failed to fetch saved queries: {e}",
+                    style=RICH_STYLES["error"],
+                )
+            return []
+
+    def get_saved_query(self, query_id: int, silent: bool = False) -> Dict[str, Any]:
+        """Get a specific saved query by ID."""
+        try:
+            saved_query = self.client.get_resource("saved_query", query_id)
+            return saved_query
+        except Exception as e:
+            if not silent:
+                console.print(
+                    f"{EMOJIS['error']} Failed to fetch saved query {query_id}: {e}",
+                    style=RICH_STYLES["error"],
+                )
+            raise
+
+    def get_chart_data(
+        self, chart_id: int, result_type: str = "results", silent: bool = False,
+    ) -> Dict[str, Any]:
+        """
+        Get chart data or SQL query using the chart data endpoint.
+
+        Args:
+            chart_id: Chart ID to get data for
+            result_type: "results" for data, "query" for SQL
+            silent: Whether to suppress error messages
+        """
+        try:
+            # First get the chart to get its query_context and form_data
+            chart = self.client.get_chart(chart_id)
+
+            # Try to use query_context if available (this is what actually gets executed)
+            query_context = chart.get("query_context", "{}")
+            if isinstance(query_context, str):
+                import json
+
+                query_context = json.loads(query_context)
+
+            # Build the payload using the chart's existing query context
+            # This should match what Superset expects
+            from preset_cli.lib import validate_response
+
+            url = self.client.baseurl / "api/v1/chart/data"
+
+            # Use the form data format that Superset expects
+            form_data_payload = {
+                **query_context,
+                "result_type": result_type,
+                "result_format": "json",
+            }
+
+            # Send as form data, not JSON (matching frontend)
+            import json
+
+            response = self.client.session.post(
+                url, data={"form_data": json.dumps(form_data_payload)},
+            )
+            validate_response(response)
+
+            result = response.json()
+
+            if not silent:
+                console.print(
+                    f"Retrieved chart {result_type}",
+                    style=RICH_STYLES["dim"],
+                )
+
+            return result
+
+        except Exception as e:
+            if not silent:
+                console.print(
+                    f"{EMOJIS['error']} Failed to get chart {result_type}: {e}",
+                    style=RICH_STYLES["error"],
+                )
+            return {}
+
     def execute_sql(self, database_id: int, sql: str) -> Dict[str, Any]:
         """Execute SQL query against a database."""
         try:

@@ -188,9 +188,7 @@ def handle_string(value):
     """
     try:
         asset_dict = json.loads(value)
-        return (
-            json.dumps(traverse_data(asset_dict, jinja_escaper)) if asset_dict else "{}"
-        )
+        return json.dumps(traverse_data(asset_dict, jinja_escaper)) if asset_dict else "{}"
     except json.JSONDecodeError:
         return jinja_escaper(value)
 
@@ -256,9 +254,7 @@ def export_users(
     preset_baseurl = ctx.obj.get("MANAGER_URL")
     client = SupersetClient(url, auth, preset_baseurl)
 
-    users = [
-        {k: v for k, v in user.items() if k != "id"} for user in client.export_users()
-    ]
+    users = [{k: v for k, v in user.items() if k != "id"} for user in client.export_users()]
 
     newline = get_newline_char(force_unix_eol)
     with open(path, "w", encoding="utf-8", newline=newline) as output:

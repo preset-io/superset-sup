@@ -236,6 +236,85 @@ https://{hostname}/superset/dashboard/{id}/
 4. **Register in main.py** - One line addition
 5. **Test with spinners and filtering** - Verify all formats work
 
+## DRY Improvement Recommendations
+
+### **Current Status: Functional but Repetitive**
+
+**✅ Excellent DRY Patterns:**
+- Universal filtering system (`filters/base.py`)
+- Shared output formatters (`output/formatters.py`)
+- Reusable spinner system (`output/spinners.py`)
+- Common configuration management (`config/settings.py`)
+- Consistent auth and API patterns
+
+**❌ Areas Needing DRY Improvements:**
+
+#### **1. Massive Parameter Duplication (High Priority)**
+```python
+# Every list command has 15+ identical parameters!
+# Example: chart.py, dataset.py both have:
+id_filter: Annotated[Optional[int], typer.Option("--id", help="Filter by specific ID")] = None,
+ids_filter: Annotated[Optional[str], typer.Option("--ids", help="Filter by multiple IDs (comma-separated)")] = None,
+# ... 13 more identical lines
+```
+
+**Solution:** Create command decorators for universal filters:
+```python
+@with_universal_filters
+@with_output_options
+def list_charts(filters: UniversalFilters, output: OutputOptions, **chart_specific):
+    # Much cleaner!
+```
+
+#### **2. Repeated Output Logic (Medium Priority)**
+```python
+# Same pattern in dataset.py, chart.py, workspace.py:
+if porcelain:
+    display_porcelain_list(...)
+elif json_output:
+    import json
+    console.print(json.dumps(...))
+elif yaml_output:
+    import yaml
+    console.print(yaml.safe_dump(...))
+```
+
+**Solution:** Extract into reusable function:
+```python
+def display_entity_results(items, format_type, porcelain, fields):
+    # Single implementation for all entities
+```
+
+#### **3. Similar Table Display Functions (Medium Priority)**
+- `display_datasets_table`
+- `display_charts_table`
+- `display_workspaces_table`
+
+**Solution:** Generic table builder with entity-specific field configs:
+```python
+def display_entity_table(items, entity_config, hostname=None):
+    # Universal table display with clickable links
+```
+
+#### **4. Error Handling Standardization (Low Priority)**
+- Repeated error patterns across commands
+- Consistent messaging but duplicated code
+
+**Solution:** Error handling decorators and utilities
+
+### **Implementation Priority for DRY Cleanup:**
+
+1. **Command decorators** - Eliminate 80% of parameter duplication
+2. **Output handler consolidation** - Single function for all format logic
+3. **Generic table display** - Unified table rendering with entity configs
+4. **Error handling utils** - Standardized error patterns
+
+### **Benefits of DRY Improvements:**
+- **Maintainability**: Change filtering logic once, affects all entities
+- **Consistency**: Guaranteed identical behavior across commands
+- **Extensibility**: Adding new entities becomes trivial
+- **Code reduction**: ~50% less code while maintaining functionality
+
 ### **Import/Export Control**
 ```bash
 --folder <path>             # Override SUP_ASSETS_FOLDER

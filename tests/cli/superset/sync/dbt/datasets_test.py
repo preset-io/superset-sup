@@ -896,7 +896,7 @@ def test_create_dataset_virtual_missing_dependency_snowflake(
             models[0],
         )
     output_content = capsys.readouterr()
-    assert excinfo.type == SystemExit
+    assert excinfo.type == SystemExit  # noqa: E721
     assert excinfo.value.code == 1
     assert "preset-cli[snowflake]" in output_content.out
 

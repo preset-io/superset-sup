@@ -54,15 +54,12 @@ def apply_chart_filters(
         filtered_charts = [
             item
             for item in filtered_charts
-            if item.get("viz_type")
-            and fnmatch.fnmatch(item["viz_type"].lower(), viz_pattern)
+            if item.get("viz_type") and fnmatch.fnmatch(item["viz_type"].lower(), viz_pattern)
         ]
 
     if filters.dataset_id:
         filtered_charts = [
-            item
-            for item in filtered_charts
-            if item.get("datasource_id") == filters.dataset_id
+            item for item in filtered_charts if item.get("datasource_id") == filters.dataset_id
         ]
 
     return filtered_charts

@@ -60,7 +60,7 @@ GROUP BY action""",
                     "slice_id": 1,
                     "metric": {
                         "expressionType": "SQL",
-                        "sqlExpression": "{% if from_dttm %} count(*) {% else %} count(*) {% endif %}",
+                        "sqlExpression": "{% if from_dttm %} count(*) {% else %} count(*) {% endif %}",  # noqa: E501
                         "column": None,
                         "aggregate": None,
                         "datasourceWarning": False,
@@ -84,7 +84,7 @@ GROUP BY action""",
 "slice_id":1,"metric":{"expressionType":"SQL","sqlExpression":"{% if from_dttm %} count(*) {% else %} count(*) {% endif %}","column":null,"aggregate":null,
 "datasourceWarning":false,"hasCustomLabel":true,"label":"custom_calculation","optionName":"metric_6aq7h4t8b3t_jbp2rak398o"},"adhoc_filters":[],"header_font_size":0.4,
 "subheader_font_size":0.15,"y_axis_format":"SMART_NUMBER","time_format":"smart_date","extra_form_data":{},"dashboards":[],"force":false,"result_format":"json","result_type":"full"},
-"result_format":"json","result_type":"full"}""",
+"result_format":"json","result_type":"full"}""",  # noqa: E501
             },
         ),
     }
@@ -178,7 +178,7 @@ GROUP BY action""",
                 "slice_id": 1,
                 "metric": {
                     "expressionType": "SQL",
-                    "sqlExpression": "{{ '{% if' }} from_dttm {{ '%}' }} count(*) {{ '{% else %}' }} count(*) {{ '{% endif %}' }}",
+                    "sqlExpression": "{{ '{% if' }} from_dttm {{ '%}' }} count(*) {{ '{% else %}' }} count(*) {{ '{% endif %}' }}",  # noqa: E501
                     "column": None,
                     "aggregate": None,
                     "datasourceWarning": False,
@@ -203,7 +203,7 @@ GROUP BY action""",
 "viz_type":"big_number_total","slice_id":1,"metric":{"expressionType":"SQL","sqlExpression":"{{ '{% if' }} from_dttm {{ '%}' }} count(*) {{ '{% else %}' }} count(*) {{ '{% endif %}' }}",
 "column":null,"aggregate":null,"datasourceWarning":false,"hasCustomLabel":true,"label":"custom_calculation","optionName":"metric_6aq7h4t8b3t_jbp2rak398o"},
 "adhoc_filters":[],"header_font_size":0.4,"subheader_font_size":0.15,"y_axis_format":"SMART_NUMBER","time_format":"smart_date",
-"extra_form_data":{},"dashboards":[],"force":false,"result_format":"json","result_type":"full"},"result_format":"json","result_type":"full"}""",
+"extra_form_data":{},"dashboards":[],"force":false,"result_format":"json","result_type":"full"},"result_format":"json","result_type":"full"}""",  # noqa: E501
             ),
         }
 

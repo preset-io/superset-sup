@@ -1,5 +1,7 @@
 # 'sup! - Probably the Best Unofficial Apache Superset CLI 🚀
 
+<img width="453" height="162" alt="Image" src="https://github.com/user-attachments/assets/76433889-e9f9-4813-bfe3-9fd1e4bbe75f" />
+
 **A modern command-line interface for Apache Superset and Preset workspaces**
 
 *Brought to you and fully compatible with Preset • For power users and AI agents*
@@ -20,6 +22,8 @@
 • **Enrich metadata** to/from dbt Core/Cloud - more integrations to come
 • **Automate workflows** and integrate with CI/CD pipelines
 • **Perfect for scripting** and AI-assisted data exploration
+
+<img width="849" height="310" alt="Image" src="https://github.com/user-attachments/assets/994eba52-16cb-49aa-b370-deb7cf346c4c" />
 
 ## 🚀 Quick Start
 

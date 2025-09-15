@@ -129,21 +129,24 @@ def show_banner():
     console.print()
 
 
-# Add command modules - ordered by typical workflow
-app.add_typer(config_cmd.app, name="config", help="Manage authentication and configuration")
-app.add_typer(workspace.app, name="workspace", help="Manage workspaces")
-app.add_typer(database.app, name="database", help="Manage databases")
-app.command(name="sql", help="Execute SQL queries")(sql.sql_command)
-app.add_typer(dataset.app, name="dataset", help="Manage datasets")
-app.add_typer(chart.app, name="chart", help="Manage charts")
-app.add_typer(dashboard.app, name="dashboard", help="Manage dashboards")
-app.add_typer(query.app, name="query", help="Manage saved queries")
-app.add_typer(user.app, name="user", help="Manage users")
+# Add command modules with logical sectioning
+
+app.add_typer(config_cmd.app, name="config", rich_help_panel="Configuration & Setup")
+app.add_typer(sql.app, name="sql", rich_help_panel="Direct Data Access")
 app.add_typer(
-    sync.app,
-    name="sync",
-    help="Multi-target asset synchronization with templating and git-ready folder structure",
+    workspace.app, name="workspace", help="Manage workspaces", rich_help_panel="Manage Assets"
 )
+app.add_typer(
+    database.app, name="database", help="Manage databases", rich_help_panel="Manage Assets"
+)
+app.add_typer(dataset.app, name="dataset", help="Manage datasets", rich_help_panel="Manage Assets")
+app.add_typer(chart.app, name="chart", help="Manage charts", rich_help_panel="Manage Assets")
+app.add_typer(
+    dashboard.app, name="dashboard", help="Manage dashboards", rich_help_panel="Manage Assets"
+)
+app.add_typer(query.app, name="query", help="Manage saved queries", rich_help_panel="Manage Assets")
+app.add_typer(user.app, name="user", help="Manage users", rich_help_panel="Manage Assets")
+app.add_typer(sync.app, name="sync", rich_help_panel="Synchronize Assets Across Workspaces")
 app.add_typer(theme.app, name="theme", help="Test themes and colors", hidden=True)
 
 

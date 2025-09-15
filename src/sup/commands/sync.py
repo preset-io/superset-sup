@@ -16,28 +16,33 @@ from typing_extensions import Annotated
 from sup.config.sync import SyncConfig, validate_sync_folder
 from sup.output.styles import EMOJIS, RICH_STYLES
 
-SYNC_HELP = """🔄 **Multi-target asset synchronization** - pull from source, push to targets.
 
-**Structure:** `sync_config.yml` + `assets/` folder (git-ready)
-**Features:** Precise selection, overwrite rules, enterprise workflows
-**Examples:** Multi-customer deployments, environment promotion
-**Start:** `sup sync create ./my_sync --source 123 --targets 456,789`"""
+def format_sync_help():
+    """Create beautifully formatted help text for sync command group."""
+    from sup.output.styles import COLORS
 
-app = typer.Typer(rich_markup_mode="markdown")
+    return f"""[not dim][bold bright_white]🔄 Multi-target asset synchronization[/bold bright_white][/not dim]  # noqa: E501
+
+[bold {COLORS.primary}]Key Features:[/bold {COLORS.primary}]
+• [bright_white]Git-ready folder structure:[/bright_white] [cyan]sync_config.yml[/cyan] + [cyan]assets/[/cyan] folder  # noqa: E501
+• [bright_white]Jinja2 templating:[/bright_white] Environment-specific customization with variables
+• [bright_white]Precise asset selection:[/bright_white] Universal filters work with sync operations
+• [bright_white]Enterprise workflows:[/bright_white] Multi-customer deployments, environment promotion  # noqa: E501
+• [bright_white]Safe operations:[/bright_white] Dry-run mode, overwrite protection, validation
+
+[bold {COLORS.primary}]Common Workflows:[/bold {COLORS.primary}]
+• [bright_white]Environment promotion:[/bright_white] Dev → Staging → Production
+• [bright_white]Multi-customer deployment:[/bright_white] Template → Customer A, B, C
+• [bright_white]Backup & restore:[/bright_white] Pull assets for version control
+
+[bold {COLORS.primary}]Quick Start:[/bold {COLORS.primary}]
+• [bold]Step 1:[/bold] [cyan]sup sync create ./my_sync --source 123 --targets 456,789[/cyan]
+• [bold]Step 2:[/bold] [cyan]sup sync run ./my_sync --dry-run[/cyan] - Preview operations
+• [bold]Step 3:[/bold] [cyan]sup sync run ./my_sync[/cyan] - Execute synchronization"""  # noqa: E501
+
+
+app = typer.Typer(help=format_sync_help(), rich_markup_mode="rich", no_args_is_help=True)
 console = Console()
-
-
-@app.callback(invoke_without_command=True)
-def sync_main(ctx: typer.Context):
-    SYNC_HELP
-    if ctx.invoked_subcommand is None:
-        # Show help when no subcommand is provided
-        print(ctx.get_help())
-        raise typer.Exit()
-
-
-# Set the docstring dynamically
-sync_main.__doc__ = SYNC_HELP
 
 
 @app.command("run")

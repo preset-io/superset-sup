@@ -11,11 +11,36 @@ from typing_extensions import Annotated
 
 from sup.output.styles import COLORS, EMOJIS, RICH_STYLES
 
-config_help = (
-    "Manage configuration (files: ~/.sup/config.yml, env vars: SUP_*, use 'sup config env')"
-)
 
-app = typer.Typer(help=config_help, name="config", no_args_is_help=False)
+def format_config_help():
+    """Create beautifully formatted help text for config command group."""
+    return f"""[not dim][bold bright_white]⚙️ Configuration Management[/bold bright_white][/not dim]
+
+[bold {COLORS.primary}]Configuration Sources (priority order):[/bold {COLORS.primary}]
+• [bright_white]Environment variables:[/bright_white] [cyan]SUP_*[/cyan] (highest priority)
+• [bright_white]Global config:[/bright_white] [cyan]~/.sup/config.yml[/cyan]
+• [bright_white]Project config:[/bright_white] [cyan].sup/state.yml[/cyan] (current directory)
+
+[bold {COLORS.primary}]Key Settings:[/bold {COLORS.primary}]
+• [bright_white]Authentication:[/bright_white] API tokens, workspace credentials
+• [bright_white]Defaults:[/bright_white] Current workspace ID, database ID, target workspace
+• [bright_white]Preferences:[/bright_white] Output formats, asset folder paths
+• [bright_white]Enterprise:[/bright_white] Cross-workspace sync configuration
+
+[bold {COLORS.primary}]Quick Setup:[/bold {COLORS.primary}]
+• [bold]Step 1:[/bold] [cyan]sup config auth[/cyan] - Set up authentication credentials
+• [bold]Step 2:[/bold] [cyan]sup config show[/cyan] - Verify current settings
+• [bold]Step 3:[/bold] [cyan]sup config env[/cyan] - See all available environment variables
+
+[bold {COLORS.primary}]Common Tasks:[/bold {COLORS.primary}]
+• [bright_white]Set workspace:[/bright_white] [cyan]sup config set workspace-id 123[/cyan]
+• [bright_white]Set target:[/bright_white] [cyan]sup config set target-workspace-id 456[/cyan]
+• [bright_white]Asset folder:[/bright_white] [cyan]sup config set assets-folder ./my-assets[/cyan]"""  # noqa: E501  # noqa: E501
+
+
+app = typer.Typer(
+    help=format_config_help(), rich_markup_mode="rich", name="config", no_args_is_help=True
+)
 
 # Use themed console to match main app styling
 
@@ -29,50 +54,6 @@ preset_theme = Theme(
 )
 
 console = Console(theme=preset_theme)
-
-
-@app.callback(invoke_without_command=True)
-def config_main(ctx: typer.Context):
-    """
-    sup Configuration Management
-
-    Quick configuration overview and pointers to detailed commands.
-    """
-    if ctx.invoked_subcommand is None:
-        from sup.output.styles import COLORS
-
-        # Show helpful configuration overview when no subcommand is provided
-        console.print(f"{EMOJIS['config']} sup Configuration", style=f"bold {COLORS.primary}")
-        console.print()
-
-        console.print("📁 Configuration Files:", style=f"bold {COLORS.primary}")
-        console.print("  • Global: ~/.sup/config.yml", style=RICH_STYLES["secondary"])
-        console.print("  • Project: .sup/state.yml", style=RICH_STYLES["secondary"])
-        console.print()
-
-        console.print("⚙️ Environment Variables (override files):", style=f"bold {COLORS.primary}")
-        console.print("  • SUP_PRESET_API_TOKEN", style=RICH_STYLES["secondary"])
-        console.print("  • SUP_WORKSPACE_ID", style=RICH_STYLES["secondary"])
-        console.print("  • SUP_DATABASE_ID", style=RICH_STYLES["secondary"])
-        console.print("  • And more...", style=RICH_STYLES["muted"])
-        console.print()
-
-        console.print("🚀 Quick Commands:", style=f"bold {COLORS.primary}")
-        console.print(
-            "  sup config show      # Show current settings",
-            style=RICH_STYLES["accent"],
-        )
-        console.print(
-            "  sup config env       # Complete environment variable reference",
-            style=RICH_STYLES["accent"],
-        )
-        console.print(
-            "  sup config auth      # Set up authentication",
-            style=RICH_STYLES["accent"],
-        )
-        console.print()
-
-        console.print("💡 For complete help: sup config --help", style=RICH_STYLES["muted"])
 
 
 @app.command("show")

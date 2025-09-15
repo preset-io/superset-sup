@@ -14,6 +14,58 @@ from sup.output.styles import EMOJIS, RICH_STYLES
 
 console = Console()
 
+# Create SQL app for better sectioning control
+app = typer.Typer(help="🔍 Get direct access to your data", no_args_is_help=True)
+
+
+@app.callback(invoke_without_command=True)
+def sql_main(
+    ctx: typer.Context,
+    query: Annotated[Optional[str], typer.Argument(help="SQL query to execute")] = None,
+    interactive: Annotated[
+        bool,
+        typer.Option("--interactive", "-i", help="Start interactive SQL session"),
+    ] = False,
+    workspace_id: Annotated[
+        Optional[int],
+        typer.Option("--workspace-id", "-w", help="Workspace ID"),
+    ] = None,
+    database_id: Annotated[
+        Optional[int],
+        typer.Option("--database-id", "-d", help="Database ID"),
+    ] = None,
+    json_output: Annotated[bool, typer.Option("--json", "-j", help="Output as JSON")] = False,
+    csv_output: Annotated[bool, typer.Option("--csv", "-c", help="Output as CSV")] = False,
+    yaml_output: Annotated[bool, typer.Option("--yaml", "-y", help="Output as YAML")] = False,
+    porcelain: Annotated[
+        bool,
+        typer.Option("--porcelain", help="Machine-readable output (no decorations)"),
+    ] = False,
+    limit: Annotated[
+        int,
+        typer.Option("--limit", "-l", help="Maximum rows to fetch"),
+    ] = 1000,
+    max_display_rows: Annotated[
+        int,
+        typer.Option("--max-rows", help="Maximum rows to display"),
+    ] = 100,
+):
+    """Execute SQL queries against your databases."""
+    if ctx.invoked_subcommand is None:
+        # Execute the sql command directly
+        sql_command(
+            query,
+            interactive,
+            workspace_id,
+            database_id,
+            json_output,
+            csv_output,
+            yaml_output,
+            porcelain,
+            limit,
+            max_display_rows,
+        )
+
 
 def execute_sql_query(
     query: str,

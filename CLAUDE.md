@@ -56,12 +56,14 @@ src/sup/
 │   ├── query.py              # Saved query discovery
 │   ├── user.py               # User management
 │   ├── sql.py                # Direct SQL execution
+│   ├── sync.py               # Multi-asset sync operations (NEW)
 │   └── config.py             # Configuration management
 ├── clients/                   # sup-specific client wrappers
 │   ├── preset.py             # Wrapped PresetClient with sup UX
 │   └── superset.py           # Wrapped SupersetClient with sup UX
 ├── config/                    # Modern Pydantic configuration
 │   ├── settings.py           # Type-safe config models
+│   ├── sync.py               # Sync configuration models (NEW)
 │   └── paths.py              # Config file path resolution
 ├── filters/                   # Universal filtering system
 │   ├── base.py               # UniversalFilters for all entities
@@ -111,7 +113,12 @@ sup sql "SELECT COUNT(*) FROM sales" --json  # JSON for automation
 sup chart list --mine --limit 10              # Universal filtering
 sup chart pull --mine                         # Pull charts + dependencies to ./assets/
 sup chart push --workspace-id=456 --force     # Push to target workspace
-sup chart sync ./templates --option env=prod  # Advanced templating (NEXT)
+
+# Multi-asset sync workflows (NEW - WORKING)
+sup sync create ./my_sync --source 123 --targets 456,789  # Create sync config
+sup sync run ./my_sync --dry-run                          # Preview operations
+sup sync run ./my_sync --pull-only                        # Pull from source
+sup sync validate ./my_sync                               # Validate config
 
 # Configuration management
 sup config show                               # Display all current settings
@@ -123,7 +130,69 @@ sup config set target-workspace-id 789        # Set cross-workspace target
 - ✅ **Chart Pull/Push Pattern**: Complete asset lifecycle with dependency management
 - ✅ **Enterprise Features**: Cross-workspace sync, target configuration, safety confirmations
 - ✅ **Production Tested**: Live integration with real Preset workspaces
-- 🎯 **Next**: Chart sync for advanced templating workflows (bridges pull/push with legacy CLI power)
+- ✅ **Multi-Asset Sync Framework**: YAML-based sync configs with automatic dependency resolution
+- ✅ **Sync Pull Implementation**: Full working implementation using legacy export_resource
+- 🎯 **Next**: Sync push implementation for complete multi-target workflows
+
+## Multi-Asset Sync Implementation (NEW)
+
+### Sync Architecture Decisions
+
+**Key architectural choices made during sync implementation:**
+
+1. **Always Overwrite in Sync**: Removed `overwrite` option from sync config schema
+   - Sync operations are opinionated: local should match remote
+   - Users have git for safety (`git stash`, `git diff`, `--dry-run`)
+   - Eliminates sync config complexity and user confusion
+
+2. **Multi-Asset Type Support**: Single sync config can handle multiple asset types
+   - Each `export_zip()` call includes dependencies automatically
+   - Later asset exports overwrite earlier dependency files (beneficial)
+   - Gets most up-to-date dependency state during sync operation
+
+3. **Atomic Operations via Legacy CLI**:
+   - `export_resource()` from `preset_cli.cli.superset.export` provides atomic export
+   - `client.export_zip(resource_name, ids)` handles batching and dependencies
+   - Reuses battle-tested export logic with proper error handling
+
+### Sync Configuration Schema
+
+```yaml
+# sync_config.yml - Multi-target sync configuration
+source:
+  workspace_id: 187
+  assets:
+    dashboards:
+      selection: ids
+      ids: [254]
+      include_dependencies: true
+    charts:
+      selection: all
+      include_dependencies: true
+    # NOTE: No overwrite option - always true in sync operations
+
+target_defaults:
+  overwrite: false                    # For push operations
+  jinja_context:
+    company: Default Company
+    region: us-east-1
+
+targets:
+  - workspace_id: 456
+    name: production
+    jinja_context:
+      environment: production
+```
+
+### Sync Implementation Status
+
+- ✅ **Sync Config Models**: Pydantic models with validation
+- ✅ **Sync Pull**: Working implementation using `export_resource()`
+- ✅ **Multi-Asset Support**: Single config handles databases, datasets, charts, dashboards
+- ✅ **Dependency Resolution**: Automatic via existing export_zip logic
+- ✅ **Dry Run**: Preview operations without execution
+- 🎯 **Sync Push**: Connect to existing `native()` import function
+- 🎯 **Jinja Templating**: Environment-specific asset customization
 
 ### dbt Integration Entity Distribution
 **How dbt capabilities map to sup entities:**

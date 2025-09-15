@@ -21,7 +21,8 @@ def format_sync_help():
     """Create beautifully formatted help text for sync command group."""
     from sup.output.styles import COLORS
 
-    return f"""[not dim][bold bright_white]🔄 Multi-target asset synchronization[/bold bright_white][/not dim]  # noqa: E501
+    return f"""\
+[not dim][bold bright_white]🔄 Multi-target asset synchronization[/bold bright_white][/not dim]
 
 [bold {COLORS.primary}]Key Features:[/bold {COLORS.primary}]
 • [bright_white]Git-ready folder structure:[/bright_white] [cyan]sync_config.yml[/cyan] + [cyan]assets/[/cyan] folder  # noqa: E501

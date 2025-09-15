@@ -10,15 +10,20 @@
 
 ## ✨ What is 'sup!?
 
-'sup is a solid CLI for Apache Superset power users and their agents. It provides sectioned help, rich terminal formatting, and git-like workflows for managing Superset and Preset workspaces efficiently.
+'sup is a solid CLI for Apache Superset power users and their agents. It provides
+sectioned help, rich terminal formatting, and git-like workflows for managing
+Superset and Preset workspaces efficiently.
 
 **[Screenshot of beautiful ASCII art and sectioned help will go here]**
 
 ## 🎯 Key Capabilities
 
-- **Run any SQL** through Superset's data access layer - get results as rich tables, CSV, YAML or JSON
-- **Backup and restore** charts, dashboards, and datasets with full dependency tracking
-- **Synchronize assets** across Superset instances with Jinja2 templating for customization
+- **Run any SQL** through Superset's data access layer - get results as rich
+  tables, CSV, YAML or JSON
+- **Backup and restore** charts, dashboards, and datasets with full dependency
+  tracking
+- **Synchronize assets** across Superset instances with Jinja2 templating for
+  customization
 - **Enrich metadata** to/from dbt Core/Cloud - more integrations to come
 - **Automate workflows** and integrate with CI/CD pipelines
 - **Perfect for scripting** and AI-assisted data exploration
@@ -62,7 +67,8 @@ sup sync run ./my_sync                                    # Execute sync
 ## 📋 Command Reference
 
 ### Configuration & Setup
-- `sup config` - Beautiful configuration guide with sources, settings, and setup steps
+- `sup config` - Beautiful configuration guide with sources, settings, and setup
+  steps
 - `sup config auth` - Set up authentication credentials
 - `sup config show` - Display current configuration
 - `sup config set workspace-id 123` - Set default workspace
@@ -94,10 +100,12 @@ sup sync run ./my_sync                                    # Execute sync
 
 ### Sectioned Help System
 Commands are organized in logical sections that guide your workflow:
-- **Configuration & Setup** → **Direct Data Access** → **Manage Assets** → **Synchronize**
+- **Configuration & Setup** → **Direct Data Access** → **Manage Assets** →
+  **Synchronize**
 
 ### Rich Output Formats
-- **Rich Tables**: Colorful, clickable tables with emerald green Preset branding
+- **Rich Tables**: Colorful, clickable tables with emerald green Preset
+  branding
 - **JSON**: Perfect for AI agents and automation (`--json`)
 - **CSV**: Direct data export (`--csv`)
 - **YAML**: Configuration-friendly format (`--yaml`)
@@ -109,7 +117,8 @@ Every entity command supports powerful, consistent filters:
 --mine                      # Objects owned by current user
 --name "pattern*"           # Name pattern matching with wildcards
 --limit 50                  # Result pagination (default: 50)
---search "revenue"          # Server-side search (charts, dashboards, datasets)
+--search "revenue"          # Server-side search (charts, dashboards,
+                           # datasets)
 --json                      # JSON output for automation
 ```
 
@@ -126,22 +135,29 @@ sup dashboard list --search="exec" --porcelain # Machine-readable output
 ### Chart Lifecycle (Production Ready)
 ```bash
 # Pull charts + dependencies to filesystem
-sup chart pull --mine                         # Pull your charts + datasets + databases
-sup chart pull --name="*revenue*"             # Pull revenue charts + dependencies
-sup chart pull --id=3586                      # Pull specific chart + dependencies
+sup chart pull --mine                         # Pull your charts + datasets +
+                                              # databases
+sup chart pull --name="*revenue*"             # Pull revenue charts +
+                                              # dependencies
+sup chart pull --id=3586                      # Pull specific chart +
+                                              # dependencies
 
 # Push from filesystem to workspace
-sup chart push                                # Push to configured target workspace
+sup chart push                                # Push to configured target
+                                              # workspace
 sup chart push --workspace-id=456             # Push to specific workspace
-sup chart push --overwrite --force            # Push with overwrite, skip confirmations
+sup chart push --overwrite --force            # Push with overwrite, skip
+                                              # confirmations
 ```
 
 ### Advanced Sync Workflows
 ```bash
 # Multi-target synchronization with templating
 sup sync create ./templates --source 123 --targets 456,789,101
-sup sync run ./templates --option env=prod    # Jinja2 templating for environments
-sup sync run --bidirectional                 # Two-way sync with conflict resolution
+sup sync run ./templates --option env=prod    # Jinja2 templating for
+                                              # environments
+sup sync run --bidirectional                 # Two-way sync with conflict
+                                              # resolution
 ```
 
 ## 🏗️ Architecture
@@ -160,7 +176,8 @@ sup sync run --bidirectional                 # Two-way sync with conflict resolu
 
 ### Enterprise Features
 - **Cross-workspace sync**: Source workspace → multiple target workspaces
-- **Asset dependencies**: Automatic resolution of charts → datasets → databases
+- **Asset dependencies**: Automatic resolution of charts → datasets →
+  databases
 - **Jinja2 templating**: Environment-specific customization
 - **Git-ready**: YAML-based assets work perfectly with version control
 
@@ -170,13 +187,15 @@ sup sync run --bidirectional                 # Two-way sync with conflict resolu
 Get the compiled SQL behind any chart - business logic included:
 ```bash
 sup chart sql 3628
-# Output: Complex SQL with filters, aggregations, joins - the actual query Superset runs
+# Output: Complex SQL with filters, aggregations, joins - the actual query
+# Superset runs
 ```
 
 ### Chart Data Export
 Access actual chart results as structured data:
 ```bash
-sup chart data 3628 --json     # Perfect for analysis, reporting, AI models
+sup chart data 3628 --json     # Perfect for analysis, reporting, AI
+                               # models
 sup chart data 3628 --csv      # Direct CSV export
 ```
 
@@ -190,15 +209,23 @@ Efficient search across all entity types:
 ## 🏠 Superset Compatibility
 
 ### Primary Focus: Preset-Hosted Instances
-'sup is primarily designed for **Preset-hosted Superset instances** and has been extensively tested with Preset workspaces. All features work seamlessly with Preset's multi-workspace environment.
+'sup is primarily designed for **Preset-hosted Superset instances** and has been
+extensively tested with Preset workspaces. All features work seamlessly with
+Preset's multi-workspace environment.
 
 ### Self-Hosted Superset
-**Does it work with my Superset instance?** Most functionality should work, but depending on your authentication setup, you may need to tweak the code. We welcome contributions from the broader Superset community to improve compatibility.
+**Does it work with my Superset instance?** Most functionality should work, but
+depending on your authentication setup, you may need to tweak the code. We
+welcome contributions from the broader Superset community to improve
+compatibility.
 
-**Preset-free mode**: A future version could remove multi-workspace constructs for single-instance Superset deployments. If you're interested in this, please contribute or open an issue.
+**Preset-free mode**: A future version could remove multi-workspace constructs
+for single-instance Superset deployments. If you're interested in this, please
+contribute or open an issue.
 
 ### Contributing for Broader Compatibility
-We're open to contributions that enable 'sup for the entire Superset community. Areas that likely need work for self-hosted instances:
+We're open to contributions that enable 'sup for the entire Superset community.
+Areas that likely need work for self-hosted instances:
 - Authentication methods beyond Preset API tokens
 - Single-instance mode (removing workspace concepts)
 - Different API endpoint structures
@@ -240,9 +267,11 @@ sup chart push --workspace-id=$PROD_WS --force # Deploy to production
 sup sync run ./deploy --option env=production  # Multi-environment deploy
 ```
 
-## 🆚 Legacy CLIs
+## 🆚 Previous CLIs
 
-'sup replaces and modernizes the legacy preset-cli and superset-cli tools while maintaining full compatibility with existing workflows. The legacy tools remain available but sup is the recommended modern experience.
+'sup replaces and modernizes the `preset-cli` and `superset-cli` tools while
+maintaining full compatibility with existing workflows. The legacy tools remain
+available but sup is the recommended modern experience.
 
 ### Migration Benefits
 - **Beautiful UX**: Rich formatting vs plain text
@@ -250,21 +279,3 @@ sup sync run ./deploy --option env=production  # Multi-environment deploy
 - **Git-like workflows**: Intuitive pull/push vs complex export/import
 - **Agent-optimized**: Perfect for AI assistants
 - **Type-safe**: Modern Python with full type hints
-
-## 🤝 Contributing
-
-We welcome contributions! 'sup is built with modern Python practices:
-- **Type hints throughout**: Full mypy compatibility
-- **Rich testing**: Comprehensive test suite
-- **Clean architecture**: Modular, extensible design
-- **Beautiful code**: Ruff formatting, clean patterns
-
-Visit [github.com/preset-io/superset-sup](https://github.com/preset-io/superset-sup) to contribute!
-
-## 📄 License
-
-[Insert license information]
-
----
-
-*Built with ❤️ for the Apache Superset and Preset community*

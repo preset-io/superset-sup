@@ -58,9 +58,10 @@ sup database use 5                             # Set default database
 # Dataset discovery
 sup dataset list --mine --limit 10             # My datasets
 sup dataset list --database-id=5               # Datasets in specific DB
+sup dataset list --search="users"              # Server-side search by table name
 
 # Chart analysis & pull/push (git-like terminology)
-sup chart list -l 5 --name="*revenue*"        # Find revenue charts
+sup chart list -l 5 --search="revenue"         # Server-side multi-field search
 sup chart sql 3628                            # Get SQL behind chart!
 sup chart data 3628 --csv                     # Export chart data!
 sup chart pull --mine                         # Pull your charts + dependencies
@@ -68,7 +69,7 @@ sup chart push                                # Push charts to target workspace
 
 # Dashboard management
 sup dashboard list --mine                      # My dashboards
-sup dashboard list --name="*exec*"            # Find executive dashboards
+sup dashboard list --search="exec"             # Server-side title/slug search
 
 # Query exploration
 sup query list --mine                          # My saved queries
@@ -78,6 +79,12 @@ sup query info 399                            # Get saved query details
 sup user list                                  # All users
 sup user export --folder=./security/          # Export users, roles, ownership
 sup user import ./security/ --overwrite       # Import security config
+
+# Multi-target synchronization
+sup sync create ./my_sync --source 123 --targets 456,789  # Create sync folder
+sup sync run ./my_sync --dry-run                          # Preview sync operations
+sup sync run ./my_sync                                    # Execute full sync
+sup sync validate ./my_sync                               # Validate sync config
 ```
 
 ### **Agent-Optimized Operations**
@@ -85,7 +92,8 @@ sup user import ./security/ --overwrite       # Import security config
 # Perfect for AI agents - minimal tokens, structured output
 sup chart data 3628 --json --limit=100        # Structured data access
 sup sql "SELECT COUNT(*) FROM users" -j       # Direct SQL with JSON
-sup chart list -l 10 --porcelain              # Machine-readable lists
+sup chart list --search="revenue" --porcelain # Server-side search, machine-readable
+sup dashboard list --search="exec" --json     # Dashboard search with JSON output
 ```
 
 ## 🏗️ **Architecture Highlights**
@@ -301,15 +309,16 @@ sup dashboard list --mine            # Your dashboards
 - ✅ **Revolutionary Data Access** not available anywhere else
 - ✅ **Chart Pull/Push System** - Complete asset lifecycle with git-like terminology
 - ✅ **Enterprise Cross-Workspace Support** - target-workspace-id for safe multi-instance sync
-- ✅ **Working Configuration System** - All config keys functional (was broken!)
-- ✅ **Consistent Filter Architecture** - All filters resolve to IDs with same behavior
-- ✅ **Production-Grade Quality** with full type safety and zero warnings
-- ✅ **Agent-Optimized** with perfect JSON/porcelain modes
+- ✅ **Server-Side Search** - Efficient search across all entity types (charts, dashboards, datasets)
+- ✅ **Complete Sync Framework** - Multi-target asset synchronization with Jinja2 templating
+- ✅ **Template Support** - Full Jinja2 templating in chart push with reusable DRY parameters
+- ✅ **Production-Grade Quality** with full type safety and zero mypy warnings
+- ✅ **Agent-Optimized** with perfect JSON/porcelain modes and server-side filtering
 
 **Next Strategic Step:**
-- 🎯 **`sup chart sync`** - Advanced templating and bidirectional workflows
-- 🎯 **Complete preset-cli replacement** - Absorb all existing CLI capabilities with sup UX
-- 🎯 **Pattern replication** - Apply chart pull/push/sync to dashboard, dataset, database
+- 🎯 **Sync Implementation** - Complete pull/push logic in sync framework
+- 🎯 **Template Support Expansion** - Apply to dashboard/dataset push commands
+- 🎯 **Cross-Version Compatibility** - Enhanced field compatibility filters
 
 ---
 

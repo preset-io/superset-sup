@@ -17,7 +17,8 @@ class UniversalFilters:
     # Identity filters
     id: Optional[int] = None
     ids: Optional[List[int]] = None
-    name: Optional[str] = None
+    name: Optional[str] = None  # Legacy name pattern matching (for other commands)
+    search: Optional[str] = None  # Server-side text search (for chart command)
     mine: bool = False
     team_id: Optional[int] = None
 
@@ -42,6 +43,7 @@ class UniversalFilters:
             "id",
             "ids",
             "name",
+            "search",
             "mine",
             "team_id",
             "created_after",
@@ -62,6 +64,7 @@ class UniversalFilters:
             id=filtered_updates.get("id", self.id),
             ids=filtered_updates.get("ids", self.ids),
             name=filtered_updates.get("name", self.name),
+            search=filtered_updates.get("search", self.search),
             mine=filtered_updates.get("mine", self.mine),
             team_id=filtered_updates.get("team_id", self.team_id),
             created_after=filtered_updates.get("created_after", self.created_after),
@@ -251,6 +254,7 @@ def parse_universal_filters(
     id_filter: Optional[int] = None,
     ids_filter: Optional[str] = None,
     name_filter: Optional[str] = None,
+    search_filter: Optional[str] = None,
     mine_filter: bool = False,
     team_filter: Optional[int] = None,
     created_after: Optional[str] = None,
@@ -285,6 +289,7 @@ def parse_universal_filters(
         id=id_filter,
         ids=ids_list,
         name=name_filter,
+        search=search_filter,
         mine=mine_filter,
         team_id=team_filter,
         created_after=created_after_dt,

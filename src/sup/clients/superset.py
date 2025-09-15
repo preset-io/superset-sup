@@ -182,6 +182,7 @@ class SupSupersetClient:
         silent: bool = False,
         limit: Optional[int] = None,
         page: int = 0,
+        text_search: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
         """Get datasets with fast pagination - only fetch what we need."""
         try:
@@ -190,16 +191,26 @@ class SupSupersetClient:
 
             from preset_cli.lib import validate_response
 
-            # Build query for single page fetch (use API default order)
-            query = prison.dumps(
-                {
-                    "filters": [],
-                    "order_column": "changed_on_delta_humanized",  # API default
-                    "order_direction": "desc",
-                    "page": page,
-                    "page_size": limit or 50,  # Use our limit as page_size
-                },
-            )
+            # Build query for single page fetch with optional search
+            query_params = {
+                "filters": [],
+                "order_column": "changed_on_delta_humanized",  # API default
+                "order_direction": "desc",
+                "page": page,
+                "page_size": limit or 50,  # Use our limit as page_size
+            }
+
+            # Add text search parameter if provided (ct operator from network monitoring)
+            if text_search:
+                query_params["filters"].append(
+                    {
+                        "col": "table_name",
+                        "opr": "ct",  # contains operator for dataset search
+                        "value": text_search,
+                    },
+                )
+
+            query = prison.dumps(query_params)
 
             url = self.client.baseurl / "api/v1/dataset/" % {"q": query}
             response = self.client.session.get(url)
@@ -240,6 +251,7 @@ class SupSupersetClient:
         silent: bool = False,
         limit: Optional[int] = None,
         page: int = 0,
+        text_search: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
         """Get charts with fast pagination - only fetch what we need."""
         try:
@@ -248,16 +260,26 @@ class SupSupersetClient:
 
             from preset_cli.lib import validate_response
 
-            # Build query for single page fetch (use API default order)
-            query = prison.dumps(
-                {
-                    "filters": [],
-                    "order_column": "changed_on_delta_humanized",  # API default
-                    "order_direction": "desc",
-                    "page": page,
-                    "page_size": limit or 50,  # Use our limit as page_size
-                },
-            )
+            # Build query for single page fetch with optional search
+            query_params = {
+                "filters": [],
+                "order_column": "changed_on_delta_humanized",  # API default
+                "order_direction": "desc",
+                "page": page,
+                "page_size": limit or 50,  # Use our limit as page_size
+            }
+
+            # Add text search parameter if provided (defaults to None for backward compatibility)
+            if text_search:
+                query_params["filters"].append(
+                    {
+                        "col": "slice_name",
+                        "opr": "chart_all_text",  # Superset's multi-field text search
+                        "value": text_search,
+                    },
+                )
+
+            query = prison.dumps(query_params)
 
             url = self.client.baseurl / "api/v1/chart/" % {"q": query}
             response = self.client.session.get(url)
@@ -295,6 +317,7 @@ class SupSupersetClient:
         silent: bool = False,
         limit: Optional[int] = None,
         page: int = 0,
+        text_search: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
         """Get dashboards with fast pagination - only fetch what we need."""
         try:
@@ -303,16 +326,26 @@ class SupSupersetClient:
 
             from preset_cli.lib import validate_response
 
-            # Build query for single page fetch (use API default order)
-            query = prison.dumps(
-                {
-                    "filters": [],
-                    "order_column": "changed_on_delta_humanized",  # API default
-                    "order_direction": "desc",
-                    "page": page,
-                    "page_size": limit or 50,  # Use our limit as page_size
-                },
-            )
+            # Build query for single page fetch with optional search
+            query_params = {
+                "filters": [],
+                "order_column": "changed_on_delta_humanized",  # API default
+                "order_direction": "desc",
+                "page": page,
+                "page_size": limit or 50,  # Use our limit as page_size
+            }
+
+            # Add text search parameter if provided (title_or_slug operator from network monitoring)
+            if text_search:
+                query_params["filters"].append(
+                    {
+                        "col": "dashboard_title",
+                        "opr": "title_or_slug",  # Superset's dashboard text search
+                        "value": text_search,
+                    },
+                )
+
+            query = prison.dumps(query_params)
 
             url = self.client.baseurl / "api/v1/dashboard/" % {"q": query}
             response = self.client.session.get(url)

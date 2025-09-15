@@ -12,8 +12,9 @@ from rich.table import Table
 from typing_extensions import Annotated
 
 from sup.commands.template_params import DisableJinjaOption, LoadEnvOption, TemplateOptions
-from sup.filters.chart import apply_chart_filters, parse_chart_filters
+from sup.filters.chart import parse_chart_filters
 from sup.output.formatters import display_porcelain_list
+from sup.output.spinners import data_spinner, query_spinner
 from sup.output.styles import COLORS, EMOJIS, RICH_STYLES
 
 app = typer.Typer(help="Manage charts", no_args_is_help=True)
@@ -31,9 +32,12 @@ def list_charts(
         Optional[str],
         typer.Option("--ids", help="Filter by multiple IDs (comma-separated)"),
     ] = None,
-    name_filter: Annotated[
+    search_filter: Annotated[
         Optional[str],
-        typer.Option("--name", help="Filter by name pattern (supports wildcards)"),
+        typer.Option(
+            "--search",
+            help="Search charts by text (server-side search across multiple fields)",
+        ),
     ] = None,
     mine_filter: Annotated[
         bool,
@@ -115,6 +119,7 @@ def list_charts(
     Examples:
         sup chart list                                    # All charts
         sup chart list --mine                            # My charts only
+        sup chart list --search="week" --limit 10        # Server search for "week", max 10
         sup chart list --dashboard-id=45 --porcelain    # Charts in dashboard, machine-readable
         sup chart list --viz-type="bar*" --json         # Bar charts, JSON
         sup chart list --modified-after=2024-01-01      # Recent modifications
@@ -128,7 +133,7 @@ def list_charts(
         filters = parse_chart_filters(
             id_filter,
             ids_filter,
-            name_filter,
+            search_filter,
             mine_filter,
             team_filter,
             created_after,
@@ -149,56 +154,42 @@ def list_charts(
             ctx = SupContext()
             client = SupSupersetClient.from_context(ctx, workspace_id)
 
-            # Fetch charts with fast pagination - only one page
+            # Use only server-side filtering - no client-side nonsense
             page = (filters.page - 1) if filters.page else 0
-            charts = client.get_charts(silent=True, limit=filters.limit, page=page)
-
-            # Apply complex client-side filters only if needed
-            from sup.filters.api_params import needs_client_side_filtering
-
-            if (
-                needs_client_side_filtering(filters)
-                or filters.dashboard_id
-                or filters.viz_type
-                or filters.dataset_id
-            ):
-                filtered_charts = apply_chart_filters(charts, filters)
-            else:
-                filtered_charts = charts
+            charts = client.get_charts(
+                silent=True,
+                limit=filters.limit,
+                page=page,
+                text_search=filters.search,  # Pass search term to server
+            )
 
             # Update spinner with results
             if sp:
-                if filtered_charts != charts:
-                    sp.text = (
-                        f"Found {len(charts)} charts, "
-                        f"showing {len(filtered_charts)} after filtering"
-                    )
-                else:
-                    sp.text = f"Found {len(charts)} charts"
+                sp.text = f"Found {len(charts)} charts"
 
         # Display results
         if porcelain:
             # Tab-separated: ID, Name, VizType, Dataset, Dashboard
             display_porcelain_list(
-                filtered_charts,
+                charts,
                 ["id", "slice_name", "viz_type", "datasource_name", "dashboards"],
             )
         elif json_output:
             import json
 
-            console.print(json.dumps(filtered_charts, indent=2, default=str))
+            console.print(json.dumps(charts, indent=2, default=str))
         elif yaml_output:
             import yaml
 
             console.print(
-                yaml.safe_dump(filtered_charts, default_flow_style=False, indent=2),
+                yaml.safe_dump(charts, default_flow_style=False, indent=2),
             )
         else:
             # Use the new table system with proper width management
             from sup.output.tables import display_charts_table as display_charts_table_new
 
             workspace_hostname = ctx.get_workspace_hostname()
-            display_charts_table_new(filtered_charts, workspace_hostname)
+            display_charts_table_new(charts, workspace_hostname)
 
     except Exception as e:
         if not porcelain:
@@ -295,22 +286,21 @@ def chart_sql(
     from sup.clients.superset import SupSupersetClient
     from sup.config.settings import SupContext
 
-    if not porcelain:
-        console.print(
-            f"{EMOJIS['sql']} Getting compiled SQL for chart {chart_id}...",
-            style=RICH_STYLES["info"],
-        )
-
     try:
         ctx = SupContext()
         client = SupSupersetClient.from_context(ctx, workspace_id)
 
-        # Get chart metadata first
-        chart = client.get_chart(chart_id, silent=True)
-        chart_name = chart.get("slice_name", "Unknown")
+        # Get chart metadata and SQL with spinner
+        with query_spinner(f"chart {chart_id} SQL", silent=porcelain) as sp:
+            # Get chart metadata first
+            chart = client.get_chart(chart_id, silent=True)
+            chart_name = chart.get("slice_name", "Unknown")
 
-        # Get the compiled SQL
-        query_result = client.get_chart_data(chart_id, result_type="query", silent=True)
+            if sp:
+                sp.text = f"Getting compiled SQL for chart: {chart_name}"
+
+            # Get the compiled SQL
+            query_result = client.get_chart_data(chart_id, result_type="query", silent=True)
 
         # Extract SQL queries
         sql_queries = []
@@ -393,22 +383,21 @@ def chart_data(
     from sup.clients.superset import SupSupersetClient
     from sup.config.settings import SupContext
 
-    if not porcelain:
-        console.print(
-            f"{EMOJIS['chart']} Getting data for chart {chart_id}...",
-            style=RICH_STYLES["info"],
-        )
-
     try:
         ctx = SupContext()
         client = SupSupersetClient.from_context(ctx, workspace_id)
 
-        # Get chart metadata first
-        chart = client.get_chart(chart_id, silent=True)
-        chart_name = chart.get("slice_name", "Unknown")
+        # Get chart metadata and data with spinner
+        with data_spinner(f"chart {chart_id} data", silent=porcelain) as sp:
+            # Get chart metadata first
+            chart = client.get_chart(chart_id, silent=True)
+            chart_name = chart.get("slice_name", "Unknown")
 
-        # Get the chart data
-        data_result = client.get_chart_data(chart_id, result_type="results", silent=True)
+            if sp:
+                sp.text = f"Getting data for chart: {chart_name}"
+
+            # Get the chart data
+            data_result = client.get_chart_data(chart_id, result_type="results", silent=True)
 
         # Extract and format data
         if "result" in data_result and data_result["result"]:
@@ -863,7 +852,7 @@ def pull_charts(
 
     from sup.clients.superset import SupSupersetClient
     from sup.config.settings import SupContext
-    from sup.filters.chart import apply_chart_filters, parse_chart_filters
+    from sup.filters.chart import parse_chart_filters
     from sup.output.spinners import data_spinner
 
     # Jinja2 escaping markers (from original implementation)
@@ -927,7 +916,7 @@ def pull_charts(
             filters = parse_chart_filters(
                 id_filter=id_filter,
                 ids_filter=ids_filter,
-                name_filter=name_filter,
+                search_filter=name_filter,  # Map legacy name_filter to new search_filter
                 mine_filter=mine_filter,
                 team_filter=None,  # Team inferred from workspace context
                 created_after=created_after,
@@ -935,15 +924,15 @@ def pull_charts(
                 limit_filter=limit,
             )
 
-            # Get all charts and apply filters
-            all_charts = client.get_charts(
+            # Get charts with server-side filtering only
+            charts = client.get_charts(
                 silent=True,
-                limit=None,  # Get all, then filter
+                limit=None,  # Get all matching charts
+                text_search=filters.search,  # Server-side search
             )
-            filtered_charts = apply_chart_filters(all_charts, filters)
 
             # Extract IDs for export
-            chart_ids = [chart["id"] for chart in filtered_charts]
+            chart_ids = [chart["id"] for chart in charts]
 
             if sp:
                 sp.text = f"Found {len(chart_ids)} charts to export"

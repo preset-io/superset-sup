@@ -69,7 +69,7 @@ def parse_chart_filters(
     # Universal filters
     id_filter: Optional[int] = None,
     ids_filter: Optional[str] = None,
-    name_filter: Optional[str] = None,
+    search_filter: Optional[str] = None,
     mine_filter: bool = False,
     team_filter: Optional[int] = None,
     created_after: Optional[str] = None,
@@ -92,17 +92,18 @@ def parse_chart_filters(
     universal = parse_universal_filters(
         id_filter,
         ids_filter,
-        name_filter,
-        mine_filter,
-        team_filter,
-        created_after,
-        modified_after,
-        limit_filter,
-        offset_filter,
-        page_filter,
-        page_size_filter,
-        order_filter,
-        desc_filter,
+        name_filter=None,  # Chart command doesn't use legacy name patterns
+        search_filter=search_filter,  # Chart command uses server-side search
+        mine_filter=mine_filter,
+        team_filter=team_filter,
+        created_after=created_after,
+        modified_after=modified_after,
+        limit_filter=limit_filter,
+        offset_filter=offset_filter,
+        page_filter=page_filter,
+        page_size_filter=page_size_filter,
+        order_filter=order_filter,
+        desc_filter=desc_filter,
     )
 
     # Add chart-specific filters
@@ -111,6 +112,7 @@ def parse_chart_filters(
         id=universal.id,
         ids=universal.ids,
         name=universal.name,
+        search=universal.search,
         mine=universal.mine,
         team_id=universal.team_id,
         created_after=universal.created_after,

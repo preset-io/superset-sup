@@ -17,6 +17,7 @@ from sup.commands import (
     dataset,
     query,
     sql,
+    sync,
     theme,
     user,
     workspace,
@@ -138,6 +139,11 @@ app.add_typer(chart.app, name="chart", help="Manage charts")
 app.add_typer(dashboard.app, name="dashboard", help="Manage dashboards")
 app.add_typer(query.app, name="query", help="Manage saved queries")
 app.add_typer(user.app, name="user", help="Manage users")
+app.add_typer(
+    sync.app,
+    name="sync",
+    help="Multi-target asset synchronization with templating and git-ready folder structure",
+)
 app.add_typer(theme.app, name="theme", help="Test themes and colors", hidden=True)
 
 

@@ -11,7 +11,6 @@ from rich.console import Console
 from rich.table import Table
 from typing_extensions import Annotated
 
-from sup.filters.dataset import apply_dataset_filters, parse_dataset_filters
 from sup.output.formatters import display_porcelain_list
 from sup.output.styles import COLORS, EMOJIS, RICH_STYLES
 
@@ -30,9 +29,9 @@ def list_datasets(
         Optional[str],
         typer.Option("--ids", help="Filter by multiple IDs (comma-separated)"),
     ] = None,
-    name_filter: Annotated[
+    search_filter: Annotated[
         Optional[str],
-        typer.Option("--name", help="Filter by name pattern (supports wildcards)"),
+        typer.Option("--search", help="Search datasets by table name (server-side)"),
     ] = None,
     mine_filter: Annotated[
         bool,
@@ -120,79 +119,45 @@ def list_datasets(
     from sup.output.spinners import data_spinner
 
     try:
-        # Parse filters
-        filters = parse_dataset_filters(
-            id_filter,
-            ids_filter,
-            name_filter,
-            mine_filter,
-            team_filter,
-            created_after,
-            modified_after,
-            limit_filter,
-            offset_filter,
-            page_filter,
-            page_size_filter,
-            order_filter,
-            desc_filter,
-            database_id,
-            schema,
-            table_type,
-        )
+        # No complex filtering - just simple server-side search
 
         # Get datasets from API with spinner (using server-side filtering for performance)
         with data_spinner("datasets", silent=porcelain) as sp:
             ctx = SupContext()
             client = SupSupersetClient.from_context(ctx, workspace_id)
 
-            # Fetch datasets with fast pagination - only one page
-            page = (filters.page - 1) if filters.page else 0
-            datasets = client.get_datasets(silent=True, limit=filters.limit, page=page)
-
-            # Apply complex client-side filters only if needed
-            from sup.filters.api_params import needs_client_side_filtering
-
-            if (
-                needs_client_side_filtering(filters)
-                or filters.database_id
-                or filters.schema
-                or filters.table_type
-            ):
-                filtered_datasets = apply_dataset_filters(datasets, filters)
-            else:
-                filtered_datasets = datasets
+            # Use server-side filtering only - no client-side nonsense
+            datasets = client.get_datasets(
+                silent=True,
+                limit=limit_filter,
+                text_search=search_filter,  # Server-side table name search
+            )
 
             # Update spinner with results
             if sp:
-                if filtered_datasets != datasets:
-                    sp.text = (
-                        f"Found {len(datasets)} datasets, "
-                        f"showing {len(filtered_datasets)} after filtering"
-                    )
-                else:
-                    sp.text = f"Found {len(datasets)} datasets"
+                sp.text = f"Found {len(datasets)} datasets"
 
         # Display results
         if porcelain:
             # Tab-separated: ID, Name, Database, Schema, Type
             display_porcelain_list(
-                filtered_datasets,
+                datasets,
                 ["id", "table_name", "database_name", "schema", "kind"],
             )
         elif json_output:
             import json
 
-            console.print(json.dumps(filtered_datasets, indent=2, default=str))
+            console.print(json.dumps(datasets, indent=2, default=str))
         elif yaml_output:
             import yaml
 
             console.print(
-                yaml.safe_dump(filtered_datasets, default_flow_style=False, indent=2),
+                yaml.safe_dump(datasets, default_flow_style=False, indent=2),
             )
         else:
             # Get hostname for clickable links
             workspace_hostname = ctx.get_workspace_hostname()
-            display_datasets_table(filtered_datasets, workspace_hostname)
+            display_datasets_table(datasets, workspace_hostname)
 
     except Exception as e:
         if not porcelain:

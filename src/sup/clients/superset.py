@@ -192,7 +192,7 @@ class SupSupersetClient:
             from preset_cli.lib import validate_response
 
             # Build query for single page fetch with optional search
-            query_params = {
+            query_params: Dict[str, Any] = {
                 "filters": [],
                 "order_column": "changed_on_delta_humanized",  # API default
                 "order_direction": "desc",
@@ -261,7 +261,7 @@ class SupSupersetClient:
             from preset_cli.lib import validate_response
 
             # Build query for single page fetch with optional search
-            query_params = {
+            query_params: Dict[str, Any] = {
                 "filters": [],
                 "order_column": "changed_on_delta_humanized",  # API default
                 "order_direction": "desc",
@@ -327,7 +327,7 @@ class SupSupersetClient:
             from preset_cli.lib import validate_response
 
             # Build query for single page fetch with optional search
-            query_params = {
+            query_params: Dict[str, Any] = {
                 "filters": [],
                 "order_column": "changed_on_delta_humanized",  # API default
                 "order_direction": "desc",

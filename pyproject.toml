@@ -4,13 +4,13 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "preset-cli"
-description = "A CLI to interact with Preset (https://preset.io/) workspaces."
+description = "'sup - probably the best unofficial Apache Superset CLI. Beautiful, modern interface for Superset and Preset workspaces."
 authors = [
     {name = "Beto Dealmeida", email = "beto@preset.io"},
     {name = "Max Beauchemin", email = "max@preset.io"},
 ]
-license = {text = "Other/Proprietary License"}
-readme = "README.rst"
+license = {file = "LICENSE.txt"}
+readme = "README.md"
 requires-python = ">=3.8"
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -19,7 +19,7 @@ classifiers = [
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
-    "License :: Other/Proprietary License",
+    "License :: Proprietary License",
 ]
 dependencies = [
     "importlib-metadata; python_version<'3.8'",
@@ -54,7 +54,7 @@ dependencies = [
 dynamic = ["version"]
 
 [project.urls]
-Documentation = "https://github.com/preset-io/backend-sdk/blob/master/README.rst"
+Documentation = "https://github.com/preset-io/superset-sup/blob/main/README.md"
 
 [project.optional-dependencies]
 snowflake = ["snowflake-sqlalchemy==1.4.4"]

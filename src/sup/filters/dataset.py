@@ -116,19 +116,20 @@ def parse_dataset_filters(
 
     # Get universal filters first
     universal = parse_universal_filters(
-        id_filter,
-        ids_filter,
-        name_filter,
-        mine_filter,
-        team_filter,
-        created_after,
-        modified_after,
-        limit_filter,
-        offset_filter,
-        page_filter,
-        page_size_filter,
-        order_filter,
-        desc_filter,
+        id_filter=id_filter,
+        ids_filter=ids_filter,
+        name_filter=name_filter,
+        search_filter=None,  # Dataset uses name_filter, not search_filter
+        mine_filter=mine_filter,
+        team_filter=team_filter,
+        created_after=created_after,
+        modified_after=modified_after,
+        limit_filter=limit_filter,
+        offset_filter=offset_filter,
+        page_filter=page_filter,
+        page_size_filter=page_size_filter,
+        order_filter=order_filter,
+        desc_filter=desc_filter,
     )
 
     # Add dataset-specific filters

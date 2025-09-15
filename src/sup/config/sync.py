@@ -71,10 +71,6 @@ class SourceConfig(BaseModel):
 
     workspace_id: int = Field(description="Source workspace ID to pull assets from")
     assets: AssetTypes = Field(description="Asset types and selection criteria")
-    overwrite: bool = Field(
-        default=True,
-        description="Whether to overwrite existing files during pull",
-    )
 
 
 class TargetDefaults(BaseModel):

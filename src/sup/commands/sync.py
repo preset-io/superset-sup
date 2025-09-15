@@ -160,7 +160,7 @@ def run_sync(
     try:
         # Execute sync operations
         if not push_only:
-            execute_pull(sync_config, dry_run, porcelain)
+            execute_pull(sync_config, sync_path, dry_run, porcelain)
 
         if not pull_only:
             execute_push(sync_config, selected_targets, dry_run, porcelain)
@@ -379,7 +379,7 @@ def display_sync_summary(
         console.print(f"   • {target.workspace_id}{name_display} [overwrite: {overwrite}]")
 
 
-def execute_pull(sync_config: SyncConfig, dry_run: bool, porcelain: bool) -> None:
+def execute_pull(sync_config: SyncConfig, sync_path: Path, dry_run: bool, porcelain: bool) -> None:
     """Execute the pull operation from source workspace."""
     if not porcelain:
         console.print(
@@ -388,17 +388,99 @@ def execute_pull(sync_config: SyncConfig, dry_run: bool, porcelain: bool) -> Non
         )
 
     if dry_run:
+        # Show what would be pulled for each asset type
+        asset_summary = []
+        assets = sync_config.source.assets
+        for asset_type in ["databases", "datasets", "charts", "dashboards"]:
+            asset_config = getattr(assets, asset_type)
+            if asset_config:
+                summary = f"{asset_type}: {asset_config.selection}"
+                if asset_config.selection == "ids":
+                    summary += f" ({len(asset_config.ids or [])} items)"
+                asset_summary.append(summary)
+
         if not porcelain:
-            console.print("   [DRY RUN] Would pull assets to assets/ folder")
+            console.print("   [DRY RUN] Would pull assets to assets/ folder:")
+            for summary in asset_summary:
+                console.print(f"     • {summary}")
         return
 
-    # TODO: Implement actual pull logic
-    # This would call the existing pull commands with the asset selections
-    # from sync_config.source.assets
+    # Import the export functionality from legacy CLI
+    from preset_cli.cli.superset.export import export_resource
+    from sup.clients.superset import SupSupersetClient
+    from sup.config.settings import SupContext
 
-    # For now, placeholder
-    if not porcelain:
-        console.print("   Pull operation completed")
+    try:
+        # Get current context and client
+        ctx = SupContext()
+        client = SupSupersetClient.from_context(ctx, sync_config.source.workspace_id)
+
+        # Use the sync config's assets folder method
+        assets_path = sync_config.assets_folder(sync_path)
+
+        # Create assets directory if it doesn't exist
+        assets_path.mkdir(parents=True, exist_ok=True)
+
+        # Process each asset type
+        assets = sync_config.source.assets
+        total_files = 0
+
+        for asset_type in ["databases", "datasets", "charts", "dashboards"]:
+            asset_config = getattr(assets, asset_type)
+            if not asset_config:
+                continue
+
+            if not porcelain:
+                console.print(f"   Pulling {asset_type}...")
+
+            # Get asset IDs based on selection
+            if asset_config.selection == "all":
+                # Get all assets of this type
+                resources = client.client.get_resources(asset_type.rstrip("s"))  # Remove plural
+                requested_ids = set(resource["id"] for resource in resources)
+            elif asset_config.selection == "ids":
+                requested_ids = set(asset_config.ids or [])
+            else:
+                # TODO: Support other selection types (mine, filter)
+                if not porcelain:
+                    console.print(
+                        f"     Skipping {asset_type}: {asset_config.selection} "
+                        "not implemented yet"
+                    )
+                continue
+
+            if not requested_ids:
+                if not porcelain:
+                    console.print(f"     No {asset_type} to pull")
+                continue
+
+            # Use the legacy export_resource function with overwrite=True
+            export_resource(
+                resource_name=asset_type.rstrip("s"),  # Remove plural: charts -> chart
+                requested_ids=requested_ids,
+                root=assets_path,
+                client=client.client,  # Use underlying SupersetClient
+                overwrite=True,  # Always overwrite in sync
+                disable_jinja_escaping=False,
+                skip_related=not asset_config.include_dependencies,
+                force_unix_eol=False,
+            )
+
+            total_files += len(requested_ids)
+
+            if not porcelain:
+                console.print(f"     Pulled {len(requested_ids)} {asset_type}")
+
+        if not porcelain:
+            console.print(f"   Pull operation completed - {total_files} assets exported")
+
+    except Exception as e:
+        if not porcelain:
+            console.print(
+                f"{EMOJIS['error']} Pull operation failed: {e}",
+                style=RICH_STYLES["error"],
+            )
+        raise
 
 
 def execute_push(sync_config: SyncConfig, targets: List, dry_run: bool, porcelain: bool) -> None:

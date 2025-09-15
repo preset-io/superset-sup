@@ -16,12 +16,12 @@
 
 ## 🎯 Key Capabilities
 
-• **Run any SQL** through Superset's data access layer - get results as rich tables, CSV, YAML or JSON
-• **Backup and restore** charts, dashboards, and datasets with full dependency tracking
-• **Synchronize assets** across Superset instances with Jinja2 templating for customization
-• **Enrich metadata** to/from dbt Core/Cloud - more integrations to come
-• **Automate workflows** and integrate with CI/CD pipelines
-• **Perfect for scripting** and AI-assisted data exploration
+- **Run any SQL** through Superset's data access layer - get results as rich tables, CSV, YAML or JSON
+- **Backup and restore** charts, dashboards, and datasets with full dependency tracking
+- **Synchronize assets** across Superset instances with Jinja2 templating for customization
+- **Enrich metadata** to/from dbt Core/Cloud - more integrations to come
+- **Automate workflows** and integrate with CI/CD pipelines
+- **Perfect for scripting** and AI-assisted data exploration
 
 <img width="849" height="310" alt="Image" src="https://github.com/user-attachments/assets/994eba52-16cb-49aa-b370-deb7cf346c4c" />
 

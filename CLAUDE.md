@@ -146,6 +146,9 @@ dbt-cloud-account-id, dbt-cloud-project-id, dbt-cloud-job-id, dbt-cloud-api-toke
 
 ### Environment Setup
 ```bash
+# Activate virtual environment first
+source .venv/bin/activate
+
 # Using uv (preferred for fastest installation)
 uv pip install -e '.[testing]'
 

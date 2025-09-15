@@ -221,17 +221,13 @@ def chart_info(
     """
     from sup.clients.superset import SupSupersetClient
     from sup.config.settings import SupContext
-
-    if not porcelain:
-        console.print(
-            f"{EMOJIS['info']} Loading chart {chart_id} details...",
-            style=RICH_STYLES["info"],
-        )
+    from sup.output.spinners import data_spinner
 
     try:
-        ctx = SupContext()
-        client = SupSupersetClient.from_context(ctx, workspace_id)
-        chart = client.get_chart(chart_id, silent=porcelain)
+        with data_spinner(f"chart {chart_id}", silent=porcelain):
+            ctx = SupContext()
+            client = SupSupersetClient.from_context(ctx, workspace_id)
+            chart = client.get_chart(chart_id, silent=True)
 
         if porcelain:
             # Simple key-value output

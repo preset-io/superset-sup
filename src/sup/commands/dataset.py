@@ -188,17 +188,13 @@ def dataset_info(
     """
     from sup.clients.superset import SupSupersetClient
     from sup.config.settings import SupContext
-
-    if not porcelain:
-        console.print(
-            f"{EMOJIS['info']} Loading dataset {dataset_id} details...",
-            style=RICH_STYLES["info"],
-        )
+    from sup.output.spinners import data_spinner
 
     try:
-        ctx = SupContext()
-        client = SupSupersetClient.from_context(ctx, workspace_id)
-        dataset = client.get_dataset(dataset_id, silent=porcelain)
+        with data_spinner(f"dataset {dataset_id}", silent=porcelain):
+            ctx = SupContext()
+            client = SupSupersetClient.from_context(ctx, workspace_id)
+            dataset = client.get_dataset(dataset_id, silent=True)
 
         if porcelain:
             # Simple key-value output

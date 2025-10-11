@@ -107,62 +107,6 @@ def user_info(
     )
 
 
-@app.command("export")
-def export_users(
-    workspace_id: Annotated[
-        Optional[int],
-        typer.Option("--workspace-id", "-w", help="Workspace ID"),
-    ] = None,
-    folder: Annotated[
-        Optional[str],
-        typer.Option("--folder", "-f", help="Output folder for exported users"),
-    ] = "./security/",
-    format_type: Annotated[
-        str,
-        typer.Option("--format", help="Export format"),
-    ] = "yaml",
-):
-    """
-    Export users, roles, and permissions to files.
-
-    Creates YAML files with user data suitable for version control and import.
-    """
-    console.print(
-        f"{EMOJIS['export']} Exporting users to {folder}...",
-        style=RICH_STYLES["info"],
-    )
-
-    # TODO: Implement user export functionality
-    console.print(
-        f"{EMOJIS['warning']} User export not yet implemented",
-        style=RICH_STYLES["warning"],
-    )
-
-
-@app.command("import")
-def import_users(
-    path: Annotated[str, typer.Argument(help="Path to user data files")],
-    workspace_id: Annotated[
-        Optional[int],
-        typer.Option("--workspace-id", "-w", help="Workspace ID"),
-    ] = None,
-    overwrite: Annotated[
-        bool,
-        typer.Option("--overwrite", help="Overwrite existing users"),
-    ] = False,
-):
-    """
-    Import users, roles, and permissions from files.
-
-    Reads YAML files and creates/updates users and their roles.
-    """
-    console.print(
-        f"{EMOJIS['import']} Importing users from {path}...",
-        style=RICH_STYLES["info"],
-    )
-
-    # TODO: Implement user import functionality
-    console.print(
-        f"{EMOJIS['warning']} User import not yet implemented",
-        style=RICH_STYLES["warning"],
-    )
+# Note: User pull/push commands not yet implemented
+# The user list command provides read-only access to user data
+# Future implementation will follow the chart pull/push pattern

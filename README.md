@@ -6,6 +6,9 @@
 
 *Brought to you and fully compatible with Preset • For power users and AI agents*
 
+> **🧪 Beta Release**: This is an experimental beta release for Preset customers and the Superset community.
+> We welcome feedback and contributions! Please report issues at https://github.com/preset-io/superset-sup/issues
+
 ---
 
 ## ✨ What is 'sup!?
@@ -267,15 +270,38 @@ sup chart push --workspace-id=$PROD_WS --force # Deploy to production
 sup sync run ./deploy --option env=production  # Multi-environment deploy
 ```
 
-## 🆚 Previous CLIs
+## 🆚 Legacy CLIs (preset-cli & superset-cli)
 
-'sup replaces and modernizes the `preset-cli` and `superset-cli` tools while
-maintaining full compatibility with existing workflows. The legacy tools remain
-available but sup is the recommended modern experience.
+This package includes three command-line tools:
+- **`sup`** - The modern, recommended CLI with beautiful UX (🆕 focus of development)
+- **`preset-cli`** - Legacy CLI for Preset workspaces (maintenance mode)
+- **`superset-cli`** - Legacy CLI for standalone Superset (maintenance mode)
 
-### Migration Benefits
+All three CLIs are installed together, ensuring backward compatibility with existing
+workflows while providing a smooth migration path to the modern `sup` experience.
+
+### Why 'sup?
+'sup replaces and modernizes the legacy tools while maintaining full compatibility:
+
 - **Beautiful UX**: Rich formatting vs plain text
 - **Logical organization**: Sectioned help vs long command lists
 - **Git-like workflows**: Intuitive pull/push vs complex export/import
 - **Agent-optimized**: Perfect for AI assistants
 - **Type-safe**: Modern Python with full type hints
+
+### Legacy CLI Documentation
+
+For users still using `preset-cli` or `superset-cli`, please refer to the
+[original preset-cli repository](https://github.com/preset-io/preset-cli) for
+comprehensive documentation. We recommend migrating to `sup` for the best experience,
+but the legacy CLIs will continue to work.
+
+**Migration path**: Most commands have direct equivalents in `sup`. For example:
+```bash
+# Legacy preset-cli
+preset-cli --workspaces=https://workspace.preset.io/ superset export
+
+# Modern sup
+sup workspace use 123
+sup chart pull --mine
+```

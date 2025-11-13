@@ -63,8 +63,8 @@ dynamic = ["version"]
 [project.urls]
 Homepage = "https://github.com/preset-io/superset-sup"
 Documentation = "https://github.com/preset-io/superset-sup/blob/main/README.md"
+Support = "https://preset.io/support"
 Repository = "https://github.com/preset-io/superset-sup"
-"Bug Tracker" = "https://github.com/preset-io/superset-sup/issues"
 "Legacy CLI Documentation" = "https://github.com/preset-io/preset-cli"
 
 [project.optional-dependencies]

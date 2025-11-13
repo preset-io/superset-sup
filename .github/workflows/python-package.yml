@@ -34,5 +34,5 @@ jobs:
 
       - name: Test with pytest
         run: |
-          pre-commit run --all-files
+          uv run pre-commit run --all-files
           uv run pytest --cov-fail-under=100 --cov=src/preset_cli -vv tests/

@@ -6,7 +6,7 @@ Type-safe configuration management with YAML support.
 
 from datetime import datetime
 from enum import Enum
-from typing import Dict, Optional
+from typing import Dict, Optional, Tuple
 
 import yaml
 from pydantic import BaseModel, ConfigDict, Field
@@ -216,7 +216,7 @@ class SupContext:
             or self.global_config.current_database_id
         )
 
-    def get_preset_credentials(self) -> tuple[Optional[str], Optional[str]]:
+    def get_preset_credentials(self) -> Tuple[Optional[str], Optional[str]]:
         """Get Preset API credentials."""
         token = get_env_var("preset_api_token") or self.global_config.preset_api_token
         secret = get_env_var("preset_api_secret") or self.global_config.preset_api_secret

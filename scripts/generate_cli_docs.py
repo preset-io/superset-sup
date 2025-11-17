@@ -28,18 +28,83 @@ def clean_help_text(text: str) -> str:
     rich_markup = re.compile(r'\[/?[^\]]*\]')
     text = rich_markup.sub('', text)
     
-    # Clean up whitespace and format for markdown
-    lines = text.strip().split('\n')
-    cleaned = []
+    return text.strip()
+
+
+def format_help_text_as_markdown(text: str) -> str:
+    """Convert help text to well-formatted markdown sections."""
+    if not text:
+        return ""
+    
+    lines = text.split('\n')
+    formatted = []
+    current_section = None
+    in_list = False
+    
     for line in lines:
         line = line.strip()
-        if line:
-            # Convert bullet points to markdown
-            if line.startswith('•'):
-                line = '- ' + line[1:].strip()
-            cleaned.append(line)
+        if not line:
+            if in_list:
+                formatted.append("")
+                in_list = False
+            continue
+            
+        # Detect section headers (lines ending with colon)
+        if line.endswith(':') and not line.startswith('•') and not line.startswith('-'):
+            if in_list:
+                formatted.append("")
+                in_list = False
+            
+            # Convert to markdown header
+            section_name = line[:-1].strip()
+            if section_name:
+                formatted.append(f"\n## {section_name}\n")
+                current_section = section_name.lower()
+            continue
+        
+        # Handle bullet points
+        if line.startswith('•') or line.startswith('-'):
+            if not in_list:
+                in_list = True
+            item = line[1:].strip() if line.startswith('•') else line[1:].strip()
+            
+            # Special formatting for commands
+            if current_section and 'setup' in current_section or 'tasks' in current_section:
+                # Extract command from description
+                if ':' in item:
+                    desc, cmd = item.split(':', 1)
+                    cmd = cmd.strip()
+                    if cmd.startswith('sup '):
+                        formatted.append(f"- **{desc.strip()}**: `{cmd}`")
+                    else:
+                        formatted.append(f"- **{desc.strip()}**: {cmd}")
+                else:
+                    formatted.append(f"- {item}")
+            else:
+                formatted.append(f"- {item}")
+            continue
+        
+        # Handle step numbers
+        step_match = re.match(r'Step (\d+):\s*(.+)', line)
+        if step_match:
+            if not in_list:
+                in_list = True
+            step_num = step_match.group(1)
+            step_content = step_match.group(2)
+            if ' - ' in step_content:
+                cmd, desc = step_content.split(' - ', 1)
+                formatted.append(f"{step_num}. **{desc.strip()}**: `{cmd.strip()}`")
+            else:
+                formatted.append(f"{step_num}. {step_content}")
+            continue
+            
+        # Regular text
+        if in_list:
+            formatted.append("")
+            in_list = False
+        formatted.append(line)
     
-    return '\n'.join(cleaned)
+    return '\n'.join(formatted)
 
 
 def extract_command_info(app: typer.Typer, command_path: List[str] = None) -> Dict[str, Any]:
@@ -142,19 +207,31 @@ def generate_command_mdx(command: Dict[str, Any], is_subcommand: bool = False) -
     """Generate MDX content for a command."""
     name = ' '.join(command['path']) if command.get('path') else command['name']
     
+    # Extract clean description for frontmatter
+    clean_desc = ""
+    if command['help']:
+        clean_desc = clean_help_text(command['help']).split('\n')[0] if command['help'] else 'CLI command documentation'
+        # Remove emoji and take first sentence
+        clean_desc = re.sub(r'[^\w\s-]', '', clean_desc).strip()
+        if '.' in clean_desc:
+            clean_desc = clean_desc.split('.')[0]
+        clean_desc = clean_desc[:100] + "..." if len(clean_desc) > 100 else clean_desc
+    
     # Build the MDX frontmatter
     frontmatter = f"""---
 title: "sup {name}"
-description: "{command['help'].split('.')[0] if command['help'] else 'CLI command documentation'}"
+description: "{clean_desc or 'CLI command documentation'}"
 ---"""
     
     # Build the content
     content_parts = [frontmatter, ""]
     
-    # Add description if available
+    # Add formatted description if available
     if command['help']:
-        content_parts.append(command['help'])
-        content_parts.append("")
+        formatted_help = format_help_text_as_markdown(clean_help_text(command['help']))
+        if formatted_help:
+            content_parts.append(formatted_help)
+            content_parts.append("")
     
     # Usage section
     content_parts.append("## Usage")
@@ -170,13 +247,13 @@ description: "{command['help'].split('.')[0] if command['help'] else 'CLI comman
     
     # Subcommands section (if any)
     if command.get('subcommands'):
-        content_parts.append("## Commands")
+        content_parts.append("## Subcommands")
         content_parts.append("")
         content_parts.append("| Command | Description |")
         content_parts.append("|---------|-------------|")
         for sub_name, sub_info in command['subcommands'].items():
-            desc = sub_info['help'].split('.')[0] if sub_info['help'] else ""
-            content_parts.append(f"| `{sub_name}` | {desc} |")
+            desc = clean_help_text(sub_info['help']).split('.')[0] if sub_info['help'] else ""
+            content_parts.append(f"| `sup {name} {sub_name}` | {desc} |")
         content_parts.append("")
     
     # Options section

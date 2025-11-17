@@ -1,29 +1,37 @@
 ---
 title: "sup config"
-description: "⚙️ Configuration Management
-Configuration Sources (priority order):
-- Environment variables: SUP_* (highest priority)
-- Global config: ~/"
+description: "Configuration Management"
 ---
 
 ⚙️ Configuration Management
-Configuration Sources (priority order):
+
+## Configuration Sources (priority order)
+
 - Environment variables: SUP_* (highest priority)
 - Global config: ~/.sup/config.yml
 - Project config: .sup/state.yml (current directory)
-Key Settings:
+
+
+## Key Settings
+
 - Authentication: API tokens, workspace credentials
 - Defaults: Current workspace ID, database ID, target workspace
 - Preferences: Output formats, asset folder paths
 - Enterprise: Cross-workspace sync configuration
-Quick Setup:
-- Step 1: sup config auth - Set up authentication credentials
-- Step 2: sup config show - Verify current settings
-- Step 3: sup config env - See all available environment variables
-Common Tasks:
-- Set workspace: sup config set workspace-id 123
-- Set target: sup config set target-workspace-id 456
-- Asset folder: sup config set assets-folder ./my-assets
+
+
+## Quick Setup
+
+- **Step 1**: `sup config auth - Set up authentication credentials`
+- **Step 2**: `sup config show - Verify current settings`
+- **Step 3**: `sup config env - See all available environment variables`
+
+
+## Common Tasks
+
+- **Set workspace**: `sup config set workspace-id 123`
+- **Set target**: `sup config set target-workspace-id 456`
+- **Asset folder**: `sup config set assets-folder ./my-assets`
 
 ## Usage
 
@@ -31,15 +39,15 @@ Common Tasks:
 sup config [COMMAND] [OPTIONS]
 ```
 
-## Commands
+## Subcommands
 
 | Command | Description |
 |---------|-------------|
-| `show` | Display current configuration settings |
-| `set` | Set a configuration value |
-| `auth` | Set up authentication credentials |
-| `init` | Initialize sup configuration in current directory |
-| `env` | Show available environment variables for sup configuration |
+| `sup config show` | Display current configuration settings |
+| `sup config set` | Set a configuration value |
+| `sup config auth` | Set up authentication credentials |
+| `sup config init` | Initialize sup configuration in current directory |
+| `sup config env` | Show available environment variables for sup configuration |
 
 ## Examples
 

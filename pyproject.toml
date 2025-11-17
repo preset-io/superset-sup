@@ -3,7 +3,7 @@ requires = ["setuptools>=46.1.0", "setuptools_scm[toml]>=5", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "preset-cli"
+name = "superset-sup"
 description = "'sup - probably the best unofficial Apache Superset CLI. Beautiful, modern interface for Superset and Preset workspaces."
 authors = [
     {name = "Beto Dealmeida", email = "beto@preset.io"},
@@ -14,13 +14,20 @@ readme = "README.md"
 requires-python = ">=3.8"
 classifiers = [
     "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Intended Audience :: System Administrators",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
-    "License :: Proprietary License",
+    "Topic :: Database",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: System :: Systems Administration",
+    "License :: Other/Proprietary License",
 ]
+keywords = ["superset", "preset", "cli", "data", "analytics", "business-intelligence"]
 dependencies = [
     "importlib-metadata; python_version<'3.8'",
     "Cython>=0.29.26",
@@ -28,7 +35,7 @@ dependencies = [
     "appdirs>=1.4.4",
     "backoff>=1.10.0",
     "beautifulsoup4>=4.10.0",
-    "click>=8.0.3",
+    "click>=8.1.2",
     "jinja2>=3.0.3",
     "marshmallow>=3.17.0",
     "numpy>=1.21.5",
@@ -54,7 +61,11 @@ dependencies = [
 dynamic = ["version"]
 
 [project.urls]
+Homepage = "https://github.com/preset-io/superset-sup"
 Documentation = "https://github.com/preset-io/superset-sup/blob/main/README.md"
+Support = "https://preset.io/support"
+Repository = "https://github.com/preset-io/superset-sup"
+"Legacy CLI Documentation" = "https://github.com/preset-io/preset-cli"
 
 [project.optional-dependencies]
 snowflake = ["snowflake-sqlalchemy==1.4.4"]

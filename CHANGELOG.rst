@@ -5,6 +5,12 @@ Changelog
 Next
 ====
 
+- **BREAKING**: Package renamed from ``preset-cli`` to ``superset-sup`` for PyPI publication
+- All three CLIs now ship together: ``sup`` (modern, recommended), ``preset-cli`` (legacy), and ``superset-cli`` (legacy)
+- Added comprehensive beta/experimental release documentation for Preset customers
+- Enhanced README with migration guide from legacy CLIs to modern ``sup`` CLI
+- Added PUBLISHING.md with detailed PyPI publication instructions
+
 Version 0.3.7 - 2025-07-24
 ==========================
 

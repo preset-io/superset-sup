@@ -60,3 +60,6 @@ MANIFEST
 # sup CLI local state and assets
 .sup/
 assets/
+
+# dotenv files
+.envrc

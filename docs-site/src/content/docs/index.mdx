@@ -1,0 +1,56 @@
+---
+title: Welcome to sup CLI
+description: Beautiful, modern interface for Apache Superset and Preset workspaces
+template: splash
+hero:
+  tagline: The best unofficial Apache Superset CLI with a git-like interface for managing your analytics assets
+  image:
+    file: ../../assets/houston.webp
+  actions:
+    - text: Quick Start
+      link: /introduction/
+      icon: right-arrow
+      variant: primary
+    - text: View Commands
+      link: /commands/workspace/
+      icon: external
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+## Features
+
+<CardGrid stagger>
+  <Card title="Git-like Workflow" icon="github">
+    Pull, push, and sync your Superset assets with familiar commands
+  </Card>
+  <Card title="Cross-Workspace Sync" icon="rocket">
+    Seamlessly move charts and dashboards between environments
+  </Card>
+  <Card title="Beautiful Output" icon="star">
+    Rich tables, emerald branding, and progress indicators
+  </Card>
+  <Card title="Enterprise Ready" icon="setting">
+    JWT authentication, multi-workspace support, and team management
+  </Card>
+</CardGrid>
+
+## Quick Example
+
+```bash
+# Set your workspace
+sup workspace use 123
+
+# Pull your charts
+sup chart pull --mine
+
+# Run SQL queries
+sup sql "SELECT COUNT(*) FROM users"
+
+# Push to another workspace
+sup chart push --workspace-id 456
+```
+
+## Getting Started
+
+Start with our [introduction](/introduction/) to understand sup's core concepts, then follow the [installation guide](/installation/) to get up and running.

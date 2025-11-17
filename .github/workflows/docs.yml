@@ -1,0 +1,86 @@
+name: Generate and Build Documentation
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/sup/**/*.py'          # Trigger on CLI changes
+      - 'docs-site/**'             # Or manual doc updates
+      - 'scripts/generate_cli_docs.py'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/sup/**/*.py'
+      - 'docs-site/**'
+      - 'scripts/generate_cli_docs.py'
+  workflow_dispatch:               # Allow manual trigger
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install sup CLI
+        run: |
+          pip install --upgrade pip
+          pip install -e .
+
+      - name: Generate CLI command documentation
+        run: python scripts/generate_cli_docs.py
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: docs-site/package-lock.json
+
+      - name: Install dependencies
+        working-directory: docs-site
+        run: npm ci
+
+      - name: Build documentation site
+        working-directory: docs-site
+        run: npm run build
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: documentation-site
+          path: docs-site/dist
+
+  deploy:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: documentation-site
+          path: ./dist
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload to GitHub Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./dist
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

@@ -1,0 +1,40 @@
+---
+title: "sup chart"
+description: "Manage charts"
+---
+
+Manage charts
+
+## Usage
+
+```bash
+sup chart [COMMAND] [OPTIONS]
+```
+
+## Subcommands
+
+| Command | Description |
+|---------|-------------|
+| `sup chart list` | List charts in the current or specified workspace |
+| `sup chart info` | Show detailed information about a chart |
+| `sup chart sql` | Get the compiled SQL query that powers a chart |
+| `sup chart data` | Get the actual data results from a chart |
+| `sup chart pull` | Pull chart definitions from Superset workspace to local filesystem |
+| `sup chart push` | Push chart definitions from local filesystem to Superset workspace |
+
+## Examples
+
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+
+<Tabs>
+  <TabItem label="List charts">
+    ```bash
+    sup chart list --mine
+    ```
+  </TabItem>
+  <TabItem label="Pull charts">
+    ```bash
+    sup chart pull --ids 123,456
+    ```
+  </TabItem>
+</Tabs>

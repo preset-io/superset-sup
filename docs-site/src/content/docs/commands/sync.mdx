@@ -1,0 +1,54 @@
+---
+title: "sup sync"
+description: "Multi-target asset synchronization"
+---
+
+🔄 Multi-target asset synchronization
+
+## Key Features
+
+- Git-ready folder structure: sync_config.yml + assets/ folder  # noqa: E501
+- Jinja2 templating: Environment-specific customization with variables
+- Precise asset selection: Universal filters work with sync operations
+- Enterprise workflows: Multi-customer deployments, environment promotion  # noqa: E501
+- Safe operations: Dry-run mode, overwrite protection, validation
+
+
+## Common Workflows
+
+- Environment promotion: Dev → Staging → Production
+- Multi-customer deployment: Template → Customer A, B, C
+- Backup & restore: Pull assets for version control
+
+
+## Quick Start
+
+- Step 1: sup sync create ./my_sync --source 123 --targets 456,789
+- Step 2: sup sync run ./my_sync --dry-run - Preview operations
+- Step 3: sup sync run ./my_sync - Execute synchronization
+
+## Usage
+
+```bash
+sup sync [COMMAND] [OPTIONS]
+```
+
+## Subcommands
+
+| Command | Description |
+|---------|-------------|
+| `sup sync run` | Run a multi-target sync operation |
+| `sup sync create` | Create a new sync configuration folder with example config |
+| `sup sync validate` | Validate a sync configuration folder |
+
+## Examples
+
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+
+<Tabs>
+  <TabItem label="Basic usage">
+    ```bash
+    sup sync
+    ```
+  </TabItem>
+</Tabs>

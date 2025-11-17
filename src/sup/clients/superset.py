@@ -49,8 +49,11 @@ class SupSupersetClient:
             )
             raise ValueError("No workspace configured")
 
-        # Check if we have cached hostname first
-        hostname = ctx.get_workspace_hostname()
+        # Check if we have cached hostname for the specific workspace_id
+        # Only use cached hostname if it's for the current workspace
+        hostname = None
+        if workspace_id == ctx.get_workspace_id():
+            hostname = ctx.get_workspace_hostname()
 
         if not hostname:
             # No cached hostname, fetch from Preset API

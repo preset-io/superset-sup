@@ -164,7 +164,7 @@ def run_sync(
             execute_pull(sync_config, sync_path, dry_run, porcelain)
 
         if not pull_only:
-            execute_push(sync_config, selected_targets, dry_run, porcelain)
+            execute_push(sync_config, selected_targets, sync_path, dry_run, porcelain)
 
         if not porcelain:
             console.print(
@@ -445,8 +445,7 @@ def execute_pull(sync_config: SyncConfig, sync_path: Path, dry_run: bool, porcel
                 # TODO: Support other selection types (mine, filter)
                 if not porcelain:
                     console.print(
-                        f"     Skipping {asset_type}: {asset_config.selection} "
-                        "not implemented yet"
+                        f"     Skipping {asset_type}: {asset_config.selection} not implemented yet"
                     )
                 continue
 
@@ -484,9 +483,30 @@ def execute_pull(sync_config: SyncConfig, sync_path: Path, dry_run: bool, porcel
         raise
 
 
-def execute_push(sync_config: SyncConfig, targets: List, dry_run: bool, porcelain: bool) -> None:
+def execute_push(
+    sync_config: SyncConfig, selected_targets: List, sync_path: Path, dry_run: bool, porcelain: bool
+) -> None:
     """Execute push operations to target workspaces."""
-    for target in targets:
+    from typing import Dict
+
+    import yaml
+    from jinja2 import Template
+
+    from preset_cli.cli.superset.sync.native.command import (
+        ResourceType,
+        import_resources,
+    )
+    from sup.clients.superset import SupSupersetClient
+    from sup.config.settings import SupContext
+
+    # TODO: Implement non-atomic, resumable sync operations
+    # - Track individual asset import status in a checkpoint file (e.g., .sync_state.json)
+    # - Skip already-imported assets on resume
+    # - Import assets individually rather than in batches
+    # - Log successes and failures for each asset
+    # - Allow retry of failed assets only
+
+    for target in selected_targets:
         name_display = f" ({target.name})" if target.name else ""
 
         if not porcelain:
@@ -501,13 +521,104 @@ def execute_push(sync_config: SyncConfig, targets: List, dry_run: bool, porcelai
                 console.print(f"   [DRY RUN] Would push with Jinja context: {context}")
             continue
 
-        # TODO: Implement actual push logic with Jinja context
-        # This would call the existing push commands with template variables
-        # from target.get_effective_jinja_context(sync_config.target_defaults)
+        try:
+            jinja_context = target.get_effective_jinja_context(sync_config.target_defaults)
 
-        # For now, placeholder
-        if not porcelain:
-            console.print(f"   Push to {target.workspace_id} completed")
+            ctx = SupContext()
+            client = SupSupersetClient.from_context(ctx, target.workspace_id)
+
+            assets_path = sync_config.assets_folder(sync_path)
+
+            configs: Dict[str, str] = {}
+            queue = [assets_path]
+
+            while queue:
+                path_name = queue.pop()
+                relative_path = path_name.relative_to(assets_path)
+
+                if path_name.is_dir() and not path_name.stem.startswith("."):
+                    queue.extend(path_name.glob("*"))
+                elif path_name.suffix in {".yaml", ".yml"} and path_name.name != "metadata.yaml":
+                    with open(path_name, "r") as f:
+                        content = f.read()
+
+                    if jinja_context:
+                        template = Template(content)
+                        content = template.render(**jinja_context)
+
+                    config = yaml.safe_load(content)
+                    config["is_managed_externally"] = False
+
+                    configs[f"bundle/{relative_path}"] = yaml.dump(config)
+
+            if not configs:
+                if not porcelain:
+                    console.print(f"   No assets found to push to {target.workspace_id}")
+                continue
+
+            overwrite = target.get_effective_overwrite(sync_config.target_defaults)
+
+            # Try importing all assets together first (preserves relationships)
+            try:
+                import_resources(
+                    contents=configs,
+                    client=client.client,
+                    overwrite=overwrite,
+                    asset_type=ResourceType.ASSET,
+                )
+            except Exception:
+                # Group configs by asset type for proper import order
+                databases_configs = {k: v for k, v in configs.items() if "/databases/" in k}
+                datasets_configs = {k: v for k, v in configs.items() if "/datasets/" in k}
+                charts_configs = {k: v for k, v in configs.items() if "/charts/" in k}
+                dashboards_configs = {k: v for k, v in configs.items() if "/dashboards/" in k}
+
+                # Import in the correct order: databases -> datasets -> charts -> dashboards
+                if databases_configs:
+                    import_resources(
+                        contents=databases_configs,
+                        client=client.client,
+                        overwrite=overwrite,
+                        asset_type=ResourceType.DATABASE,
+                    )
+
+                if datasets_configs:
+                    import_resources(
+                        contents=datasets_configs,
+                        client=client.client,
+                        overwrite=overwrite,
+                        asset_type=ResourceType.DATASET,
+                    )
+
+                if charts_configs:
+                    import_resources(
+                        contents=charts_configs,
+                        client=client.client,
+                        overwrite=overwrite,
+                        asset_type=ResourceType.CHART,
+                    )
+
+                if dashboards_configs:
+                    try:
+                        import_resources(
+                            contents=dashboards_configs,
+                            client=client.client,
+                            overwrite=overwrite,
+                            asset_type=ResourceType.DASHBOARD,
+                        )
+                    except Exception:
+                        pass
+
+            if not porcelain:
+                console.print(f"   Push to {target.workspace_id} completed")
+
+        except Exception as e:
+            if not porcelain:
+                console.print(
+                    f"   {EMOJIS['error']} Push to {target.workspace_id} failed: {e}",
+                    style=RICH_STYLES["error"],
+                )
+            continue
 
 
 if __name__ == "__main__":

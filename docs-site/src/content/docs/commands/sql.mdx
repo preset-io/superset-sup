@@ -1,0 +1,44 @@
+---
+title: "sup sql"
+description: "🔍 Get direct access to your data"
+---
+
+🔍 Get direct access to your data
+
+## Usage
+
+```bash
+sup sql [OPTIONS]
+```
+
+## Options
+
+| Option | Type | Required | Default | Description |
+|--------|------|----------|---------|-------------|
+| `query` | text |  | - | SQL query to execute |
+| `--interactive`, `-i` | flag |  | - | Start interactive SQL session |
+| `--workspace-id`, `-w` | integer |  | - | Workspace ID |
+| `--database-id`, `-d` | integer |  | - | Database ID |
+| `--json`, `-j` | flag |  | - | Output as JSON |
+| `--csv`, `-c` | flag |  | - | Output as CSV |
+| `--yaml`, `-y` | flag |  | - | Output as YAML |
+| `--porcelain` | flag |  | - | Machine-readable output (no decorations) |
+| `--limit`, `-l` | integer |  | `1000` | Maximum rows to fetch |
+| `--max-rows` | integer |  | `100` | Maximum rows to display |
+
+## Examples
+
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+
+<Tabs>
+  <TabItem label="Run query">
+    ```bash
+    sup sql "SELECT * FROM users LIMIT 10"
+    ```
+  </TabItem>
+  <TabItem label="Export to JSON">
+    ```bash
+    sup sql "SELECT * FROM sales" --json > results.json
+    ```
+  </TabItem>
+</Tabs>

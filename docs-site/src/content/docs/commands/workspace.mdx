@@ -1,0 +1,39 @@
+---
+title: "sup workspace"
+description: "Manage workspaces"
+---
+
+Manage workspaces
+
+## Usage
+
+```bash
+sup workspace [COMMAND] [OPTIONS]
+```
+
+## Commands
+
+| Command | Description |
+|---------|-------------|
+| `list` | List all available workspaces |
+| `use` | Set the default workspace for current session |
+| `info` | Show detailed information about a workspace |
+| `set-target` | Set the import target workspace for cross-workspace operations |
+| `show` | Show current workspace context including source and import target |
+
+## Examples
+
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+
+<Tabs>
+  <TabItem label="List workspaces">
+    ```bash
+    sup workspace list
+    ```
+  </TabItem>
+  <TabItem label="Set active workspace">
+    ```bash
+    sup workspace use 123
+    ```
+  </TabItem>
+</Tabs>

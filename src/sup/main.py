@@ -53,7 +53,7 @@ BANNER = """\
    ╚══════╝ ╚═════╝ ╚═╝     ╚═╝"""
 
 # App title for consistent usage
-APP_TITLE = "🚀 'sup! - probably the best unofficial Apache Superset CLI 📊"
+APP_TITLE = "🚀 'sup! - the official Preset CLI with a git-like interface 📊"
 
 # Use cases for consistent display
 USE_CASES = [

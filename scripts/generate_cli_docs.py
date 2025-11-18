@@ -4,6 +4,7 @@ Generate MDX documentation for sup CLI commands using Typer introspection.
 """
 
 import re
+import subprocess
 from pathlib import Path
 from typing import Any, Dict, List
 
@@ -320,6 +321,198 @@ description: "{clean_desc or 'CLI command documentation'}"
     return "\n".join(content_parts)
 
 
+def capture_sup_output():
+    """Run sup command and capture its output."""
+    import subprocess
+    
+    try:
+        result = subprocess.run(
+            ["sup"],
+            capture_output=True,
+            text=True,
+            timeout=5
+        )
+        return result.stdout
+    except FileNotFoundError:
+        # Try python module if sup not in PATH
+        try:
+            result = subprocess.run(
+                ["python", "-m", "sup.main"],
+                capture_output=True,
+                text=True,
+                timeout=5
+            )
+            return result.stdout
+        except:
+            print("Warning: Could not run sup command, using fallback content")
+            return None
+
+
+def generate_index_mdx():
+    """Generate the index.mdx content with hero section from actual sup output."""
+    # Capture actual sup output
+    sup_output = capture_sup_output()
+    
+    # Parse output to build hero HTML
+    hero_html = ""
+    capabilities = []
+    
+    if sup_output:
+        lines = sup_output.split('\n')
+        html_lines = []
+        
+        for line in lines:
+            if not line:
+                continue
+                
+            # ASCII art (contains box drawing characters)
+            if '███' in line or '██╔' in line or '╚══' in line or '██║' in line:
+                escaped = line.replace('<', '&lt;').replace('>', '&gt;')
+                html_lines.append(f'<span style="color: #10B981; font-weight: bold;">{escaped}</span>')
+            
+            # Title line (contains emoji)
+            elif '🚀' in line:
+                escaped = line.replace('<', '&lt;').replace('>', '&gt;')
+                html_lines.append(f'<span style="color: #f0f0f0; font-weight: 600;">{escaped}</span>')
+            
+            # Subtitle lines
+            elif 'Brought to you' in line or 'For power users' in line:
+                escaped = line.replace('<', '&lt;').replace('>', '&gt;')
+                html_lines.append(f'<span style="color: #9CA3AF;">{escaped}</span>')
+            
+            # Section headers
+            elif line.strip().endswith(':') and not line.strip().startswith('•'):
+                html_lines.append('')
+                escaped = line.replace('<', '&lt;').replace('>', '&gt;')
+                html_lines.append(f'<span style="color: #60A5FA; font-weight: 500;">{escaped}</span>')
+            
+            # Bullet points - extract capabilities
+            elif line.strip().startswith('•'):
+                escaped = line.replace('<', '&lt;').replace('>', '&gt;')
+                html_lines.append(f'<span style="color: #D1D5DB;">{escaped}</span>')
+                # Also save the capability for feature cards
+                capabilities.append(line.strip()[1:].strip())
+            
+            # Other text
+            elif line.strip():
+                escaped = line.replace('<', '&lt;').replace('>', '&gt;')
+                html_lines.append(f'<span style="color: #9CA3AF;">{escaped}</span>')
+        
+        # Build the hero HTML with heavy box shadow
+        hero_html = '\n'.join(html_lines)
+    else:
+        # Fallback content
+        hero_html = '''<span style="color: #10B981; font-weight: bold;">██ ███████╗██╗   ██╗██████╗ ██╗</span>
+<span style="color: #10B981; font-weight: bold;">██ ██╔════╝██║   ██║██╔══██╗██║</span>
+<span style="color: #10B981; font-weight: bold;">   ███████╗██║   ██║██████╔╝██║</span>
+<span style="color: #10B981; font-weight: bold;">   ╚════██║██║   ██║██╔═══╝ ╚═╝</span>
+<span style="color: #10B981; font-weight: bold;">   ███████║╚██████╔╝██║     ██╗</span>
+<span style="color: #10B981; font-weight: bold;">   ╚══════╝ ╚═════╝ ╚═╝     ╚═╝</span>
+
+<span style="color: #f0f0f0; font-weight: 600;">🚀 'sup! - the official Preset CLI with a git-like interface 📊</span>
+<span style="color: #9CA3AF;">   Brought to you and fully compatible with Preset</span>
+<span style="color: #9CA3AF;">   For power users and AI agents</span>'''
+        
+        capabilities = [
+            "Run any SQL through Superset's data access layer - get results as rich table, CSV, YAML or JSON",
+            "Backup and restore charts, dashboards, and datasets with full dependency tracking",
+            "Synchronize assets across Superset instances with Jinja2 templating for customization",
+            "Enrich metadata to/from dbt Core/Cloud - more integrations to come",
+            "Automate workflows and integrate with CI/CD pipelines",
+            "Perfect for scripting and AI-assisted data exploration"
+        ]
+    
+    # Properly indent the hero HTML for YAML literal scalar
+    hero_html_indented = '\n'.join('      ' + line if line else '' for line in hero_html.split('\n'))
+    
+    # Generate the index.mdx content
+    mdx = f'''---
+title: Welcome to sup CLI
+description: Beautiful, modern interface for Apache Superset and Preset workspaces
+template: splash
+hero:
+  tagline: The official Preset CLI with a git-like interface for managing your analytics assets
+  image:
+    html: |
+      <div style="position: relative; margin: 2rem auto; max-width: 900px;">
+        <div style="box-shadow: 0 40px 80px -20px rgba(0, 0, 0, 0.8), 0 15px 35px -15px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(0, 0, 0, 0.15); border-radius: 12px; overflow: hidden; background: linear-gradient(to bottom, #1a1a1a, #0f0f0f);">
+          <div style="padding: 0.5rem 1rem; background: linear-gradient(to right, #2d2d2d, #1a1a1a); border-bottom: 1px solid #333; display: flex; align-items: center; gap: 0.5rem;">
+            <div style="width: 12px; height: 12px; border-radius: 50%; background: #ff5f57;"></div>
+            <div style="width: 12px; height: 12px; border-radius: 50%; background: #ffbd2e;"></div>
+            <div style="width: 12px; height: 12px; border-radius: 50%; background: #28ca42;"></div>
+            <span style="margin-left: auto; font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', monospace; font-size: 0.75rem; color: #666;">$ sup</span>
+          </div>
+          <pre style="margin: 0; padding: 2rem; font-family: 'Cascadia Code', 'JetBrains Mono', 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', monospace; font-size: 0.875rem; line-height: 1.5; color: #e5e5e5; overflow-x: auto; background: transparent;">
+{hero_html_indented}
+          </pre>
+        </div>
+      </div>
+  actions:
+    - text: Quick Start
+      link: /introduction/
+      icon: right-arrow
+      variant: primary
+    - text: View Commands
+      link: /commands/workspace/
+      icon: external
+---
+
+import {{ Card, CardGrid }} from '@astrojs/starlight/components';
+
+## Features
+
+<CardGrid>
+  <Card title="SQL Execution" icon="seti:sql">
+    Run any SQL through Superset's data access layer with multiple output formats
+  </Card>
+  <Card title="Asset Management" icon="github">
+    Pull, push, and sync charts, dashboards, and datasets with dependency tracking
+  </Card>
+  <Card title="Cross-Workspace Sync" icon="rocket">
+    Seamlessly move assets between environments with Jinja2 templating
+  </Card>
+  <Card title="Enterprise Ready" icon="setting">
+    JWT authentication, multi-workspace support, and team management
+  </Card>
+</CardGrid>
+
+## Why sup?
+
+'''
+    
+    # Add capabilities as feature bullets
+    for capability in capabilities[:6]:
+        if ' - ' in capability:
+            parts = capability.split(' - ', 1)
+            mdx += f"- **{parts[0].strip()}** - {parts[1].strip()}\n"
+        else:
+            mdx += f"- {capability}\n"
+    
+    mdx += '''
+## Quick Example
+
+```bash
+# Set your workspace
+sup workspace use 123
+
+# Pull your charts  
+sup chart pull --mine
+
+# Run SQL queries
+sup sql "SELECT COUNT(*) FROM users"
+
+# Push to another workspace
+sup chart push --workspace-id 456
+```
+
+## Getting Started
+
+Start with our [introduction](/introduction/) to understand sup's core concepts, then follow the [installation guide](/installation/) to get up and running.
+'''
+    
+    return mdx
+
+
 def generate_docs():
     """Main function to generate documentation."""
     # Import the sup CLI app
@@ -334,13 +527,20 @@ def generate_docs():
         print("Make sure the sup package is installed with: pip install -e .")
         return
 
-    # Create output directory for commands only
+    # Create output directories
     docs_dir = Path(__file__).parent.parent / "docs-site" / "src" / "content" / "docs"
     commands_dir = docs_dir / "commands"
     commands_dir.mkdir(parents=True, exist_ok=True)
 
+    # Generate index.mdx with hero section from actual sup output
+    print("Running 'sup' command to generate hero section...")
+    index_file = docs_dir / "index.mdx"
+    index_content = generate_index_mdx()
+    index_file.write_text(index_content)
+    print(f"✓ Generated: {index_file.relative_to(Path.cwd())}")
+
     # Extract command information
-    print("Extracting command information from sup CLI...")
+    print("\nExtracting command information from sup CLI...")
     commands = extract_command_info(app)
 
     # Generate MDX files for each command

@@ -3,7 +3,42 @@ title: Welcome to sup CLI
 description: Beautiful, modern interface for Apache Superset and Preset workspaces
 template: splash
 hero:
-  tagline: The best unofficial Apache Superset CLI with a git-like interface for managing your analytics assets
+  tagline: The official Preset CLI with a git-like interface for managing your analytics assets
+  image:
+    html: |
+      <div style="position: relative; margin: 2rem auto; max-width: 900px;">
+        <div style="box-shadow: 0 40px 80px -20px rgba(0, 0, 0, 0.8), 0 15px 35px -15px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(0, 0, 0, 0.15); border-radius: 12px; overflow: hidden; background: linear-gradient(to bottom, #1a1a1a, #0f0f0f);">
+          <div style="padding: 0.5rem 1rem; background: linear-gradient(to right, #2d2d2d, #1a1a1a); border-bottom: 1px solid #333; display: flex; align-items: center; gap: 0.5rem;">
+            <div style="width: 12px; height: 12px; border-radius: 50%; background: #ff5f57;"></div>
+            <div style="width: 12px; height: 12px; border-radius: 50%; background: #ffbd2e;"></div>
+            <div style="width: 12px; height: 12px; border-radius: 50%; background: #28ca42;"></div>
+            <span style="margin-left: auto; font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', monospace; font-size: 0.75rem; color: #666;">$ sup</span>
+          </div>
+          <pre style="margin: 0; padding: 2rem; font-family: 'Cascadia Code', 'JetBrains Mono', 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', monospace; font-size: 0.875rem; line-height: 1.5; color: #e5e5e5; overflow-x: auto; background: transparent;">
+      <span style="color: #10B981; font-weight: bold;">██ ███████╗██╗   ██╗██████╗ ██╗</span>
+      <span style="color: #10B981; font-weight: bold;">██ ██╔════╝██║   ██║██╔══██╗██║</span>
+      <span style="color: #10B981; font-weight: bold;">   ███████╗██║   ██║██████╔╝██║</span>
+      <span style="color: #10B981; font-weight: bold;">   ╚════██║██║   ██║██╔═══╝ ╚═╝</span>
+      <span style="color: #10B981; font-weight: bold;">   ███████║╚██████╔╝██║     ██╗</span>
+      <span style="color: #10B981; font-weight: bold;">   ╚══════╝ ╚═════╝ ╚═╝     ╚═╝</span>
+      <span style="color: #f0f0f0; font-weight: 600;">🚀 'sup! - the official Preset CLI with a git-like interface 📊</span>
+      <span style="color: #9CA3AF;">   Brought to you and fully compatible with Preset</span>
+      <span style="color: #9CA3AF;">   For power users and AI agents</span>
+
+      <span style="color: #60A5FA; font-weight: 500;">Key capabilities:</span>
+      <span style="color: #D1D5DB;">• Run any SQL through Superset's data access layer - get results as rich table, </span>
+      <span style="color: #9CA3AF;">CSV, YAML or JSON</span>
+      <span style="color: #D1D5DB;">• Backup and restore charts, dashboards, and datasets with full dependency </span>
+      <span style="color: #9CA3AF;">tracking</span>
+      <span style="color: #D1D5DB;">• Synchronize assets across Superset instances with Jinja2 templating for </span>
+      <span style="color: #9CA3AF;">customization</span>
+      <span style="color: #D1D5DB;">• Enrich metadata to/from dbt Core/Cloud - more integrations to come</span>
+      <span style="color: #D1D5DB;">• Automate workflows and integrate with CI/CD pipelines</span>
+      <span style="color: #D1D5DB;">• Perfect for scripting and AI-assisted data exploration</span>
+      <span style="color: #9CA3AF;">Use sup --help for available commands</span>
+          </pre>
+        </div>
+      </div>
   actions:
     - text: Quick Start
       link: /introduction/
@@ -18,20 +53,29 @@ import { Card, CardGrid } from '@astrojs/starlight/components';
 
 ## Features
 
-<CardGrid stagger>
-  <Card title="Git-like Workflow" icon="github">
-    Pull, push, and sync your Superset assets with familiar commands
+<CardGrid>
+  <Card title="SQL Execution" icon="seti:sql">
+    Run any SQL through Superset's data access layer with multiple output formats
+  </Card>
+  <Card title="Asset Management" icon="github">
+    Pull, push, and sync charts, dashboards, and datasets with dependency tracking
   </Card>
   <Card title="Cross-Workspace Sync" icon="rocket">
-    Seamlessly move charts and dashboards between environments
-  </Card>
-  <Card title="Beautiful Output" icon="star">
-    Rich tables, emerald branding, and progress indicators
+    Seamlessly move assets between environments with Jinja2 templating
   </Card>
   <Card title="Enterprise Ready" icon="setting">
     JWT authentication, multi-workspace support, and team management
   </Card>
 </CardGrid>
+
+## Why sup?
+
+- **Run any SQL through Superset's data access layer** - get results as rich table,
+- Backup and restore charts, dashboards, and datasets with full dependency
+- Synchronize assets across Superset instances with Jinja2 templating for
+- **Enrich metadata to/from dbt Core/Cloud** - more integrations to come
+- Automate workflows and integrate with CI/CD pipelines
+- Perfect for scripting and AI-assisted data exploration
 
 ## Quick Example
 
@@ -39,7 +83,7 @@ import { Card, CardGrid } from '@astrojs/starlight/components';
 # Set your workspace
 sup workspace use 123
 
-# Pull your charts
+# Pull your charts  
 sup chart pull --mine
 
 # Run SQL queries

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "superset-sup"
-description = "'sup - probably the best unofficial Apache Superset CLI. Beautiful, modern interface for Superset and Preset workspaces."
+description = "'sup - the official Preset CLI with a git-like interface for managing your analytics assets."
 authors = [
     {name = "Beto Dealmeida", email = "beto@preset.io"},
     {name = "Max Beauchemin", email = "max@preset.io"},

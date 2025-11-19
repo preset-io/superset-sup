@@ -40,6 +40,10 @@ Superset and Preset workspaces efficiently.
 ```bash
 pip install superset-sup
 ```
+OR
+```bash
+pip install git+https://github.com/preset-io/superset-sup.git
+```
 
 ### Getting Started
 

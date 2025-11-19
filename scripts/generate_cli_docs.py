@@ -223,7 +223,7 @@ def generate_command_mdx(command: Dict[str, Any], is_subcommand: bool = False) -
     # Build the MDX frontmatter
     frontmatter = f"""---
 title: "sup {name}"
-description: "{clean_desc or 'CLI command documentation'}"
+description: "{clean_desc or "CLI command documentation"}"
 ---"""
 
     # Build the content
@@ -323,15 +323,20 @@ description: "{clean_desc or 'CLI command documentation'}"
 
 def capture_sup_output():
     """Run sup command and capture its output."""
+    import os
+
+    # Set consistent terminal width to match CI environment
+    env = os.environ.copy()
+    env["COLUMNS"] = "80"  # Standard terminal width for consistent output
 
     try:
-        result = subprocess.run(["sup"], capture_output=True, text=True, timeout=5)
+        result = subprocess.run(["sup"], capture_output=True, text=True, timeout=5, env=env)
         return result.stdout
     except FileNotFoundError:
         # Try python module if sup not in PATH
         try:
             result = subprocess.run(
-                ["python", "-m", "sup.main"], capture_output=True, text=True, timeout=5
+                ["python", "-m", "sup.main"], capture_output=True, text=True, timeout=5, env=env
             )
             return result.stdout
         except Exception:
@@ -360,14 +365,14 @@ def generate_index_mdx():
             if "███" in line or "██╔" in line or "╚══" in line or "██║" in line:
                 escaped = line.replace("<", "&lt;").replace(">", "&gt;")
                 html_lines.append(
-                    f'<span style="color: #10B981; ' f'font-weight: bold;">{escaped}</span>'
+                    f'<span style="color: #10B981; font-weight: bold;">{escaped}</span>'
                 )
 
             # Title line (contains emoji)
             elif "🚀" in line:
                 escaped = line.replace("<", "&lt;").replace(">", "&gt;")
                 html_lines.append(
-                    f'<span style="color: #f0f0f0; ' f'font-weight: 600;">{escaped}</span>'
+                    f'<span style="color: #f0f0f0; font-weight: 600;">{escaped}</span>'
                 )
 
             # Subtitle lines
@@ -380,7 +385,7 @@ def generate_index_mdx():
                 html_lines.append("")
                 escaped = line.replace("<", "&lt;").replace(">", "&gt;")
                 html_lines.append(
-                    f'<span style="color: #60A5FA; ' f'font-weight: 500;">{escaped}</span>'
+                    f'<span style="color: #60A5FA; font-weight: 500;">{escaped}</span>'
                 )
 
             # Bullet points - extract capabilities
@@ -414,9 +419,8 @@ def generate_index_mdx():
         capabilities = [
             "Run any SQL through Superset's data access layer - "
             "get results as rich table, CSV, YAML or JSON",
-            "Backup and restore charts, dashboards, and datasets with " "full dependency tracking",
-            "Synchronize assets across Superset instances with Jinja2 "
-            "templating for customization",
+            "Backup and restore charts, dashboards, and datasets with full dependency tracking",
+            "Synchronize assets across Superset instances with Jinja2 templating for customization",
             "Enrich metadata to/from dbt Core/Cloud - more integrations to come",
             "Automate workflows and integrate with CI/CD pipelines",
             "Perfect for scripting and AI-assisted data exploration",
@@ -464,11 +468,11 @@ hero:
       </div>
   actions:
     - text: Quick Start
-      link: /introduction/
+      link: introduction/
       icon: right-arrow
       variant: primary
     - text: View Commands
-      link: /commands/workspace/
+      link: commands/workspace/
       icon: external
 ---
 
@@ -510,7 +514,7 @@ import {{ Card, CardGrid }} from '@astrojs/starlight/components';
 # Set your workspace
 sup workspace use 123
 
-# Pull your charts
+# Pull your charts  
 sup chart pull --mine
 
 # Run SQL queries
@@ -522,8 +526,7 @@ sup chart push --workspace-id 456
 
 ## Getting Started
 
-Start with our [introduction](/introduction/) to understand sup's core concepts, 
-then follow the [installation guide](/installation/) to get up and running.
+Start with our [introduction](/introduction/) to understand sup's core concepts, then follow the [installation guide](/installation/) to get up and running.
 """
 
     return mdx

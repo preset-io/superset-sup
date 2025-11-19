@@ -494,9 +494,10 @@ def execute_push(
     """Execute push operations to target workspaces."""
     from preset_cli.cli.superset.sync.native.command import (
         is_yaml_config,
+        load_user_modules,
         render_yaml,
-        import_resources,
         import_resources_individually,
+        raise_helper,
         ResourceType,
     )
     from sup.clients.superset import SupSupersetClient
@@ -531,13 +532,16 @@ def execute_push(
                 console.print(f"   🔗 Client base URL: {client.client.baseurl}")
 
             # Get Jinja context for this target
-            jinja_env = target.get_effective_jinja_context(sync_config.target_defaults)
-
             # Get assets folder from sync config
             assets_path = sync_config.assets_folder(sync_path)
 
             if not assets_path.exists():
                 raise Exception(f"Assets folder not found: {assets_path}")
+
+            jinja_env = dict(target.get_effective_jinja_context(sync_config.target_defaults))
+            jinja_env["instance"] = client.client.baseurl
+            jinja_env["functions"] = load_user_modules(assets_path / "functions")
+            jinja_env["raise"] = raise_helper
 
             # Read all YAML files and render with Jinja2
             configs = {}
@@ -609,7 +613,12 @@ def execute_push(
                             buf = BytesIO()
                             with ZipFile(buf, "w") as bundle:
                                 for file_path, file_content in debug_contents.items():
-                                    bundle.writestr(file_path, file_content.encode() if isinstance(file_content, str) else file_content)
+                                    content = (
+                                        file_content.encode()
+                                        if isinstance(file_content, str)
+                                        else file_content
+                                    )
+                                    bundle.writestr(file_path, content)
                             f.write(buf.getvalue())
 
                         console.print(f"   📋 Bundle contains {len(debug_contents)} files")
@@ -627,7 +636,8 @@ def execute_push(
                         sys.stderr = captured_output
 
                         # Try individual import for better error messages
-                        console.print(f"   🔍 Using split import for better error visibility...")
+                        if not porcelain:
+                            console.print("   🔍 Using split import for better error visibility...")
                         import_resources_individually(
                             configs,
                             client.client,  # Use underlying SupersetClient
@@ -646,10 +656,11 @@ def execute_push(
                             console.print(output)
 
                     if not porcelain:
-                        console.print(
-                            f"   {EMOJIS['success']} Pushed {len(configs)} assets to workspace {target.workspace_id}",
-                            style=RICH_STYLES["success"],
+                        success_message = (
+                            f"   {EMOJIS['success']} Pushed {len(configs)} assets to "
+                            f"workspace {target.workspace_id}"
                         )
+                        console.print(success_message, style=RICH_STYLES["success"])
                 except Exception as import_error:
                     if not porcelain:
                         console.print(

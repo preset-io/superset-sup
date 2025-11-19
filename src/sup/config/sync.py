@@ -217,10 +217,10 @@ class SyncConfig(BaseModel):
             targets.append(
                 TargetConfig(
                     workspace_id=workspace_id,
-                    name=f"target_{i+1}",
+                    name=f"target_{i + 1}",
                     jinja_context={
                         "environment": "production" if i == 0 else "staging",
-                        "database_host": f"target-{i+1}.example.com",
+                        "database_host": f"target-{i + 1}.example.com",
                     },
                 ),
             )

@@ -166,7 +166,7 @@ def preset_cli(  # pylint: disable=too-many-branches, too-many-locals, too-many-
             ctx.obj["AUTH"] = PresetAuth(manager_api_url, api_token, api_secret)
         except JWTTokenError as excinfo:
             error_message = (
-                "Failed to auth using the provided credentials." " Please run ``preset-cli auth``"
+                "Failed to auth using the provided credentials. Please run ``preset-cli auth``"
             )
             raise CLIError(error_message, 1) from excinfo
 
@@ -176,10 +176,10 @@ def preset_cli(  # pylint: disable=too-many-branches, too-many-locals, too-many-
         i = 0
         hostnames = []
         for team in client.get_teams():
-            click.echo(f'\n# {team["title"]} #')
+            click.echo(f"\n# {team['title']} #")
             for workspace in client.get_workspaces(team_name=team["name"]):
                 status = get_status_icon(workspace["workspace_status"])
-                click.echo(f'{status} ({i + 1}) {workspace["title"]}')
+                click.echo(f"{status} ({i + 1}) {workspace['title']}")
                 hostnames.append("https://" + workspace["hostname"])
                 i += 1
 
@@ -223,8 +223,7 @@ def auth(baseurl: str, overwrite: bool = False, show: bool = False) -> None:
     if show:
         if not credentials_path.exists():
             error_message = (
-                f"The file {credentials_path} doesn't exist. "
-                "Run ``preset-cli auth`` to create it."
+                f"The file {credentials_path} doesn't exist. Run ``preset-cli auth`` to create it."
             )
             raise CLIError(error_message, 1)
 
@@ -237,7 +236,7 @@ def auth(baseurl: str, overwrite: bool = False, show: bool = False) -> None:
 
     if credentials_path.exists() and not overwrite:
         error_message = (
-            f"The file {credentials_path} already exists. " "Pass ``--overwrite`` to replace it."
+            f"The file {credentials_path} already exists. Pass ``--overwrite`` to replace it."
         )
         raise CLIError(error_message, 1)
 
@@ -262,7 +261,7 @@ def get_teams(client: PresetClient) -> List[str]:
     i = 0
     all_teams = []
     for team in client.get_teams():
-        click.echo(f'({i + 1}) {team["title"]}')
+        click.echo(f"({i + 1}) {team['title']}")
         all_teams.append(team["name"])
         i += 1
 
@@ -370,11 +369,11 @@ def print_group_membership(groups: Dict[str, Any]) -> None:
     Print group membership on the terminal
     """
     for group in groups["Resources"]:
-        click.echo(f'\nName: {group["displayName"]} ID: {group["id"]}')
+        click.echo(f"\nName: {group['displayName']} ID: {group['id']}")
         if group.get("members"):
             for member in group["members"]:
                 click.echo(
-                    f'# User: {member["display"]} Username: {member["value"]}',
+                    f"# User: {member['display']} Username: {member['value']}",
                 )
         else:
             click.echo("# Group with no users\n")

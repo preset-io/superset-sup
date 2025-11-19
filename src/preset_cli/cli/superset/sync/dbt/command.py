@@ -284,12 +284,12 @@ def get_account_id(client: DBTClient) -> int:
     if len(accounts) == 1:
         account = accounts[0]
         click.echo(
-            f'Using account {account["name"]} [id={account["id"]}] since it\'s the only one',
+            f"Using account {account['name']} [id={account['id']}] since it's the only one",
         )
         return account["id"]
     click.echo("Choose an account:")
     for i, account in enumerate(accounts):
-        click.echo(f'({i+1}) {account["name"]} [id={account["id"]}]')
+        click.echo(f"({i + 1}) {account['name']} [id={account['id']}]")
 
     while True:
         try:
@@ -315,7 +315,7 @@ def get_project_id(client: DBTClient, account_id: int | None = None) -> int:
         return projects[0]["id"]
     click.echo("Choose a project:")
     for i, project in enumerate(projects):
-        click.echo(f'({i+1}) {project["name"]} [id={project["id"]}]')
+        click.echo(f"({i + 1}) {project['name']} [id={project['id']}]")
 
     while True:
         try:
@@ -351,7 +351,7 @@ def get_job(
 
         click.echo("Choose a job:")
         for i, job in enumerate(jobs):
-            click.echo(f'({i+1}) {job["name"]} [id={job["id"]}]')
+            click.echo(f"({i + 1}) {job['name']} [id={job['id']}]")
 
         while True:
             try:

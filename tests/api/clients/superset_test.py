@@ -1974,11 +1974,7 @@ def test_export_roles(mocker: MockerFixture, requests_mock: Mocker) -> None:
     Test ``export_roles``.
     """
     requests_mock.get(
-        (
-            "https://superset.example.org/roles/list/?"
-            "psize_RoleModelView=100&"
-            "page_RoleModelView=0"
-        ),
+        ("https://superset.example.org/roles/list/?psize_RoleModelView=100&page_RoleModelView=0"),
         text="""
 <!DOCTYPE html>
 <html lang="en">
@@ -2006,11 +2002,7 @@ def test_export_roles(mocker: MockerFixture, requests_mock: Mocker) -> None:
         """,
     )
     requests_mock.get(
-        (
-            "https://superset.example.org/roles/list/?"
-            "psize_RoleModelView=100&"
-            "page_RoleModelView=1"
-        ),
+        ("https://superset.example.org/roles/list/?psize_RoleModelView=100&page_RoleModelView=1"),
         text="""
 <!DOCTYPE html>
 <html lang="en">
@@ -2108,11 +2100,7 @@ def test_export_roles_anchor_role_id(
     Test ``export_roles``.
     """
     requests_mock.get(
-        (
-            "https://superset.example.org/roles/list/?"
-            "psize_RoleModelView=100&"
-            "page_RoleModelView=0"
-        ),
+        ("https://superset.example.org/roles/list/?psize_RoleModelView=100&page_RoleModelView=0"),
         text="""
 <!DOCTYPE html>
 <html lang="en">
@@ -2140,11 +2128,7 @@ def test_export_roles_anchor_role_id(
         """,
     )
     requests_mock.get(
-        (
-            "https://superset.example.org/roles/list/?"
-            "psize_RoleModelView=100&"
-            "page_RoleModelView=1"
-        ),
+        ("https://superset.example.org/roles/list/?psize_RoleModelView=100&page_RoleModelView=1"),
         text="""
 <!DOCTYPE html>
 <html lang="en">
@@ -2603,7 +2587,7 @@ def test_get_uuids(requests_mock: Mocker) -> None:
         "0ac7464e-14e7-4c54-ab22-7cbd4536fccc",
     ]
     for i in range(3):
-        name = f"chart_export/chart/chart{i+1}.yaml"
+        name = f"chart_export/chart/chart{i + 1}.yaml"
         uuid = uuids[i]
         buf = BytesIO()
         with ZipFile(buf, "w") as bundle:
@@ -2614,7 +2598,7 @@ def test_get_uuids(requests_mock: Mocker) -> None:
         buf.seek(0)
 
         requests_mock.get(
-            f"https://superset.example.org/api/v1/chart/export/?q=%21%28{i+1}%29",
+            f"https://superset.example.org/api/v1/chart/export/?q=%21%28{i + 1}%29",
             content=buf.getvalue(),
         )
 

@@ -65,7 +65,7 @@ def sql(  # pylint: disable=too-many-arguments
     if database_id is None:
         click.echo("Choose the ID of a database to connect to:")
         for database in sorted(databases, key=itemgetter("id")):
-            click.echo(f'({database["id"]}) {database["database_name"]}')
+            click.echo(f"({database['id']}) {database['database_name']}")
     while database_id is None:
         try:
             choice = int(input("> "))

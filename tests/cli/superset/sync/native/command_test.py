@@ -196,7 +196,7 @@ def test_import_resources_overwrite_needed(mocker: MockerFixture) -> None:
                     {
                         "code": 1010,
                         "message": (
-                            "Issue 1010 - Superset encountered an " "error while running a command."
+                            "Issue 1010 - Superset encountered an error while running a command."
                         ),
                     },
                 ],
@@ -230,7 +230,7 @@ def test_import_resources_error(mocker: MockerFixture) -> None:
                     {
                         "code": 1010,
                         "message": (
-                            "Issue 1010 - Superset encountered an " "error while running a command."
+                            "Issue 1010 - Superset encountered an error while running a command."
                         ),
                     },
                 ],

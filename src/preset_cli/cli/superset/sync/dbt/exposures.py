@@ -41,7 +41,7 @@ def get_chart_depends_on(
         dataset_id = json.loads(chart["params"])["datasource"].split("__")[0]
     else:
         raise Exception(
-            f'Unable to find dataset information for Chart {chart["slice_name"]}',
+            f"Unable to find dataset information for Chart {chart['slice_name']}",
         )
 
     dataset = client.get_dataset(dataset_id)

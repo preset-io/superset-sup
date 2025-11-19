@@ -445,8 +445,7 @@ def execute_pull(sync_config: SyncConfig, sync_path: Path, dry_run: bool, porcel
                 # TODO: Support other selection types (mine, filter)
                 if not porcelain:
                     console.print(
-                        f"     Skipping {asset_type}: {asset_config.selection} "
-                        "not implemented yet"
+                        f"     Skipping {asset_type}: {asset_config.selection} not implemented yet"
                     )
                 continue
 
@@ -566,6 +565,7 @@ def execute_push(
                     if overrides_path.exists():
                         overrides = render_yaml(overrides_path, jinja_env)
                         from preset_cli.lib import dict_merge
+
                         dict_merge(config, overrides)
 
                     configs[PathlibPath("bundle") / relative_path] = config
@@ -609,7 +609,7 @@ def execute_push(
                             ),
                         )
 
-                        with open(debug_zip_path, 'wb') as f:
+                        with open(debug_zip_path, "wb") as f:
                             buf = BytesIO()
                             with ZipFile(buf, "w") as bundle:
                                 for file_path, file_content in debug_contents.items():

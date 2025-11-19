@@ -213,7 +213,7 @@ class PresetClient:  # pylint: disable=too-few-public-methods
                         "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User",
                     ],
                     "active": True,
-                    "displayName": f'{user["first_name"]} {user["last_name"]}',
+                    "displayName": f"{user['first_name']} {user['last_name']}",
                     "emails": [
                         {
                             "primary": True,
@@ -224,7 +224,7 @@ class PresetClient:  # pylint: disable=too-few-public-methods
                     "meta": {"resourceType": "User"},
                     "userName": user["email"],
                     "name": {
-                        "formatted": f'{user["first_name"]} {user["last_name"]}',
+                        "formatted": f"{user['first_name']} {user['last_name']}",
                         "familyName": user["last_name"],
                         "givenName": user["first_name"],
                     },

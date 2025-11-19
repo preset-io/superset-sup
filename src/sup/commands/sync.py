@@ -491,18 +491,20 @@ def execute_push(
     porcelain: bool,
 ) -> None:
     """Execute push operations to target workspaces."""
+    from pathlib import Path as PathlibPath
+
+    import yaml
+
     from preset_cli.cli.superset.sync.native.command import (
+        ResourceType,
+        import_resources_individually,
         is_yaml_config,
         load_user_modules,
-        render_yaml,
-        import_resources_individually,
         raise_helper,
-        ResourceType,
+        render_yaml,
     )
     from sup.clients.superset import SupSupersetClient
     from sup.config.settings import SupContext
-    import yaml
-    from pathlib import Path as PathlibPath
 
     for target in targets:
         name_display = f" ({target.name})" if target.name else ""
@@ -596,8 +598,8 @@ def execute_push(
                         console.print(f"   🐛 Saving debug bundle to: {debug_zip_path}")
 
                         from datetime import datetime, timezone
-                        from zipfile import ZipFile
                         from io import BytesIO
+                        from zipfile import ZipFile
 
                         # Create the same bundle that will be sent
                         debug_contents = dict(contents)
@@ -652,7 +654,7 @@ def execute_push(
                         # Show captured output if any
                         output = captured_output.getvalue()
                         if output and not porcelain:
-                            console.print(f"   📝 Import output:")
+                            console.print("   📝 Import output:")
                             console.print(output)
 
                     if not porcelain:

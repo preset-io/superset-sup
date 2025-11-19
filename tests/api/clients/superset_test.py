@@ -90,7 +90,6 @@ def test_run_query(mocker: MockerFixture, requests_mock: Mocker) -> None:
         """{
     "client_id": "5b8f4d8c89",
     "database_id": 1,
-    "json": true,
     "runAsync": false,
     "schema": null,
     "sql": "SELECT 1 AS value",
@@ -177,7 +176,6 @@ def test_run_query_legacy_endpoint(
         """{
     "client_id": "5b8f4d8c89",
     "database_id": 1,
-    "json": true,
     "runAsync": false,
     "schema": null,
     "sql": "SELECT 1 AS value",
@@ -198,7 +196,6 @@ def test_run_query_legacy_endpoint(
         """{
     "client_id": "5b8f4d8c89",
     "database_id": 1,
-    "json": true,
     "runAsync": false,
     "schema": null,
     "sql": "SELECT 1 AS value",

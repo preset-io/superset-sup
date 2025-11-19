@@ -217,58 +217,79 @@ def dataset_info(
         raise typer.Exit(1)
 
 
-@app.command("export")
-def export_dataset(
-    dataset_id: Annotated[
-        Optional[int],
-        typer.Argument(help="Dataset ID to export"),
-    ] = None,
-    folder: Annotated[
+@app.command("pull")
+def pull_datasets(
+    assets_folder: Annotated[
         Optional[str],
-        typer.Option("--folder", help="Export folder (default: ./assets/)"),
+        typer.Argument(
+            help="Assets folder to pull dataset definitions to (defaults to configured folder)",
+        ),
+    ] = None,
+    # Universal filters - same as list command
+    id_filter: Annotated[
+        Optional[int],
+        typer.Option("--id", help="Pull specific dataset by ID"),
+    ] = None,
+    ids_filter: Annotated[
+        Optional[str],
+        typer.Option("--ids", help="Pull multiple datasets by IDs (comma-separated)"),
+    ] = None,
+    search_filter: Annotated[
+        Optional[str],
+        typer.Option("--search", help="Pull datasets matching search pattern"),
+    ] = None,
+    mine_filter: Annotated[
+        bool,
+        typer.Option("--mine", help="Pull only datasets you own"),
+    ] = False,
+    limit: Annotated[
+        Optional[int],
+        typer.Option("--limit", "-l", help="Maximum number of datasets to pull"),
+    ] = None,
+    # Pull-specific options
+    workspace_id: Annotated[
+        Optional[int],
+        typer.Option(
+            "--workspace-id",
+            "-w",
+            help="Workspace ID (defaults to configured workspace)",
+        ),
     ] = None,
     overwrite: Annotated[
         bool,
         typer.Option("--overwrite", help="Overwrite existing files"),
     ] = False,
-    dry_run: Annotated[
+    skip_dependencies: Annotated[
         bool,
-        typer.Option("--dry-run", help="Preview export without writing files"),
+        typer.Option(
+            "--skip-dependencies",
+            help="Pull datasets only, without related database connections",
+        ),
     ] = False,
-    workspace_id: Annotated[
-        Optional[int],
-        typer.Option("--workspace-id", "-w", help="Workspace ID"),
-    ] = None,
-    # Filter options for bulk export
-    ids_filter: Annotated[
-        Optional[str],
-        typer.Option("--ids", help="Export multiple datasets (comma-separated IDs)"),
-    ] = None,
-    name_filter: Annotated[
-        Optional[str],
-        typer.Option("--name", help="Export datasets matching name pattern"),
-    ] = None,
-    mine_filter: Annotated[
+    porcelain: Annotated[
         bool,
-        typer.Option("--mine", help="Export only datasets you own"),
+        typer.Option("--porcelain", help="Machine-readable output (no decorations)"),
     ] = False,
 ):
     """
-    Export dataset(s) to YAML files.
+    Pull dataset definitions from Superset workspace to local filesystem.
+
+    Downloads dataset configurations as YAML files following the same pattern as chart pull.
 
     Examples:
-        sup dataset export 123                           # Export single dataset
-        sup dataset export --ids=1,2,3 --folder=./backup/  # Export multiple to custom folder
-        sup dataset export --mine --dry-run             # Preview export of my datasets
+        sup dataset pull                           # Pull all datasets + dependencies
+        sup dataset pull --mine                    # Pull your datasets + dependencies
+        sup dataset pull --id=123                  # Pull specific dataset + dependencies
+        sup dataset pull --search="sales"          # Pull matching datasets + dependencies
+        sup dataset pull --skip-dependencies       # Pull datasets only (no databases)
     """
     console.print(
-        f"{EMOJIS['export']} Exporting datasets...",
-        style=RICH_STYLES["info"],
-    )
-    # TODO: Implement dataset export
-    console.print(
-        f"{EMOJIS['warning']} Dataset export not yet implemented",
+        f"{EMOJIS['warning']} Dataset pull not yet implemented",
         style=RICH_STYLES["warning"],
+    )
+    console.print(
+        "This will follow the same pattern as chart pull when implemented.",
+        style=RICH_STYLES["dim"],
     )
 
 

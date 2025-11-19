@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 This is `preset-cli`, a command-line interface for interacting with Preset (https://preset.io/) workspaces. The CLI allows users to:
 
 - Run SQL queries against analytical databases in workspaces
-- Import/export resources (databases, datasets, charts, dashboards)
+- Pull/push resources (databases, datasets, charts, dashboards) using git-like workflow
 - Sync from dbt Core/Cloud projects to Preset workspaces
 - Manage users, teams, and workspace permissions
 - Handle authentication via API tokens or JWT
@@ -109,10 +109,24 @@ sup workspace show                            # Display source + target context
 sup sql "SELECT * FROM users LIMIT 5"        # Rich table output
 sup sql "SELECT COUNT(*) FROM sales" --json  # JSON for automation
 
-# Chart lifecycle management (COMPLETE PATTERN)
+# Chart lifecycle management (COMPLETE PATTERN - PRODUCTION)
 sup chart list --mine --limit 10              # Universal filtering
 sup chart pull --mine                         # Pull charts + dependencies to ./assets/
 sup chart push --workspace-id=456 --force     # Push to target workspace
+
+# Dashboard lifecycle management (STUB - follows chart pattern)
+sup dashboard list --mine                     # Universal filtering
+sup dashboard pull --mine                     # Pull dashboards + dependencies (not implemented)
+sup dashboard push                            # Push dashboards to workspace (not implemented)
+
+# Dataset lifecycle management (STUB - follows chart pattern)
+sup dataset list --search="sales"             # Universal filtering
+sup dataset pull --mine                       # Pull datasets + dependencies (not implemented)
+sup dataset push                              # Push datasets to workspace (not implemented)
+
+# User management (READ-ONLY)
+sup user list --limit 50                      # List users in workspace
+# Note: User pull/push intentionally not implemented (security/RBAC concerns)
 
 # Multi-asset sync workflows (NEW - WORKING)
 sup sync create ./my_sync --source 123 --targets 456,789  # Create sync config
@@ -125,14 +139,24 @@ sup config show                               # Display all current settings
 sup config set target-workspace-id 789        # Set cross-workspace target
 ```
 
-### sup Development Status
-- ✅ **7 Entity Types Complete**: workspace, database, dataset, chart, dashboard, query, user
-- ✅ **Chart Pull/Push Pattern**: Complete asset lifecycle with dependency management
+### sup Development Status - Pull/Push Terminology
+
+**Terminology Standard**: All sup commands use **pull/push** (not import/export) for git-like UX consistency
+
+**Entity Pull/Push Status**:
+- ✅ **chart**: Full pull/push implementation with dependency management (PRODUCTION)
+- 🔨 **dashboard**: Pull command stub added, push not implemented
+- 🔨 **dataset**: Pull command stub added, push not implemented
+- 🔨 **database**: No pull/push commands (managed via config files)
+- ❌ **user**: Intentionally no pull/push (security/RBAC concerns, list-only)
+- ❌ **query**: No pull/push (discovery-only entity)
+
+**Additional Features**:
 - ✅ **Enterprise Features**: Cross-workspace sync, target configuration, safety confirmations
 - ✅ **Production Tested**: Live integration with real Preset workspaces
 - ✅ **Multi-Asset Sync Framework**: YAML-based sync configs with automatic dependency resolution
 - ✅ **Sync Pull Implementation**: Full working implementation using legacy export_resource
-- 🎯 **Next**: Sync push implementation for complete multi-target workflows
+- 🎯 **Next**: Dashboard/dataset pull implementation, sync push for multi-target workflows
 
 ## Multi-Asset Sync Implementation (NEW)
 
@@ -197,10 +221,10 @@ targets:
 ### dbt Integration Entity Distribution
 **How dbt capabilities map to sup entities:**
 
-- **`sup database sync`**: dbt profiles → Superset database connections
-- **`sup dataset sync`**: dbt models → Superset datasets (schema, metrics, metadata)
-- **`sup chart sync`**: Superset charts → dbt exposures (usage tracking)
-- **`sup dashboard sync`**: Superset dashboards → dbt exposures (business context)
+- **`sup database pull`**: dbt profiles → Superset database connections
+- **`sup dataset pull`**: dbt models → Superset datasets (schema, metrics, metadata)
+- **`sup chart pull`**: Superset charts → dbt exposures (usage tracking)
+- **`sup dashboard pull`**: Superset dashboards → dbt exposures (business context)
 
 **Required sup config keys for dbt integration:**
 ```bash

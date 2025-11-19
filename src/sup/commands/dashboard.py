@@ -286,5 +286,81 @@ def display_dashboard_details(dashboard: Dict[str, Any]) -> None:
         )
 
 
+@app.command("pull")
+def pull_dashboards(
+    assets_folder: Annotated[
+        Optional[str],
+        typer.Argument(
+            help="Assets folder to pull dashboard definitions to (defaults to configured folder)",
+        ),
+    ] = None,
+    # Universal filters - same as list command
+    id_filter: Annotated[
+        Optional[int],
+        typer.Option("--id", help="Pull specific dashboard by ID"),
+    ] = None,
+    ids_filter: Annotated[
+        Optional[str],
+        typer.Option("--ids", help="Pull multiple dashboards by IDs (comma-separated)"),
+    ] = None,
+    search_filter: Annotated[
+        Optional[str],
+        typer.Option("--search", help="Pull dashboards matching search pattern"),
+    ] = None,
+    mine_filter: Annotated[
+        bool,
+        typer.Option("--mine", help="Pull only dashboards you own"),
+    ] = False,
+    limit: Annotated[
+        Optional[int],
+        typer.Option("--limit", "-l", help="Maximum number of dashboards to pull"),
+    ] = None,
+    # Pull-specific options
+    workspace_id: Annotated[
+        Optional[int],
+        typer.Option(
+            "--workspace-id",
+            "-w",
+            help="Workspace ID (defaults to configured workspace)",
+        ),
+    ] = None,
+    overwrite: Annotated[
+        bool,
+        typer.Option("--overwrite", help="Overwrite existing files"),
+    ] = False,
+    skip_dependencies: Annotated[
+        bool,
+        typer.Option(
+            "--skip-dependencies",
+            help="Pull dashboards only, without related charts, datasets, and databases",
+        ),
+    ] = False,
+    porcelain: Annotated[
+        bool,
+        typer.Option("--porcelain", help="Machine-readable output (no decorations)"),
+    ] = False,
+):
+    """
+    Pull dashboard definitions from Superset workspace to local filesystem.
+
+    Downloads dashboard configurations as YAML files following the same pattern as chart pull.
+
+    Examples:
+        sup dashboard pull                           # Pull all dashboards + dependencies
+        sup dashboard pull --mine                    # Pull your dashboards + dependencies
+        sup dashboard pull --id=254                  # Pull specific dashboard + dependencies
+        sup dashboard pull --search="sales"          # Pull matching dashboards + dependencies
+        sup dashboard pull --skip-dependencies       # Pull dashboards only (no deps)
+    """
+    console.print(
+        f"{EMOJIS['warning']} Dashboard pull not yet implemented",
+        style=RICH_STYLES["warning"],
+    )
+    console.print(
+        "This will follow the same pattern as chart pull when implemented.",
+        style=RICH_STYLES["dim"],
+    )
+
+
 if __name__ == "__main__":
     app()

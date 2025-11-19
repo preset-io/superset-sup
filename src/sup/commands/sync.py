@@ -7,7 +7,7 @@ targets with environment-specific customization.
 """
 
 from pathlib import Path
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 import typer
 from rich.console import Console
@@ -583,7 +583,7 @@ def execute_push(
 
                 # Log what we're pushing
                 if not porcelain:
-                    asset_counts = {}
+                    asset_counts: Dict[str, int] = {}
                     for path in configs.keys():
                         asset_type = path.parts[1] if len(path.parts) > 1 else "unknown"
                         asset_counts[asset_type] = asset_counts.get(asset_type, 0) + 1
@@ -668,9 +668,10 @@ def execute_push(
                             style=RICH_STYLES["error"],
                         )
                         # Try to extract more details from the error
-                        if hasattr(import_error, 'errors'):
-                            console.print(f"   📋 Error details:")
-                            for err in import_error.errors:
+                        errors = getattr(import_error, "errors", None)
+                        if errors:
+                            console.print("   📋 Error details:")
+                            for err in errors:
                                 console.print(f"      - {err}")
                     raise
             else:

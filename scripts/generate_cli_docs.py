@@ -323,15 +323,20 @@ description: "{clean_desc or "CLI command documentation"}"
 
 def capture_sup_output():
     """Run sup command and capture its output."""
+    import os
+
+    # Set consistent terminal width to match CI environment
+    env = os.environ.copy()
+    env["COLUMNS"] = "80"  # Standard terminal width for consistent output
 
     try:
-        result = subprocess.run(["sup"], capture_output=True, text=True, timeout=5)
+        result = subprocess.run(["sup"], capture_output=True, text=True, timeout=5, env=env)
         return result.stdout
     except FileNotFoundError:
         # Try python module if sup not in PATH
         try:
             result = subprocess.run(
-                ["python", "-m", "sup.main"], capture_output=True, text=True, timeout=5
+                ["python", "-m", "sup.main"], capture_output=True, text=True, timeout=5, env=env
             )
             return result.stdout
         except Exception:
@@ -463,11 +468,11 @@ hero:
       </div>
   actions:
     - text: Quick Start
-      link: superset-sup/introduction/
+      link: introduction/
       icon: right-arrow
       variant: primary
     - text: View Commands
-      link: superset-sup/commands/workspace/
+      link: commands/workspace/
       icon: external
 ---
 
@@ -509,7 +514,7 @@ import {{ Card, CardGrid }} from '@astrojs/starlight/components';
 # Set your workspace
 sup workspace use 123
 
-# Pull your charts
+# Pull your charts  
 sup chart pull --mine
 
 # Run SQL queries
@@ -521,8 +526,7 @@ sup chart push --workspace-id 456
 
 ## Getting Started
 
-Start with our [introduction](/introduction/) to understand sup's core concepts, 
-then follow the [installation guide](/installation/) to get up and running.
+Start with our [introduction](/introduction/) to understand sup's core concepts, then follow the [installation guide](/installation/) to get up and running.
 """
 
     return mdx

@@ -5,6 +5,8 @@ import starlightThemeRapide from 'starlight-theme-rapide';
 
 // https://astro.build/config
 export default defineConfig({
+	site: 'https://preset-io.github.io/superset-sup/',
+	base: '/superset-sup/',
 	integrations: [
 		starlight({
 			title: 'sup CLI',

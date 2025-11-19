@@ -223,7 +223,7 @@ def generate_command_mdx(command: Dict[str, Any], is_subcommand: bool = False) -
     # Build the MDX frontmatter
     frontmatter = f"""---
 title: "sup {name}"
-description: "{clean_desc or 'CLI command documentation'}"
+description: "{clean_desc or "CLI command documentation"}"
 ---"""
 
     # Build the content
@@ -360,14 +360,14 @@ def generate_index_mdx():
             if "███" in line or "██╔" in line or "╚══" in line or "██║" in line:
                 escaped = line.replace("<", "&lt;").replace(">", "&gt;")
                 html_lines.append(
-                    f'<span style="color: #10B981; ' f'font-weight: bold;">{escaped}</span>'
+                    f'<span style="color: #10B981; font-weight: bold;">{escaped}</span>'
                 )
 
             # Title line (contains emoji)
             elif "🚀" in line:
                 escaped = line.replace("<", "&lt;").replace(">", "&gt;")
                 html_lines.append(
-                    f'<span style="color: #f0f0f0; ' f'font-weight: 600;">{escaped}</span>'
+                    f'<span style="color: #f0f0f0; font-weight: 600;">{escaped}</span>'
                 )
 
             # Subtitle lines
@@ -380,7 +380,7 @@ def generate_index_mdx():
                 html_lines.append("")
                 escaped = line.replace("<", "&lt;").replace(">", "&gt;")
                 html_lines.append(
-                    f'<span style="color: #60A5FA; ' f'font-weight: 500;">{escaped}</span>'
+                    f'<span style="color: #60A5FA; font-weight: 500;">{escaped}</span>'
                 )
 
             # Bullet points - extract capabilities
@@ -414,9 +414,8 @@ def generate_index_mdx():
         capabilities = [
             "Run any SQL through Superset's data access layer - "
             "get results as rich table, CSV, YAML or JSON",
-            "Backup and restore charts, dashboards, and datasets with " "full dependency tracking",
-            "Synchronize assets across Superset instances with Jinja2 "
-            "templating for customization",
+            "Backup and restore charts, dashboards, and datasets with full dependency tracking",
+            "Synchronize assets across Superset instances with Jinja2 templating for customization",
             "Enrich metadata to/from dbt Core/Cloud - more integrations to come",
             "Automate workflows and integrate with CI/CD pipelines",
             "Perfect for scripting and AI-assisted data exploration",
@@ -464,11 +463,11 @@ hero:
       </div>
   actions:
     - text: Quick Start
-      link: /introduction/
+      link: superset-sup/introduction/
       icon: right-arrow
       variant: primary
     - text: View Commands
-      link: /commands/workspace/
+      link: superset-sup/commands/workspace/
       icon: external
 ---
 

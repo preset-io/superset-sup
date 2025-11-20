@@ -12,6 +12,17 @@ from halo import Halo
 from sup.output.styles import EMOJIS
 
 
+def _should_use_color() -> bool:
+    """Check if colors should be used (respects monochrome setting)."""
+    try:
+        from sup.output.console import get_console
+
+        console = get_console()
+        return not console.no_color
+    except Exception:
+        return True  # Default to colors if can't determine
+
+
 @contextmanager
 def spinner(
     text: str,
@@ -38,8 +49,14 @@ def spinner(
         yield None
         return
 
-    # Use cyan spinner to match our brand colors
-    with Halo(text=text, spinner="dots12", color="cyan", text_color="white") as sp:
+    # Respect monochrome mode
+    use_color = _should_use_color()
+    color = "cyan" if use_color else None
+    text_color = "white" if use_color else None
+
+    with Halo(
+        text=text, spinner="dots12", color=color, text_color=text_color, enabled=use_color or None
+    ) as sp:
         try:
             yield sp
             # Success message

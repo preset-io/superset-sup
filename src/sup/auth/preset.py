@@ -6,16 +6,14 @@ Builds on preset_cli's auth system with sup-specific configuration.
 
 from typing import Optional
 
-from rich.console import Console
 from yarl import URL
 
 from preset_cli.auth.lib import get_access_token
 from preset_cli.auth.preset import JWTTokenError
 from preset_cli.auth.preset import PresetAuth as BasePresetAuth
 from sup.config.settings import SupContext
+from sup.output.console import console
 from sup.output.styles import EMOJIS, RICH_STYLES
-
-console = Console()
 
 
 class SupPresetAuth(BasePresetAuth):

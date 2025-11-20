@@ -7,17 +7,18 @@ Working version without decorators - follows dataset.py pattern.
 from typing import Any, Dict, Optional
 
 import typer
-from rich.console import Console
+
+# Removed: from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 from typing_extensions import Annotated
 
+from sup.output.console import console
 from sup.output.formatters import display_porcelain_list
 from sup.output.styles import COLORS, EMOJIS, RICH_STYLES
 from sup.output.tables import display_dashboards_table
 
 app = typer.Typer(help="Manage dashboards", no_args_is_help=True)
-console = Console()
 
 
 @app.command("list")
@@ -352,14 +353,145 @@ def pull_dashboards(
         sup dashboard pull --search="sales"          # Pull matching dashboards + dependencies
         sup dashboard pull --skip-dependencies       # Pull dashboards only (no deps)
     """
-    console.print(
-        f"{EMOJIS['warning']} Dashboard pull not yet implemented",
-        style=RICH_STYLES["warning"],
-    )
-    console.print(
-        "This will follow the same pattern as chart pull when implemented.",
-        style=RICH_STYLES["dim"],
-    )
+    from pathlib import Path
+    from zipfile import ZipFile
+
+    from sup.clients.superset import SupSupersetClient
+    from sup.config.settings import SupContext
+    from sup.output.spinners import data_spinner
+
+    # Resolve assets folder using config default
+    ctx = SupContext()
+    resolved_assets_folder = ctx.get_assets_folder(cli_override=assets_folder)
+
+    if not porcelain:
+        console.print(
+            f"{EMOJIS['export']} Exporting dashboards to {resolved_assets_folder}...",
+            style=RICH_STYLES["info"],
+        )
+
+    try:
+        # Resolve assets folder path
+        output_path = Path(resolved_assets_folder)
+        if not output_path.exists():
+            output_path.mkdir(parents=True, exist_ok=True)
+        elif not output_path.is_dir():
+            console.print(
+                f"{EMOJIS['error']} Path exists but is not a directory: {resolved_assets_folder}",
+                style=RICH_STYLES["error"],
+            )
+            raise typer.Exit(1)
+
+        # Get dashboards using existing API
+        client = SupSupersetClient.from_context(ctx, workspace_id)
+
+        with data_spinner("dashboards to export", silent=porcelain) as sp:
+            # Get dashboards (server-side filtering)
+            dashboards = client.get_dashboards(
+                silent=True,
+                text_search=search_filter,
+            )
+
+            # Client-side filtering
+            if id_filter:
+                dashboards = [d for d in dashboards if d.get("id") == id_filter]
+            elif ids_filter:
+                id_list = [int(x.strip()) for x in ids_filter.split(",")]
+                dashboards = [d for d in dashboards if d.get("id") in id_list]
+
+            if mine_filter:
+                try:
+                    current_user = client.client.get_me()  # type: ignore[attr-defined]
+                    current_user_id = current_user.get("id")
+                    dashboards = [
+                        d
+                        for d in dashboards
+                        if any(owner.get("id") == current_user_id for owner in d.get("owners", []))
+                    ]
+                except Exception:
+                    pass
+
+            if limit:
+                dashboards = dashboards[:limit]
+
+            # Extract IDs for export
+            dashboard_ids = [dashboard["id"] for dashboard in dashboards]
+
+            if sp:
+                sp.text = f"Found {len(dashboard_ids)} dashboards to export"
+
+        if not dashboard_ids:
+            console.print(
+                f"{EMOJIS['warning']} No dashboards match your filters",
+                style=RICH_STYLES["warning"],
+            )
+            return
+
+        # Export using existing API
+        should_include_dependencies = not skip_dependencies
+
+        if not porcelain:
+            dependency_msg = " (with dependencies)" if should_include_dependencies else ""
+            console.print(
+                f"{EMOJIS['info']} Exporting {len(dashboard_ids)} dashboards{dependency_msg}...",
+                style=RICH_STYLES["info"],
+            )
+
+        zip_buffer = client.client.export_zip("dashboard", dashboard_ids)
+
+        # Process ZIP contents
+        def remove_root(file_name: str) -> str:
+            """Remove root directory from file path"""
+            parts = Path(file_name).parts
+            return str(Path(*parts[1:])) if len(parts) > 1 else file_name
+
+        with ZipFile(zip_buffer) as bundle:
+            contents = {
+                remove_root(file_name): bundle.read(file_name).decode()
+                for file_name in bundle.namelist()
+            }
+
+        # Save files to filesystem
+        files_written = 0
+        for file_name, file_contents in contents.items():
+            # Skip related files unless dependencies are requested
+            if not should_include_dependencies and not file_name.startswith("dashboard"):
+                continue
+
+            target = output_path / file_name
+            if target.exists() and not overwrite:
+                if not porcelain:
+                    console.print(
+                        f"{EMOJIS['warning']} File exists, skipping: {target}",
+                        style=RICH_STYLES["warning"],
+                    )
+                continue
+
+            # Create directory if needed
+            if not target.parent.exists():
+                target.parent.mkdir(parents=True, exist_ok=True)
+
+            # Write file
+            with open(target, "w", encoding="utf-8") as output:
+                output.write(file_contents)
+
+            files_written += 1
+
+        if not porcelain:
+            console.print(
+                f"{EMOJIS['success']} Exported {files_written} files to {resolved_assets_folder}",
+                style=RICH_STYLES["success"],
+            )
+        else:
+            print(f"{files_written}\t{resolved_assets_folder}")
+
+    except Exception as e:
+        if not porcelain:
+            console.print(
+                f"{EMOJIS['error']} Failed to export dashboards: {e}",
+                style=RICH_STYLES["error"],
+            )
+        raise typer.Exit(1)
 
 
 if __name__ == "__main__":

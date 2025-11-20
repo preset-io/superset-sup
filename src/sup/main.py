@@ -6,7 +6,6 @@ Main entry point for the sup command-line interface.
 """
 
 import typer
-from rich.console import Console
 from rich.theme import Theme
 from typing_extensions import Annotated
 
@@ -23,6 +22,7 @@ from sup.commands import (
     workspace,
 )
 from sup.commands import config as config_cmd
+from sup.output.console import get_console
 from sup.output.styles import RICH_STYLES
 
 # Custom Rich theme to eliminate purple/magenta colors
@@ -41,7 +41,7 @@ PRESET_THEME = Theme(
 )
 
 # Initialize Rich console with custom theme
-console = Console(theme=PRESET_THEME)
+console = get_console(theme=PRESET_THEME)
 
 # ASCII Art Banner
 BANNER = """\

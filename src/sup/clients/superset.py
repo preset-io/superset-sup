@@ -6,15 +6,14 @@ Provides database and SQL execution functionality.
 
 from typing import Any, Dict, List, Optional
 
-from rich.console import Console
+# Removed: from rich.console import Console
 from rich.table import Table
 
 from preset_cli.api.clients.superset import SupersetClient
 from sup.auth.preset import SupPresetAuth
 from sup.config.settings import SupContext
+from sup.output.console import console
 from sup.output.styles import COLORS, EMOJIS, RICH_STYLES
-
-console = Console()
 
 
 class SupSupersetClient:
@@ -459,44 +458,112 @@ class SupSupersetClient:
             # First get the chart to get its query_context and form_data
             chart = self.client.get_chart(chart_id)
 
-            # Try to use query_context if available (this is what actually gets executed)
-            query_context = chart.get("query_context", "{}")
-            if isinstance(query_context, str):
-                import json
-
-                query_context = json.loads(query_context)
-
-            # Build the payload using the chart's existing query context
-            # This should match what Superset expects
-            from preset_cli.lib import validate_response
-
-            url = self.client.baseurl / "api/v1/chart/data"
-
-            # Use the form data format that Superset expects
-            form_data_payload = {
-                **query_context,
-                "result_type": result_type,
-                "result_format": "json",
-            }
-
-            # Send as form data, not JSON (matching frontend)
             import json
 
-            response = self.client.session.post(
-                url,
-                data={"form_data": json.dumps(form_data_payload)},
-            )
-            validate_response(response)
+            from preset_cli.lib import validate_response
 
-            result = response.json()
+            # Try to use query_context if available (newer Superset versions)
+            query_context = chart.get("query_context")
 
-            if not silent:
-                console.print(
-                    f"Retrieved chart {result_type}",
-                    style=RICH_STYLES["dim"],
+            # APPROACH 1: Use saved query_context (newest Superset, most reliable)
+            if query_context and query_context not in ["", "{}"]:
+                if isinstance(query_context, str):
+                    query_context = json.loads(query_context)
+
+                url = self.client.baseurl / "api/v1/chart/data"
+                form_data_payload = {
+                    **query_context,
+                    "result_type": result_type,
+                    "result_format": "json",
+                }
+
+                response = self.client.session.post(
+                    url,
+                    data={"form_data": json.dumps(form_data_payload)},
                 )
+                validate_response(response)
+                result = response.json()
 
-            return result
+                if not silent:
+                    console.print(
+                        f"Retrieved chart {result_type}",
+                        style=RICH_STYLES["dim"],
+                    )
+                return result
+
+            # APPROACH 2: Try GET /api/v1/chart/{id}/data/ (works for some charts)
+            url_get = self.client.baseurl / f"api/v1/chart/{chart_id}/data/"
+            response_get = self.client.session.get(url_get)
+
+            if response_get.status_code == 200:
+                result = response_get.json()
+                if not silent:
+                    console.print(
+                        f"Retrieved chart {result_type}",
+                        style=RICH_STYLES["dim"],
+                    )
+                return result
+
+            # APPROACH 3: Try constructing query_context from params (older Superset)
+            params = chart.get("params", "{}")
+            if isinstance(params, str):
+                params = json.loads(params)
+
+            # Check if we have datasource info in params
+            datasource_key = params.get("datasource")
+            if datasource_key:
+                # Parse datasource key (format: "id__type")
+                try:
+                    datasource_id, datasource_type = datasource_key.split("__")
+                    datasource_id = int(datasource_id)
+
+                    # Construct a minimal query_context from params
+                    constructed_qc = {
+                        "datasource": {
+                            "id": datasource_id,
+                            "type": datasource_type,
+                        },
+                        "queries": [
+                            {
+                                "columns": params.get("columns", []),
+                                "metrics": [params.get("metric")]
+                                if params.get("metric")
+                                else params.get("metrics", []),
+                                "row_limit": params.get("row_limit", 10000),
+                                "filters": params.get("adhoc_filters", []),
+                                "extras": params.get("extras", {}),
+                            }
+                        ],
+                        "form_data": {
+                            **params,
+                            "slice_id": chart_id,
+                        },
+                        "result_type": result_type,
+                        "result_format": "json",
+                    }
+
+                    url = self.client.baseurl / "api/v1/chart/data"
+                    response = self.client.session.post(
+                        url,
+                        data={"form_data": json.dumps(constructed_qc)},
+                    )
+
+                    if response.status_code == 200:
+                        result = response.json()
+                        if not silent:
+                            console.print(
+                                f"Retrieved chart {result_type}",
+                                style=RICH_STYLES["dim"],
+                            )
+                        return result
+                except (ValueError, KeyError):
+                    pass
+
+            # All approaches failed
+            raise ValueError(
+                f"Chart {chart_id} has no saved query context and cannot construct one. "
+                f"Please open and save the chart in Superset to generate a query context."
+            )
 
         except Exception as e:
             if not silent:
@@ -504,7 +571,7 @@ class SupSupersetClient:
                     f"{EMOJIS['error']} Failed to get chart {result_type}: {e}",
                     style=RICH_STYLES["error"],
                 )
-            return {}
+            raise
 
     def execute_sql(self, database_id: int, sql: str) -> Dict[str, Any]:
         """Execute SQL query against a database."""

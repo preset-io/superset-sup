@@ -5,10 +5,10 @@ Quick utility to test colors and styling in the terminal.
 """
 
 import typer
-from rich.console import Console
+
+from sup.output.console import console
 
 app = typer.Typer(help="Test themes and colors", no_args_is_help=True)
-console = Console()
 
 # ASCII Art Banner for testing
 BANNER = """██ ███████╗██╗   ██╗██████╗ ██╗

@@ -7,13 +7,14 @@ Handles database listing, selection, and connection management.
 from typing import Optional
 
 import typer
-from rich.console import Console
+
+# Removed: from rich.console import Console
 from typing_extensions import Annotated
 
+from sup.output.console import console
 from sup.output.styles import EMOJIS, RICH_STYLES
 
 app = typer.Typer(help="Manage databases", no_args_is_help=True)
-console = Console()
 
 
 @app.command("list")
@@ -127,19 +128,96 @@ def use_database(
 @app.command("info")
 def database_info(
     database_id: Annotated[int, typer.Argument(help="Database ID to inspect")],
+    workspace_id: Annotated[
+        Optional[int],
+        typer.Option("--workspace-id", "-w", help="Workspace ID"),
+    ] = None,
+    json_output: Annotated[bool, typer.Option("--json", "-j", help="Output as JSON")] = False,
+    yaml_output: Annotated[bool, typer.Option("--yaml", "-y", help="Output as YAML")] = False,
+    porcelain: Annotated[
+        bool,
+        typer.Option("--porcelain", help="Machine-readable output"),
+    ] = False,
 ):
     """
     Show detailed information about a database.
 
-    Displays connection details, available schemas, tables, and metadata.
+    Displays connection details, backend type, and configuration.
     """
-    console.print(
-        f"{EMOJIS['info']} Loading database {database_id} details...",
-        style=RICH_STYLES["info"],
-    )
+    from sup.clients.superset import SupSupersetClient
+    from sup.config.settings import SupContext
+    from sup.output.spinners import data_spinner
 
-    # TODO: Implement database details fetching
+    try:
+        with data_spinner(f"database {database_id}", silent=porcelain):
+            ctx = SupContext()
+            client = SupSupersetClient.from_context(ctx, workspace_id)
+
+            # Get database info
+            database = client.get_database(database_id)
+
+        if porcelain:
+            # Simple key-value output
+            db_name = database.get("database_name", "")
+            backend = database.get("backend", "")
+            print(f"{database_id}\t{db_name}\t{backend}")
+        elif json_output:
+            import json
+
+            console.print(json.dumps(database, indent=2, default=str))
+        elif yaml_output:
+            import yaml
+
+            console.print(yaml.safe_dump(database, default_flow_style=False, indent=2))
+        else:
+            display_database_details(database)
+
+    except Exception as e:
+        if not porcelain:
+            console.print(
+                f"{EMOJIS['error']} Failed to get database info: {e}",
+                style=RICH_STYLES["error"],
+            )
+        raise typer.Exit(1)
+
+
+def display_database_details(database: dict) -> None:
+    """Display detailed database information."""
+    from rich.panel import Panel
+
+    database_id = database.get("id", "")
+    name = database.get("database_name", "Unknown")
+    backend = database.get("backend", "Unknown")
+
+    # Basic info
+    info_lines = [
+        f"ID: {database_id}",
+        f"Name: {name}",
+        f"Backend: {backend}",
+        f"Expose in SQL Lab: {database.get('expose_in_sqllab', False)}",
+    ]
+
+    # Add capabilities
+    capabilities = []
+    if database.get("allow_ctas"):
+        capabilities.append("CTAS")
+    if database.get("allow_cvas"):
+        capabilities.append("CVAS")
+    if database.get("allow_dml"):
+        capabilities.append("DML")
+    if database.get("allow_file_upload"):
+        capabilities.append("File Upload")
+    if database.get("allow_run_async"):
+        capabilities.append("Async Queries")
+
+    if capabilities:
+        info_lines.append(f"Capabilities: {', '.join(capabilities)}")
+
+    # Add UUID if available
+    if database.get("uuid"):
+        info_lines.append(f"UUID: {database['uuid']}")
+
+    panel_content = "\n".join(info_lines)
     console.print(
-        f"{EMOJIS['warning']} Database info not yet implemented",
-        style=RICH_STYLES["warning"],
+        Panel(panel_content, title=f"Database: {name}", border_style=RICH_STYLES["brand"])
     )

@@ -481,7 +481,7 @@ import {{ Card, CardGrid }} from '@astrojs/starlight/components';
 ## Features
 
 <CardGrid>
-  <Card title="SQL Execution" icon="seti:sql">
+  <Card title="SQL Execution" icon="seti:db">
     Run any SQL through Superset's data access layer with multiple output formats
   </Card>
   <Card title="Asset Management" icon="github">

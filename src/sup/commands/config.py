@@ -200,6 +200,7 @@ def set_config(
             ctx.global_config.save_to_file()
             # Reset console cache so changes take effect immediately
             from sup.output.console import reset_console_cache
+
             reset_console_cache()
         elif key == "color-output":
             # Direct control of color_output
@@ -207,6 +208,7 @@ def set_config(
             ctx.global_config.save_to_file()
             # Reset console cache so changes take effect immediately
             from sup.output.console import reset_console_cache
+
             reset_console_cache()
         elif key == "preset-api-token":
             ctx.global_config.preset_api_token = value

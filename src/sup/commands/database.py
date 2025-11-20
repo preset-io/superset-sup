@@ -7,11 +7,12 @@ Handles database listing, selection, and connection management.
 from typing import Optional
 
 import typer
+
 # Removed: from rich.console import Console
 from typing_extensions import Annotated
 
-from sup.output.styles import EMOJIS, RICH_STYLES
 from sup.output.console import console
+from sup.output.styles import EMOJIS, RICH_STYLES
 
 app = typer.Typer(help="Manage databases", no_args_is_help=True)
 
@@ -157,9 +158,9 @@ def database_info(
 
         if porcelain:
             # Simple key-value output
-            print(
-                f"{database_id}\t{database.get('database_name', '')}\t{database.get('backend', '')}",
-            )
+            db_name = database.get("database_name", "")
+            backend = database.get("backend", "")
+            print(f"{database_id}\t{db_name}\t{backend}")
         elif json_output:
             import json
 
@@ -217,4 +218,6 @@ def display_database_details(database: dict) -> None:
         info_lines.append(f"UUID: {database['uuid']}")
 
     panel_content = "\n".join(info_lines)
-    console.print(Panel(panel_content, title=f"Database: {name}", border_style=RICH_STYLES["brand"]))
+    console.print(
+        Panel(panel_content, title=f"Database: {name}", border_style=RICH_STYLES["brand"])
+    )

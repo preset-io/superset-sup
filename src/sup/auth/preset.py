@@ -12,8 +12,8 @@ from preset_cli.auth.lib import get_access_token
 from preset_cli.auth.preset import JWTTokenError
 from preset_cli.auth.preset import PresetAuth as BasePresetAuth
 from sup.config.settings import SupContext
-from sup.output.styles import EMOJIS, RICH_STYLES
 from sup.output.console import console
+from sup.output.styles import EMOJIS, RICH_STYLES
 
 
 class SupPresetAuth(BasePresetAuth):

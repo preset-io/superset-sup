@@ -16,6 +16,7 @@ def _should_use_color() -> bool:
     """Check if colors should be used (respects monochrome setting)."""
     try:
         from sup.output.console import get_console
+
         console = get_console()
         return not console.no_color
     except Exception:
@@ -53,7 +54,9 @@ def spinner(
     color = "cyan" if use_color else None
     text_color = "white" if use_color else None
 
-    with Halo(text=text, spinner="dots12", color=color, text_color=text_color, enabled=use_color or None) as sp:
+    with Halo(
+        text=text, spinner="dots12", color=color, text_color=text_color, enabled=use_color or None
+    ) as sp:
         try:
             yield sp
             # Success message

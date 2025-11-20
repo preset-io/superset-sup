@@ -12,9 +12,8 @@ from rich.table import Table
 from preset_cli.api.clients.superset import SupersetClient
 from sup.auth.preset import SupPresetAuth
 from sup.config.settings import SupContext
-from sup.output.styles import COLORS, EMOJIS, RICH_STYLES
 from sup.output.console import console
-
+from sup.output.styles import COLORS, EMOJIS, RICH_STYLES
 
 
 class SupSupersetClient:
@@ -460,6 +459,7 @@ class SupSupersetClient:
             chart = self.client.get_chart(chart_id)
 
             import json
+
             from preset_cli.lib import validate_response
 
             # Try to use query_context if available (newer Superset versions)
@@ -523,13 +523,17 @@ class SupSupersetClient:
                             "id": datasource_id,
                             "type": datasource_type,
                         },
-                        "queries": [{
-                            "columns": params.get("columns", []),
-                            "metrics": [params.get("metric")] if params.get("metric") else params.get("metrics", []),
-                            "row_limit": params.get("row_limit", 10000),
-                            "filters": params.get("adhoc_filters", []),
-                            "extras": params.get("extras", {}),
-                        }],
+                        "queries": [
+                            {
+                                "columns": params.get("columns", []),
+                                "metrics": [params.get("metric")]
+                                if params.get("metric")
+                                else params.get("metrics", []),
+                                "row_limit": params.get("row_limit", 10000),
+                                "filters": params.get("adhoc_filters", []),
+                                "extras": params.get("extras", {}),
+                            }
+                        ],
                         "form_data": {
                             **params,
                             "slice_id": chart_id,

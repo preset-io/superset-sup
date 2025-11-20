@@ -12,9 +12,8 @@ from rich.table import Table
 from preset_cli.api.clients.preset import PresetClient
 from sup.auth.preset import SupPresetAuth
 from sup.config.settings import SupContext
-from sup.output.styles import COLORS, EMOJIS, RICH_STYLES
 from sup.output.console import console
-
+from sup.output.styles import COLORS, EMOJIS, RICH_STYLES
 
 
 class SupPresetClient:

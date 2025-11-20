@@ -10,12 +10,13 @@ from pathlib import Path
 from typing import Dict, List, Optional
 
 import typer
+
 # Removed: from rich.console import Console
 from typing_extensions import Annotated
 
 from sup.config.sync import SyncConfig, validate_sync_folder
-from sup.output.styles import EMOJIS, RICH_STYLES
 from sup.output.console import console
+from sup.output.styles import EMOJIS, RICH_STYLES
 
 
 def format_sync_help():

@@ -178,7 +178,7 @@ def list_charts(
 
             # Apply limit after filtering
             if filters.limit:
-                charts = charts[:filters.limit]
+                charts = charts[: filters.limit]
 
             # Update spinner with results
             if sp:
@@ -598,8 +598,9 @@ def display_chart_details(
     client: Optional[Any] = None,
 ) -> None:
     """Display detailed chart information."""
-    from rich.panel import Panel
     import json
+
+    from rich.panel import Panel
 
     chart_id = chart.get("id", "")
     name = chart.get("slice_name", "Unknown")
@@ -617,7 +618,9 @@ def display_chart_details(
         query_context = chart.get("query_context")
         if query_context and query_context not in ["", "{}"]:
             try:
-                qc_data = json.loads(query_context) if isinstance(query_context, str) else query_context
+                qc_data = (
+                    json.loads(query_context) if isinstance(query_context, str) else query_context
+                )
                 datasource_info = qc_data.get("datasource")
                 if datasource_info and isinstance(datasource_info, dict):
                     dataset_id = datasource_info.get("id")
@@ -646,10 +649,10 @@ def display_chart_details(
                 )
                 if response.status_code == 200:
                     dataset_data = response.json()
-                    if 'result' in dataset_data:
-                        ds = dataset_data['result']
-                        table_name = ds.get('table_name', '')
-                        schema = ds.get('schema', '')
+                    if "result" in dataset_data:
+                        ds = dataset_data["result"]
+                        table_name = ds.get("table_name", "")
+                        schema = ds.get("schema", "")
                         if schema and table_name:
                             dataset_name = f"{schema}.{table_name}"
                         elif table_name:

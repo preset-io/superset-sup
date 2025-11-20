@@ -22,8 +22,8 @@ from sup.commands import (
     workspace,
 )
 from sup.commands import config as config_cmd
-from sup.output.styles import RICH_STYLES
 from sup.output.console import get_console
+from sup.output.styles import RICH_STYLES
 
 # Custom Rich theme to eliminate purple/magenta colors
 PRESET_THEME = Theme(

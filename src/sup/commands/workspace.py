@@ -7,11 +7,12 @@ Handles workspace listing, selection, and context management.
 from typing import Optional
 
 import typer
+
 # Removed: from rich.console import Console
 from typing_extensions import Annotated
 
-from sup.output.styles import EMOJIS, RICH_STYLES
 from sup.output.console import console
+from sup.output.styles import EMOJIS, RICH_STYLES
 
 app = typer.Typer(help="Manage workspaces", no_args_is_help=True)
 
@@ -225,9 +226,10 @@ def workspace_info(
 
         if porcelain:
             # Simple key-value output
-            print(
-                f"{workspace_id}\t{workspace.get('title', '')}\t{workspace.get('status', '')}\t{workspace.get('hostname', '')}",
-            )
+            title = workspace.get("title", "")
+            status = workspace.get("status", "")
+            hostname = workspace.get("hostname", "")
+            print(f"{workspace_id}\t{title}\t{status}\t{hostname}")
         elif json_output:
             import json
 
@@ -291,7 +293,9 @@ def display_workspace_details(workspace: dict) -> None:
         info_lines.append(f"Features: {', '.join(features)}")
 
     panel_content = "\n".join(info_lines)
-    console.print(Panel(panel_content, title=f"Workspace: {title}", border_style=RICH_STYLES["brand"]))
+    console.print(
+        Panel(panel_content, title=f"Workspace: {title}", border_style=RICH_STYLES["brand"])
+    )
 
 
 @app.command("set-target")

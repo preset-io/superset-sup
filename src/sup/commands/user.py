@@ -7,11 +7,12 @@ Handles user listing, role management, and security operations.
 from typing import Optional
 
 import typer
+
 # Removed: from rich.console import Console
 from typing_extensions import Annotated
 
-from sup.output.styles import EMOJIS, RICH_STYLES
 from sup.output.console import console
+from sup.output.styles import EMOJIS, RICH_STYLES
 
 app = typer.Typer(help="Manage users", no_args_is_help=True)
 
@@ -132,9 +133,10 @@ def user_info(
 
         if porcelain:
             # Simple key-value output
-            print(
-                f"{user_id}\t{user.get('email', '')}\t{user.get('first_name', '')}\t{user.get('last_name', '')}",
-            )
+            email = user.get("email", "")
+            first = user.get("first_name", "")
+            last = user.get("last_name", "")
+            print(f"{user_id}\t{email}\t{first}\t{last}")
         elif json_output:
             import json
 
@@ -187,4 +189,6 @@ def display_user_details(user: dict) -> None:
     ]
 
     panel_content = "\n".join(info_lines)
-    console.print(Panel(panel_content, title=f"User: {full_name}", border_style=RICH_STYLES["brand"]))
+    console.print(
+        Panel(panel_content, title=f"User: {full_name}", border_style=RICH_STYLES["brand"])
+    )

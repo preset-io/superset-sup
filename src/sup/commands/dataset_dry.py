@@ -16,10 +16,10 @@ from sup.config.settings import OutputOptions
 from sup.decorators import with_output_options, with_universal_filters
 from sup.filters.base import UniversalFilters
 from sup.filters.dataset import apply_dataset_filters
+from sup.output.console import console
 from sup.output.formatters import display_entity_results
 from sup.output.styles import EMOJIS, RICH_STYLES
 from sup.output.tables import display_datasets_table
-from sup.output.console import console
 
 app = typer.Typer(help="Manage datasets", no_args_is_help=True)
 

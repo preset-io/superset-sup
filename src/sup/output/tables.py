@@ -10,8 +10,8 @@ from typing import Any, Callable, Dict, List, Optional
 
 from rich.table import Table
 
-from sup.output.styles import COLORS, EMOJIS, RICH_STYLES
 from sup.output.console import console
+from sup.output.styles import COLORS, EMOJIS, RICH_STYLES
 
 
 class EntityTableConfig:

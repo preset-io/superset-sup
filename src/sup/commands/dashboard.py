@@ -7,14 +7,15 @@ Working version without decorators - follows dataset.py pattern.
 from typing import Any, Dict, Optional
 
 import typer
+
 # Removed: from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 from typing_extensions import Annotated
 
+from sup.output.console import console
 from sup.output.formatters import display_porcelain_list
 from sup.output.styles import COLORS, EMOJIS, RICH_STYLES
-from sup.output.console import console
 from sup.output.tables import display_dashboards_table
 
 app = typer.Typer(help="Manage dashboards", no_args_is_help=True)

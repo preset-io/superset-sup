@@ -15,8 +15,8 @@ from rich.panel import Panel
 from rich.syntax import Syntax
 from rich.table import Table
 
-from sup.output.styles import COLORS, EMOJIS, RICH_STYLES
 from sup.output.console import console
+from sup.output.styles import COLORS, EMOJIS, RICH_STYLES
 
 
 class QueryResult:

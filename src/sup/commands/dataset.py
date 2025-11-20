@@ -7,13 +7,14 @@ Handles dataset listing, details, export, import, and sync operations.
 from typing import Any, Dict, List, Optional
 
 import typer
+
 # Removed: from rich.console import Console
 from rich.table import Table
 from typing_extensions import Annotated
 
+from sup.output.console import console
 from sup.output.formatters import display_porcelain_list
 from sup.output.styles import COLORS, EMOJIS, RICH_STYLES
-from sup.output.console import console
 
 app = typer.Typer(help="Manage datasets", no_args_is_help=True)
 

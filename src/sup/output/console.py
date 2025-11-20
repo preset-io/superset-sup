@@ -71,9 +71,6 @@ def reset_console_cache():
 
 # Export a default console instance for convenience
 # This dynamically gets the current console, respecting any config changes
-@property
-def _console_property():
-    return get_console()
 
 
 class _ConsoleProxy:

@@ -401,7 +401,7 @@ def pull_dashboards(
 
             if mine_filter:
                 try:
-                    current_user = client.client.get_me()
+                    current_user = client.client.get_me()  # type: ignore[attr-defined]
                     current_user_id = current_user.get("id")
                     dashboards = [
                         d

@@ -10,7 +10,6 @@ Compare this to the original dataset.py to see the massive reduction in code dup
 from typing import Optional
 
 import typer
-from rich.console import Console
 from typing_extensions import Annotated
 
 from sup.config.settings import OutputOptions
@@ -20,9 +19,9 @@ from sup.filters.dataset import apply_dataset_filters
 from sup.output.formatters import display_entity_results
 from sup.output.styles import EMOJIS, RICH_STYLES
 from sup.output.tables import display_datasets_table
+from sup.output.console import console
 
 app = typer.Typer(help="Manage datasets", no_args_is_help=True)
-console = Console()
 
 
 @app.command("list")

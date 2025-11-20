@@ -92,7 +92,16 @@ class SupGlobalConfig(BaseSettings):
     output_format: OutputFormat = OutputFormat.table
     max_rows: int = 1000
     show_query_time: bool = True
-    color_output: bool = True
+    color_output: bool = True  # Set to False for monochrome output
+
+    @property
+    def monochrome(self) -> bool:
+        """Alias for !color_output (monochrome mode)."""
+        return not self.color_output
+
+    def set_monochrome(self, enabled: bool) -> None:
+        """Set monochrome mode (inverts color_output)."""
+        self.color_output = not enabled
 
     # Asset management
     assets_folder: str = "./assets"  # Global default for asset operations

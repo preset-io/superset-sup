@@ -7,18 +7,17 @@ Handles chart listing, details, export, import, and sync operations.
 from typing import Any, Dict, List, Optional
 
 import typer
-from rich.console import Console
 from rich.table import Table
 from typing_extensions import Annotated
 
 from sup.commands.template_params import DisableJinjaOption, LoadEnvOption, TemplateOptions
 from sup.filters.chart import parse_chart_filters
+from sup.output.console import console
 from sup.output.formatters import display_porcelain_list
 from sup.output.spinners import data_spinner, query_spinner
 from sup.output.styles import COLORS, EMOJIS, RICH_STYLES
 
 app = typer.Typer(help="Manage charts", no_args_is_help=True)
-console = Console()
 
 
 @app.command("list")
@@ -154,14 +153,32 @@ def list_charts(
             ctx = SupContext()
             client = SupSupersetClient.from_context(ctx, workspace_id)
 
-            # Use only server-side filtering - no client-side nonsense
+            # Use server-side filtering where available
             page = (filters.page - 1) if filters.page else 0
             charts = client.get_charts(
                 silent=True,
-                limit=filters.limit,
+                limit=None,  # Get all charts for client-side filtering
                 page=page,
                 text_search=filters.search,  # Pass search term to server
             )
+
+            # Apply client-side filters for chart-specific options
+            from sup.filters.chart import apply_chart_filters
+
+            # Get current user ID for --mine filter
+            current_user_id = None
+            if filters.mine:
+                try:
+                    current_user = client.client.get_me()
+                    current_user_id = current_user.get("id")
+                except Exception:
+                    pass
+
+            charts = apply_chart_filters(charts, filters, current_user_id)
+
+            # Apply limit after filtering
+            if filters.limit:
+                charts = charts[:filters.limit]
 
             # Update spinner with results
             if sp:
@@ -243,7 +260,8 @@ def chart_info(
 
             console.print(yaml.safe_dump(chart, default_flow_style=False, indent=2))
         else:
-            display_chart_details(chart)
+            workspace_hostname = ctx.get_workspace_hostname()
+            display_chart_details(chart, workspace_hostname, client)
 
     except Exception as e:
         if not porcelain:
@@ -332,15 +350,11 @@ def chart_sql(
             # Beautiful Rich display
             display_chart_sql_rich(chart_id, chart_name, sql_queries)
 
-    except Exception:
+    except Exception as e:
         if not porcelain:
             console.print(
-                f"{EMOJIS['warning']} Chart SQL endpoint under development",
-                style=RICH_STYLES["warning"],
-            )
-            console.print(
-                "API payload structure needs refinement to match Superset frontend.",
-                style=RICH_STYLES["dim"],
+                f"{EMOJIS['error']} Failed to retrieve chart SQL: {e}",
+                style=RICH_STYLES["error"],
             )
         raise typer.Exit(1)
 
@@ -464,15 +478,11 @@ def chart_data(
                 )
             raise typer.Exit(1)
 
-    except Exception:
+    except Exception as e:
         if not porcelain:
             console.print(
-                f"{EMOJIS['warning']} Chart data endpoint under development",
-                style=RICH_STYLES["warning"],
-            )
-            console.print(
-                "API payload structure needs refinement to match Superset frontend.",
-                style=RICH_STYLES["dim"],
+                f"{EMOJIS['error']} Failed to retrieve chart data: {e}",
+                style=RICH_STYLES["error"],
             )
         raise typer.Exit(1)
 
@@ -582,21 +592,90 @@ def display_charts_table(
         )
 
 
-def display_chart_details(chart: Dict[str, Any]) -> None:
+def display_chart_details(
+    chart: Dict[str, Any],
+    workspace_hostname: Optional[str] = None,
+    client: Optional[Any] = None,
+) -> None:
     """Display detailed chart information."""
     from rich.panel import Panel
+    import json
 
     chart_id = chart.get("id", "")
     name = chart.get("slice_name", "Unknown")
     viz_type = chart.get("viz_type", "Unknown")
+
+    # Try to get dataset name from multiple sources
+    dataset_name = chart.get("datasource_name_text") or chart.get("datasource_name")
+
+    # If not in chart metadata, try to extract datasource ID and fetch dataset
+    if (not dataset_name or dataset_name == "Unknown") and client:
+        dataset_id = None
+        dataset_type = None
+
+        # Try query_context first (most reliable - current datasource)
+        query_context = chart.get("query_context")
+        if query_context and query_context not in ["", "{}"]:
+            try:
+                qc_data = json.loads(query_context) if isinstance(query_context, str) else query_context
+                datasource_info = qc_data.get("datasource")
+                if datasource_info and isinstance(datasource_info, dict):
+                    dataset_id = datasource_info.get("id")
+                    dataset_type = datasource_info.get("type")
+            except (json.JSONDecodeError, ValueError, AttributeError):
+                pass
+
+        # Fallback to params if query_context didn't work
+        if not dataset_id:
+            params = chart.get("params", "{}")
+            if isinstance(params, str):
+                try:
+                    params = json.loads(params)
+                    datasource_key = params.get("datasource")
+                    if datasource_key and "__" in datasource_key:
+                        dataset_id, dataset_type = datasource_key.split("__")
+                        dataset_id = int(dataset_id)
+                except (json.JSONDecodeError, ValueError):
+                    pass
+
+        # Now fetch the dataset if we have an ID
+        if dataset_id:
+            try:
+                response = client.client.session.get(
+                    f"{client.client.baseurl}/api/v1/dataset/{dataset_id}"
+                )
+                if response.status_code == 200:
+                    dataset_data = response.json()
+                    if 'result' in dataset_data:
+                        ds = dataset_data['result']
+                        table_name = ds.get('table_name', '')
+                        schema = ds.get('schema', '')
+                        if schema and table_name:
+                            dataset_name = f"{schema}.{table_name}"
+                        elif table_name:
+                            dataset_name = table_name
+                        else:
+                            dataset_name = f"Dataset ID: {dataset_id}"
+                else:
+                    dataset_name = f"Dataset ID: {dataset_id} (not found)"
+            except Exception:
+                dataset_name = f"Dataset ID: {dataset_id}"
+
+    if not dataset_name:
+        dataset_name = "Unknown"
 
     # Basic info
     info_lines = [
         f"ID: {chart_id}",
         f"Name: {name}",
         f"Visualization Type: {viz_type}",
-        f"Dataset: {chart.get('datasource_name', 'Unknown')}",
+        f"Dataset: {dataset_name}",
     ]
+
+    # Add chart URL if hostname available
+    if workspace_hostname:
+        chart_url = f"https://{workspace_hostname}/explore/?slice_id={chart_id}"
+        info_lines.append(f"URL: {chart_url}")
 
     if chart.get("description"):
         info_lines.append(f"Description: {chart['description']}")

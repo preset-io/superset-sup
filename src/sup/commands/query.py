@@ -7,17 +7,17 @@ Handles saved query listing, details, and management operations.
 from typing import Any, Dict, Optional
 
 import typer
-from rich.console import Console
+# Removed: from rich.console import Console
 from rich.panel import Panel
 from rich.syntax import Syntax
 from typing_extensions import Annotated
 
 from sup.output.formatters import display_porcelain_list
 from sup.output.styles import COLORS, EMOJIS, RICH_STYLES
+from sup.output.console import console
 from sup.output.tables import display_saved_queries_table
 
 app = typer.Typer(help="Manage saved queries", no_args_is_help=True)
-console = Console()
 
 
 @app.command("list")

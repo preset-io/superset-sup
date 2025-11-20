@@ -5,10 +5,10 @@ Handles authentication, settings, and persistent configuration.
 """
 
 import typer
-from rich.console import Console
 from rich.theme import Theme
 from typing_extensions import Annotated
 
+from sup.output.console import get_console
 from sup.output.styles import COLORS, EMOJIS, RICH_STYLES
 
 
@@ -43,7 +43,6 @@ app = typer.Typer(
 )
 
 # Use themed console to match main app styling
-
 preset_theme = Theme(
     {
         "table.header": f"bold {COLORS.primary}",
@@ -53,7 +52,7 @@ preset_theme = Theme(
     },
 )
 
-console = Console(theme=preset_theme)
+console = get_console(theme=preset_theme)
 
 
 @app.command("show")
@@ -96,6 +95,7 @@ def show_config():
             f"output-format: {ctx.global_config.output_format.value}",
             f"max-rows: {ctx.global_config.max_rows}",
             f"show-query-time: {ctx.global_config.show_query_time}",
+            f"monochrome: {ctx.global_config.monochrome}",
         ]
 
         panel_content = "\n".join(info_lines)
@@ -193,6 +193,21 @@ def set_config(
         elif key == "show-query-time":
             ctx.global_config.show_query_time = value.lower() in ("true", "1", "yes")
             ctx.global_config.save_to_file()
+        elif key == "monochrome":
+            # Set monochrome mode (which sets color_output to the inverse)
+            enabled = value.lower() in ("true", "1", "yes", "on")
+            ctx.global_config.color_output = not enabled
+            ctx.global_config.save_to_file()
+            # Reset console cache so changes take effect immediately
+            from sup.output.console import reset_console_cache
+            reset_console_cache()
+        elif key == "color-output":
+            # Direct control of color_output
+            ctx.global_config.color_output = value.lower() in ("true", "1", "yes", "on")
+            ctx.global_config.save_to_file()
+            # Reset console cache so changes take effect immediately
+            from sup.output.console import reset_console_cache
+            reset_console_cache()
         elif key == "preset-api-token":
             ctx.global_config.preset_api_token = value
             ctx.global_config.save_to_file()

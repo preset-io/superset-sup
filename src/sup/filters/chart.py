@@ -46,7 +46,10 @@ def apply_chart_filters(
             item
             for item in filtered_charts
             # Charts can be in multiple dashboards, check if our dashboard_id is in the list
-            if filters.dashboard_id in (item.get("dashboards") or [])
+            if any(
+                dashboard.get("id") == filters.dashboard_id
+                for dashboard in (item.get("dashboards") or [])
+            )
         ]
 
     if filters.viz_type:

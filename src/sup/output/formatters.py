@@ -11,14 +11,12 @@ from typing import Any, Callable, Dict, List, Optional
 
 import pandas as pd
 import yaml
-from rich.console import Console
 from rich.panel import Panel
 from rich.syntax import Syntax
 from rich.table import Table
 
 from sup.output.styles import COLORS, EMOJIS, RICH_STYLES
-
-console = Console()
+from sup.output.console import console
 
 
 class QueryResult:

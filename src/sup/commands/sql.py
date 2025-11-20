@@ -7,12 +7,12 @@ The crown jewel of the sup experience - making SQL queries beautiful and easy.
 from typing import Optional
 
 import typer
-from rich.console import Console
+# Removed: from rich.console import Console
 from typing_extensions import Annotated
 
 from sup.output.styles import EMOJIS, RICH_STYLES
+from sup.output.console import console
 
-console = Console()
 
 # Create SQL app for better sectioning control
 app = typer.Typer(help="🔍 Get direct access to your data", no_args_is_help=True)

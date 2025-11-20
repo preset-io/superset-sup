@@ -6,15 +6,15 @@ Provides sup-specific functionality on top of the existing Preset client.
 
 from typing import Any, Dict, List, Optional
 
-from rich.console import Console
+# Removed: from rich.console import Console
 from rich.table import Table
 
 from preset_cli.api.clients.preset import PresetClient
 from sup.auth.preset import SupPresetAuth
 from sup.config.settings import SupContext
 from sup.output.styles import COLORS, EMOJIS, RICH_STYLES
+from sup.output.console import console
 
-console = Console()
 
 
 class SupPresetClient:

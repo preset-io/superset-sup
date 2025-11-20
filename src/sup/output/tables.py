@@ -8,12 +8,10 @@ in dataset.py, chart.py, workspace.py, etc.
 
 from typing import Any, Callable, Dict, List, Optional
 
-from rich.console import Console
 from rich.table import Table
 
 from sup.output.styles import COLORS, EMOJIS, RICH_STYLES
-
-console = Console()
+from sup.output.console import console
 
 
 class EntityTableConfig:

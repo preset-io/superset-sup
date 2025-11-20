@@ -7,13 +7,13 @@ Handles workspace listing, selection, and context management.
 from typing import Optional
 
 import typer
-from rich.console import Console
+# Removed: from rich.console import Console
 from typing_extensions import Annotated
 
 from sup.output.styles import EMOJIS, RICH_STYLES
+from sup.output.console import console
 
 app = typer.Typer(help="Manage workspaces", no_args_is_help=True)
-console = Console()
 
 
 @app.command("list")
@@ -170,28 +170,128 @@ def workspace_info(
         Optional[int],
         typer.Argument(help="Workspace ID (uses current if not specified)"),
     ] = None,
+    json_output: Annotated[bool, typer.Option("--json", "-j", help="Output as JSON")] = False,
+    yaml_output: Annotated[bool, typer.Option("--yaml", "-y", help="Output as YAML")] = False,
+    porcelain: Annotated[
+        bool,
+        typer.Option("--porcelain", help="Machine-readable output"),
+    ] = False,
 ):
     """
     Show detailed information about a workspace.
 
-    Displays databases, datasets, dashboards, and other metadata.
+    Displays workspace name, status, region, team, and metadata.
     """
-    if workspace_id:
-        console.print(
-            f"{EMOJIS['info']} Loading workspace {workspace_id} details...",
-            style=RICH_STYLES["info"],
-        )
-    else:
-        console.print(
-            f"{EMOJIS['info']} Loading current workspace details...",
-            style=RICH_STYLES["info"],
-        )
+    from sup.clients.preset import SupPresetClient
+    from sup.config.settings import SupContext
+    from sup.output.spinners import data_spinner
 
-    # TODO: Implement workspace details fetching
-    console.print(
-        f"{EMOJIS['warning']} Workspace info not yet implemented",
-        style=RICH_STYLES["warning"],
-    )
+    try:
+        ctx = SupContext()
+
+        # Use provided workspace_id or get from context
+        if workspace_id is None:
+            workspace_id = ctx.get_workspace_id()
+            if not workspace_id:
+                if not porcelain:
+                    console.print(
+                        f"{EMOJIS['error']} No workspace configured",
+                        style=RICH_STYLES["error"],
+                    )
+                    console.print(
+                        "💡 Run [bold]sup workspace list[/] and [bold]sup workspace use <ID>[/]",
+                        style=RICH_STYLES["info"],
+                    )
+                raise typer.Exit(1)
+
+        with data_spinner(f"workspace {workspace_id}", silent=porcelain):
+            client = SupPresetClient.from_context(ctx, silent=True)
+
+            # Get all workspaces and find the specific one
+            workspaces = client.get_all_workspaces(silent=True)
+            workspace = None
+            for ws in workspaces:
+                if ws.get("id") == workspace_id:
+                    workspace = ws
+                    break
+
+            if not workspace:
+                if not porcelain:
+                    console.print(
+                        f"{EMOJIS['error']} Workspace {workspace_id} not found",
+                        style=RICH_STYLES["error"],
+                    )
+                raise typer.Exit(1)
+
+        if porcelain:
+            # Simple key-value output
+            print(
+                f"{workspace_id}\t{workspace.get('title', '')}\t{workspace.get('status', '')}\t{workspace.get('hostname', '')}",
+            )
+        elif json_output:
+            import json
+
+            console.print(json.dumps(workspace, indent=2, default=str))
+        elif yaml_output:
+            import yaml
+
+            console.print(yaml.safe_dump(workspace, default_flow_style=False, indent=2))
+        else:
+            display_workspace_details(workspace)
+
+    except typer.Exit:
+        raise
+    except Exception as e:
+        if not porcelain:
+            console.print(
+                f"{EMOJIS['error']} Failed to get workspace info: {e}",
+                style=RICH_STYLES["error"],
+            )
+        raise typer.Exit(1)
+
+
+def display_workspace_details(workspace: dict) -> None:
+    """Display detailed workspace information."""
+    from rich.panel import Panel
+
+    workspace_id = workspace.get("id", "")
+    title = workspace.get("title", "Unknown")
+    hostname = workspace.get("hostname", "")
+    status = workspace.get("status", "Unknown")
+    team_name = workspace.get("team_name", "Unknown")
+    region = workspace.get("region", "Unknown")
+
+    # Format URL
+    url = f"https://{hostname}/" if hostname else "N/A"
+
+    # Basic info
+    info_lines = [
+        f"ID: {workspace_id}",
+        f"Title: {title}",
+        f"Team: {team_name}",
+        f"Status: {status}",
+        f"Region: {region}",
+        f"URL: {url}",
+    ]
+
+    # Add optional fields
+    if workspace.get("descr"):
+        info_lines.append(f"Description: {workspace['descr']}")
+
+    # Add feature flags
+    features = []
+    if workspace.get("ai_assist_activated"):
+        features.append("AI Assist")
+    if workspace.get("allow_public_dashboards"):
+        features.append("Public Dashboards")
+    if workspace.get("enable_iframe_embedding"):
+        features.append("iFrame Embedding")
+
+    if features:
+        info_lines.append(f"Features: {', '.join(features)}")
+
+    panel_content = "\n".join(info_lines)
+    console.print(Panel(panel_content, title=f"Workspace: {title}", border_style=RICH_STYLES["brand"]))
 
 
 @app.command("set-target")

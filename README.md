@@ -17,8 +17,6 @@
 sectioned help, rich terminal formatting, and git-like workflows for managing
 Superset and Preset workspaces efficiently.
 
-**[Screenshot of beautiful ASCII art and sectioned help will go here]**
-
 ## 🎯 Key Capabilities
 
 - **Run any SQL** through Superset's data access layer - get results as rich

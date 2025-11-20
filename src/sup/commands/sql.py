@@ -18,7 +18,7 @@ from sup.output.console import console
 app = typer.Typer(help="🔍 Get direct access to your data", no_args_is_help=True)
 
 
-@app.callback(invoke_without_command=True)
+@app.callback(invoke_without_command=True, context_settings={"ignore_unknown_options": True, "allow_interspersed_args": True})
 def sql_main(
     ctx: typer.Context,
     query: Annotated[Optional[str], typer.Argument(help="SQL query to execute")] = None,

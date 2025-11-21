@@ -57,5 +57,5 @@ export SUPERSET_PASSWORD="password"
 
 ## Next Steps
 
-- [Quick Start Guide](/quick-start/)
-- [Browse Commands](/commands/workspace/)
+- [Quick Start Guide](../quick-start/)
+- [Browse Commands](../commands/workspace/)

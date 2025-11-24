@@ -68,12 +68,55 @@ class SupersetInstanceConfig(BaseModel):
     url: str
     auth_method: str = Field(
         default="username_password",
+        description="Authentication method: username_password, jwt, or oauth",
         pattern="^(username_password|jwt|oauth)$",
     )
-    username: Optional[str] = None
-    password: Optional[str] = None
-    jwt_token: Optional[str] = None
-    # Future: oauth_client_id, custom_headers, etc.
+
+    # Username/password authentication (basic Superset auth)
+    username: Optional[str] = Field(
+        default=None,
+        description="Username for Superset username/password authentication",
+    )
+    password: Optional[str] = Field(
+        default=None,
+        description="Password for Superset username/password authentication",
+    )
+
+    # JWT token authentication
+    jwt_token: Optional[str] = Field(
+        default=None,
+        description="Pre-generated JWT token for Superset JWT authentication",
+    )
+
+    # OAuth2/OIDC authentication (NEW)
+    oauth_token_url: Optional[str] = Field(
+        default=None,
+        description="OAuth2 token endpoint URL (e.g., https://auth.example.com/oauth2/token)",
+    )
+    oauth_client_id: Optional[str] = Field(
+        default=None,
+        description="OAuth2 client ID registered with OIDC provider",
+    )
+    oauth_client_secret: Optional[str] = Field(
+        default=None,
+        description="OAuth2 client secret. Use environment variables: ${ENV:SUPERSET_OAUTH_SECRET}",
+    )
+    oauth_username: Optional[str] = Field(
+        default=None,
+        description="Service account username for OAuth2 resource owner password grant",
+    )
+    oauth_password: Optional[str] = Field(
+        default=None,
+        description="Service account password. Use environment variables: ${ENV:SERVICE_PASSWORD}",
+    )
+    oauth_scope: str = Field(
+        default="openid profile email roles",
+        description="OAuth2 scopes to request (space-separated)",
+    )
+    oauth_token_type: str = Field(
+        default="Bearer",
+        description="Token type in Authorization header (usually Bearer)",
+    )
 
 
 class SupGlobalConfig(BaseSettings):

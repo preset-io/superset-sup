@@ -96,5 +96,5 @@ git commit -m "Backup analytics assets"
 
 ## Next Steps
 
-- [Cross-Workspace Sync Guide](../guides/cross-workspace/)
-- [Command Reference](../commands/workspace/)
+- [Cross-Workspace Sync Guide](./guides/cross-workspace/)
+- [Command Reference](./commands/workspace/)

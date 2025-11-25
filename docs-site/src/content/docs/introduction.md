@@ -36,6 +36,6 @@ sup supports three main workflows:
 
 ## Next Steps
 
-- [Install sup CLI](../installation/)
-- [Quick Start Guide](../quick-start/)
-- [Browse Commands](../commands/workspace/)
+- [Install sup CLI](./installation/)
+- [Quick Start Guide](./quick-start/)
+- [Browse Commands](./commands/workspace/)

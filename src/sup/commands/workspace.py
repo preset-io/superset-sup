@@ -21,20 +21,20 @@ app = typer.Typer(help="Manage workspaces", no_args_is_help=True)
 def parse_workspace_identifier(value: str, client=None) -> int:
     """
     Parse workspace identifier from either numeric ID or URL.
-    
+
     Accepts formats:
     - Numeric ID: "123" or 123
     - Full URL: "https://myworkspace.app.preset.io/"
     - Hostname: "myworkspace.app.preset.io"
     - URL with path: "https://myworkspace.app.preset.io/superset/dashboard/5/"
-    
+
     Args:
         value: Workspace ID or URL string
         client: Optional SupPresetClient instance for hostname lookup
-        
+
     Returns:
         Workspace ID as integer
-        
+
     Raises:
         ValueError: If value cannot be parsed as valid workspace identifier
     """
@@ -43,39 +43,39 @@ def parse_workspace_identifier(value: str, client=None) -> int:
         return int(value)
     except ValueError:
         pass
-    
+
     # Try parsing as URL or hostname
     hostname = None
-    
+
     # Add scheme if missing for urlparse to work correctly
-    if not value.startswith(('http://', 'https://')):
-        value = f'https://{value}'
-    
+    if not value.startswith(("http://", "https://")):
+        value = f"https://{value}"
+
     parsed = urlparse(value)
     hostname = parsed.hostname or parsed.netloc
-    
+
     if not hostname:
         raise ValueError(
             f"Could not parse '{value}' as workspace ID or URL.\n"
             "Expected formats:\n"
-            "  - Workspace ID: 123\n" 
+            "  - Workspace ID: 123\n"
             "  - Full URL: https://myworkspace.app.preset.io/\n"
             "  - Hostname: myworkspace.app.preset.io"
         )
-    
+
     # If we have a hostname, we need to look up the workspace ID
     if not client:
         raise ValueError(
             f"Cannot lookup workspace by URL '{value}' without active client.\n"
             "Please use workspace ID instead, or ensure you're authenticated."
         )
-    
+
     # Get all workspaces and find matching hostname
     workspaces = client.get_all_workspaces(silent=True)
     for workspace in workspaces:
         if workspace.get("hostname") == hostname:
             return workspace["id"]
-    
+
     raise ValueError(
         f"No workspace found with hostname '{hostname}'.\n"
         "Please check the URL or use 'sup workspace list' to see available workspaces."
@@ -85,15 +85,15 @@ def parse_workspace_identifier(value: str, client=None) -> int:
 def safe_parse_workspace(value: str, client, porcelain: bool = False) -> int:
     """
     Safely parse workspace identifier with error handling.
-    
+
     Args:
         value: Workspace ID or URL string
         client: SupPresetClient instance
         porcelain: Whether to suppress error output
-        
+
     Returns:
         Workspace ID as integer
-        
+
     Raises:
         typer.Exit: If parsing fails
     """
@@ -199,7 +199,7 @@ def use_workspace(
     Set the default workspace for current session.
 
     This workspace will be used for all subsequent commands unless overridden.
-    
+
     Examples:
       sup workspace use 123
       sup workspace use https://myworkspace.app.preset.io/
@@ -217,7 +217,7 @@ def use_workspace(
 
         # Parse workspace identifier
         workspace_id = safe_parse_workspace(workspace, client)
-        
+
         console.print(
             f"{EMOJIS['workspace']} Setting workspace {workspace_id} as default...",
             style=RICH_STYLES["info"],
@@ -281,10 +281,10 @@ def workspace_info(
     Show detailed information about a workspace.
 
     Displays workspace name, status, region, team, and metadata.
-    
+
     Examples:
       sup workspace info
-      sup workspace info 123  
+      sup workspace info 123
       sup workspace info https://myworkspace.app.preset.io/
     """
     from sup.clients.preset import SupPresetClient
@@ -429,15 +429,15 @@ def set_import_target(
     try:
         ctx = SupContext()
         client = SupPresetClient.from_context(ctx, silent=True)
-        
+
         # Parse workspace identifier
         workspace_id = safe_parse_workspace(workspace, client)
-        
+
         console.print(
             f"{EMOJIS['import']} Setting import target workspace {workspace_id}...",
             style=RICH_STYLES["info"],
         )
-        
+
         ctx.set_target_workspace_id(workspace_id, persist=persist)
 
         if persist:

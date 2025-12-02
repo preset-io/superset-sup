@@ -5,6 +5,7 @@ Handles workspace listing, selection, and context management.
 """
 
 from typing import Optional
+from urllib.parse import urlparse
 
 import typer
 
@@ -15,6 +16,96 @@ from sup.output.console import console
 from sup.output.styles import EMOJIS, RICH_STYLES
 
 app = typer.Typer(help="Manage workspaces", no_args_is_help=True)
+
+
+def parse_workspace_identifier(value: str, client=None) -> int:
+    """
+    Parse workspace identifier from either numeric ID or URL.
+    
+    Accepts formats:
+    - Numeric ID: "123" or 123
+    - Full URL: "https://myworkspace.app.preset.io/"
+    - Hostname: "myworkspace.app.preset.io"
+    - URL with path: "https://myworkspace.app.preset.io/superset/dashboard/5/"
+    
+    Args:
+        value: Workspace ID or URL string
+        client: Optional SupPresetClient instance for hostname lookup
+        
+    Returns:
+        Workspace ID as integer
+        
+    Raises:
+        ValueError: If value cannot be parsed as valid workspace identifier
+    """
+    # Try parsing as integer first
+    try:
+        return int(value)
+    except ValueError:
+        pass
+    
+    # Try parsing as URL or hostname
+    hostname = None
+    
+    # Add scheme if missing for urlparse to work correctly
+    if not value.startswith(('http://', 'https://')):
+        value = f'https://{value}'
+    
+    parsed = urlparse(value)
+    hostname = parsed.hostname or parsed.netloc
+    
+    if not hostname:
+        raise ValueError(
+            f"Could not parse '{value}' as workspace ID or URL.\n"
+            "Expected formats:\n"
+            "  - Workspace ID: 123\n" 
+            "  - Full URL: https://myworkspace.app.preset.io/\n"
+            "  - Hostname: myworkspace.app.preset.io"
+        )
+    
+    # If we have a hostname, we need to look up the workspace ID
+    if not client:
+        raise ValueError(
+            f"Cannot lookup workspace by URL '{value}' without active client.\n"
+            "Please use workspace ID instead, or ensure you're authenticated."
+        )
+    
+    # Get all workspaces and find matching hostname
+    workspaces = client.get_all_workspaces(silent=True)
+    for workspace in workspaces:
+        if workspace.get("hostname") == hostname:
+            return workspace["id"]
+    
+    raise ValueError(
+        f"No workspace found with hostname '{hostname}'.\n"
+        "Please check the URL or use 'sup workspace list' to see available workspaces."
+    )
+
+
+def safe_parse_workspace(value: str, client, porcelain: bool = False) -> int:
+    """
+    Safely parse workspace identifier with error handling.
+    
+    Args:
+        value: Workspace ID or URL string
+        client: SupPresetClient instance
+        porcelain: Whether to suppress error output
+        
+    Returns:
+        Workspace ID as integer
+        
+    Raises:
+        typer.Exit: If parsing fails
+    """
+    try:
+        return parse_workspace_identifier(value, client)
+    except ValueError as e:
+        if not porcelain:
+            console.print(
+                f"{EMOJIS['error']} {str(e)}",
+                style=RICH_STYLES["error"],
+            )
+        raise typer.Exit(1)
 
 
 @app.command("list")
@@ -98,7 +189,7 @@ def list_workspaces(
 
 @app.command("use")
 def use_workspace(
-    workspace_id: Annotated[int, typer.Argument(help="Workspace ID to use as default")],
+    workspace: Annotated[str, typer.Argument(help="Workspace ID or URL to use as default")],
     persist: Annotated[
         bool,
         typer.Option("--persist", "-p", help="Save to global config"),
@@ -108,14 +199,14 @@ def use_workspace(
     Set the default workspace for current session.
 
     This workspace will be used for all subsequent commands unless overridden.
+    
+    Examples:
+      sup workspace use 123
+      sup workspace use https://myworkspace.app.preset.io/
+      sup workspace use myworkspace.app.preset.io
     """
     from sup.clients.preset import SupPresetClient
     from sup.config.settings import SupContext
-
-    console.print(
-        f"{EMOJIS['workspace']} Setting workspace {workspace_id} as default...",
-        style=RICH_STYLES["info"],
-    )
 
     try:
         ctx = SupContext()
@@ -124,22 +215,30 @@ def use_workspace(
             silent=True,
         )  # Silent for internal operation
 
+        # Parse workspace identifier
+        workspace_id = safe_parse_workspace(workspace, client)
+        
+        console.print(
+            f"{EMOJIS['workspace']} Setting workspace {workspace_id} as default...",
+            style=RICH_STYLES["info"],
+        )
+
         # Get workspace details to cache hostname
         workspaces = client.get_all_workspaces(silent=True)
-        workspace = None
+        workspace_obj = None
         for ws in workspaces:
             if ws.get("id") == workspace_id:
-                workspace = ws
+                workspace_obj = ws
                 break
 
-        if not workspace:
+        if not workspace_obj:
             console.print(
                 f"{EMOJIS['error']} Workspace {workspace_id} not found",
                 style=RICH_STYLES["error"],
             )
             raise typer.Exit(1)
 
-        hostname = workspace.get("hostname")
+        hostname = workspace_obj.get("hostname")
         ctx.set_workspace_context(workspace_id, hostname=hostname, persist=persist)
 
         if persist:
@@ -167,9 +266,9 @@ def use_workspace(
 
 @app.command("info")
 def workspace_info(
-    workspace_id: Annotated[
-        Optional[int],
-        typer.Argument(help="Workspace ID (uses current if not specified)"),
+    workspace: Annotated[
+        Optional[str],
+        typer.Argument(help="Workspace ID or URL (uses current if not specified)"),
     ] = None,
     json_output: Annotated[bool, typer.Option("--json", "-j", help="Output as JSON")] = False,
     yaml_output: Annotated[bool, typer.Option("--yaml", "-y", help="Output as YAML")] = False,
@@ -182,6 +281,11 @@ def workspace_info(
     Show detailed information about a workspace.
 
     Displays workspace name, status, region, team, and metadata.
+    
+    Examples:
+      sup workspace info
+      sup workspace info 123  
+      sup workspace info https://myworkspace.app.preset.io/
     """
     from sup.clients.preset import SupPresetClient
     from sup.config.settings import SupContext
@@ -189,9 +293,10 @@ def workspace_info(
 
     try:
         ctx = SupContext()
+        client = SupPresetClient.from_context(ctx, silent=True)
 
-        # Use provided workspace_id or get from context
-        if workspace_id is None:
+        # Use provided workspace or get from context
+        if workspace is None:
             workspace_id = ctx.get_workspace_id()
             if not workspace_id:
                 if not porcelain:
@@ -204,19 +309,20 @@ def workspace_info(
                         style=RICH_STYLES["info"],
                     )
                 raise typer.Exit(1)
+        else:
+            # Parse workspace identifier
+            workspace_id = safe_parse_workspace(workspace, client, porcelain)
 
         with data_spinner(f"workspace {workspace_id}", silent=porcelain):
-            client = SupPresetClient.from_context(ctx, silent=True)
-
             # Get all workspaces and find the specific one
             workspaces = client.get_all_workspaces(silent=True)
-            workspace = None
+            workspace_obj = None
             for ws in workspaces:
                 if ws.get("id") == workspace_id:
-                    workspace = ws
+                    workspace_obj = ws
                     break
 
-            if not workspace:
+            if not workspace_obj:
                 if not porcelain:
                     console.print(
                         f"{EMOJIS['error']} Workspace {workspace_id} not found",
@@ -226,20 +332,20 @@ def workspace_info(
 
         if porcelain:
             # Simple key-value output
-            title = workspace.get("title", "")
-            status = workspace.get("status", "")
-            hostname = workspace.get("hostname", "")
+            title = workspace_obj.get("title", "")
+            status = workspace_obj.get("status", "")
+            hostname = workspace_obj.get("hostname", "")
             print(f"{workspace_id}\t{title}\t{status}\t{hostname}")
         elif json_output:
             import json
 
-            console.print(json.dumps(workspace, indent=2, default=str))
+            console.print(json.dumps(workspace_obj, indent=2, default=str))
         elif yaml_output:
             import yaml
 
-            console.print(yaml.safe_dump(workspace, default_flow_style=False, indent=2))
+            console.print(yaml.safe_dump(workspace_obj, default_flow_style=False, indent=2))
         else:
-            display_workspace_details(workspace)
+            display_workspace_details(workspace_obj)
 
     except typer.Exit:
         raise
@@ -300,7 +406,7 @@ def display_workspace_details(workspace: dict) -> None:
 
 @app.command("set-target")
 def set_import_target(
-    workspace_id: Annotated[int, typer.Argument(help="Workspace ID to use as import target")],
+    workspace: Annotated[str, typer.Argument(help="Workspace ID or URL to use as import target")],
     persist: Annotated[
         bool,
         typer.Option("--persist", "-p", help="Save to global config"),
@@ -317,15 +423,21 @@ def set_import_target(
     • Backup → Restore scenarios
     • Cross-workspace asset sharing
     """
+    from sup.clients.preset import SupPresetClient
     from sup.config.settings import SupContext
-
-    console.print(
-        f"{EMOJIS['import']} Setting import target workspace {workspace_id}...",
-        style=RICH_STYLES["info"],
-    )
 
     try:
         ctx = SupContext()
+        client = SupPresetClient.from_context(ctx, silent=True)
+        
+        # Parse workspace identifier
+        workspace_id = safe_parse_workspace(workspace, client)
+        
+        console.print(
+            f"{EMOJIS['import']} Setting import target workspace {workspace_id}...",
+            style=RICH_STYLES["info"],
+        )
+        
         ctx.set_target_workspace_id(workspace_id, persist=persist)
 
         if persist:

@@ -24,9 +24,9 @@ def parse_workspace_identifier(value: str, client=None) -> int:
 
     Accepts formats:
     - Numeric ID: "123" or 123
-    - Full URL: "https://myworkspace.app.preset.io/"
-    - Hostname: "myworkspace.app.preset.io"
-    - URL with path: "https://myworkspace.app.preset.io/superset/dashboard/5/"
+    - Full URL: "https://myworkspace.us1a.app.preset.io/"
+    - Hostname: "myworkspace.us1a.app.preset.io"
+    - URL with path: "https://myworkspace.us1a.app.preset.io/superset/dashboard/5/"
 
     Args:
         value: Workspace ID or URL string
@@ -59,8 +59,8 @@ def parse_workspace_identifier(value: str, client=None) -> int:
             f"Could not parse '{value}' as workspace ID or URL.\n"
             "Expected formats:\n"
             "  - Workspace ID: 123\n"
-            "  - Full URL: https://myworkspace.app.preset.io/\n"
-            "  - Hostname: myworkspace.app.preset.io"
+            "  - Full URL: https://myworkspace.us1a.app.preset.io/\n"
+            "  - Hostname: myworkspace.us1a.app.preset.io"
         )
 
     # If we have a hostname, we need to look up the workspace ID
@@ -202,8 +202,8 @@ def use_workspace(
 
     Examples:
       sup workspace use 123
-      sup workspace use https://myworkspace.app.preset.io/
-      sup workspace use myworkspace.app.preset.io
+      sup workspace use https://myworkspace.us1a.app.preset.io/
+      sup workspace use myworkspace.us1a.app.preset.io
     """
     from sup.clients.preset import SupPresetClient
     from sup.config.settings import SupContext
@@ -285,7 +285,7 @@ def workspace_info(
     Examples:
       sup workspace info
       sup workspace info 123
-      sup workspace info https://myworkspace.app.preset.io/
+      sup workspace info https://myworkspace.us1a.app.preset.io/
     """
     from sup.clients.preset import SupPresetClient
     from sup.config.settings import SupContext

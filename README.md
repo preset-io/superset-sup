@@ -220,20 +220,74 @@ Efficient search across all entity types:
 extensively tested with Preset workspaces. All features work seamlessly with
 Preset's multi-workspace environment.
 
-### Self-Hosted Superset
-**Does it work with my Superset instance?** Most functionality should work, but
-depending on your authentication setup, you may need to tweak the code. We
-welcome contributions from the broader Superset community to improve
-compatibility.
+### Self-Hosted Superset ✨ (NEW!)
+**Phase 1 Implementation Complete:** Full support for self-hosted Superset with OAuth2/OIDC authentication!
 
-**Preset-free mode**: A future version could remove multi-workspace constructs
-for single-instance Superset deployments. If you're interested in this, please
-contribute or open an issue.
+'sup now supports **self-hosted Superset instances** with multiple authentication methods:
+- **OAuth2/OIDC** - Works with Keycloak, Okta, Auth0, Dex, Azure AD, Cognito
+- **Username/Password** - Direct Superset authentication
+- **JWT Tokens** - Pre-generated JWT tokens
 
-### Contributing for Broader Compatibility
-We're open to contributions that enable 'sup for the entire Superset community.
-Areas that likely need work for self-hosted instances:
-- Authentication methods beyond Preset API tokens
+#### Quick Setup for Self-Hosted Superset
+
+```bash
+# Configure self-hosted instance in ~/.sup/config.yml
+superset_instances:
+  production:
+    url: https://superset.example.com
+    auth_method: oauth
+    oauth_token_url: https://auth.example.com/oauth2/token
+    oauth_client_id: superset-cli
+    oauth_client_secret: ${ENV:SUPERSET_OAUTH_SECRET}
+    oauth_username: superset-service
+    oauth_password: ${ENV:SUPERSET_SERVICE_PASSWORD}
+
+# Set environment variables
+export SUPERSET_OAUTH_SECRET="your-client-secret"
+export SUPERSET_SERVICE_PASSWORD="your-service-password"
+
+# Use 'sup with your self-hosted instance
+sup dataset list
+sup chart pull --mine
+sup sql "SELECT * FROM your_table"
+```
+
+#### Authentication Methods for Self-Hosted Superset
+
+**OAuth2/OIDC (Recommended)** - For instances with external authentication:
+```yaml
+auth_method: oauth
+oauth_token_url: https://auth.example.com/oauth2/token
+oauth_client_id: your-client-id
+oauth_client_secret: ${ENV:OAUTH_SECRET}
+oauth_username: service-account
+oauth_password: ${ENV:SERVICE_PASSWORD}
+```
+
+**Username/Password** - For direct Superset authentication:
+```yaml
+auth_method: username_password
+username: admin
+password: ${ENV:SUPERSET_PASSWORD}
+```
+
+**JWT Token** - For pre-generated JWT tokens:
+```yaml
+auth_method: jwt
+jwt_token: eyJhbGc...
+```
+
+#### Complete Self-Hosted Setup Guide
+See **[Self-Hosted Superset Setup Guide](docs/self_hosted_setup.rst)** for:
+- Step-by-step OAuth2 configuration
+- Provider-specific examples (Keycloak, Okta, Auth0, Azure AD)
+- Troubleshooting guide
+- Security best practices
+
+#### Contributing for Broader Compatibility
+We're open to contributions that extend 'sup for the entire Superset community.
+Areas we're actively working on:
+- Additional authentication methods
 - Single-instance mode (removing workspace concepts)
 - Different API endpoint structures
 

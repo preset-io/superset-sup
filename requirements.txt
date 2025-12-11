@@ -13,7 +13,7 @@ async-timeout==4.0.2
 attrs==22.1.0
 backoff==2.2.1
 beautifulsoup4==4.11.1
-certifi==2021.10.8
+certifi==2024.7.4
 charset-normalizer==2.0.12
 click==8.1.2
 colorama==0.4.6

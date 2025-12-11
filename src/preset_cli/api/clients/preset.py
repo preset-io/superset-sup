@@ -295,3 +295,49 @@ class PresetClient:  # pylint: disable=too-few-public-methods
         _logger.debug("GET %s", url)
         response = self.session.get(url)
         return response.json()
+
+    def create_scim_group(
+        self,
+        team_name: str,
+        group_data: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        """
+        Create a new SCIM group in a team
+        """
+        url = self.get_base_url() / "teams" / team_name / "scim/v2/Groups"
+        self.session.headers["Accept"] = "application/scim+json"
+        self.session.headers["Content-Type"] = "application/scim+json"
+        _logger.debug("POST %s", url)
+        response = self.session.post(url, json=group_data)
+        response.raise_for_status()
+        return response.json()
+
+    def update_scim_group(
+        self,
+        team_name: str,
+        group_id: str,
+        group_data: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        """
+        Update an existing SCIM group in a team
+        """
+        url = self.get_base_url() / "teams" / team_name / "scim/v2/Groups" / group_id
+        self.session.headers["Accept"] = "application/scim+json"
+        self.session.headers["Content-Type"] = "application/scim+json"
+        _logger.debug("PATCH %s", url)
+        response = self.session.patch(url, json=group_data)
+        response.raise_for_status()
+        return response.json()
+
+    def delete_scim_group(
+        self,
+        team_name: str,
+        group_id: str,
+    ) -> None:
+        """
+        Delete a SCIM group from a team
+        """
+        url = self.get_base_url() / "teams" / team_name / "scim/v2/Groups" / group_id
+        _logger.debug("DELETE %s", url)
+        response = self.session.delete(url)
+        response.raise_for_status()

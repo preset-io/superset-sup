@@ -112,6 +112,17 @@ class SupGlobalConfig(BaseSettings):
 
     # Push target (only needed when pushing to different workspace than source)
     target_workspace_id: Optional[int] = None
+    
+    # dbt Integration Settings
+    # dbt Core
+    dbt_profiles_dir: Optional[str] = None
+    dbt_project_dir: Optional[str] = None
+    
+    # dbt Cloud
+    dbt_cloud_account_id: Optional[int] = None
+    dbt_cloud_project_id: Optional[int] = None
+    dbt_cloud_job_id: Optional[int] = None
+    dbt_cloud_api_token: Optional[str] = None
 
     @classmethod
     def load_from_file(cls) -> "SupGlobalConfig":
@@ -247,6 +258,11 @@ class SupContext:
                 pass
 
         return self.global_config.output_format
+
+    @property
+    def config(self) -> SupGlobalConfig:
+        """Get the global config for easy access."""
+        return self.global_config
 
     def get_workspace_hostname(self) -> Optional[str]:
         """Get cached workspace hostname."""

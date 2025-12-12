@@ -6,7 +6,7 @@ Syncs models to datasets, metrics, and writes back exposures.
 """
 
 from pathlib import Path
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 import typer
 from typing_extensions import Annotated
@@ -546,7 +546,7 @@ def list_models(
         selected_models = apply_select(all_models, tuple(select or []), tuple(exclude or []))
 
         # Convert to display format
-        model_list = []
+        model_list: List[Dict[str, Any]] = []
         for model in selected_models:
             model_list.append(
                 {
@@ -577,13 +577,13 @@ def list_models(
             table.add_column("Materialized", style="blue")
             table.add_column("Tags", style="magenta")
 
-            for model in model_list:
+            for model_dict in model_list:
                 table.add_row(
-                    model["name"],
-                    model["schema"],
-                    model["database"],
-                    model["materialized"],
-                    ", ".join(model["tags"]),
+                    model_dict["name"],
+                    model_dict["schema"],
+                    model_dict["database"],
+                    model_dict["materialized"],
+                    ", ".join(model_dict["tags"]),
                 )
 
             console.print(table)

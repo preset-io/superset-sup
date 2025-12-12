@@ -27,7 +27,7 @@ def format_dbt_help():
 • [bright_white]Database sync:[/bright_white] dbt profiles → Superset database connections
 • [bright_white]Exposures:[/bright_white] Superset charts/dashboards → dbt exposures
 • [bright_white]Selective sync:[/bright_white] Use --select and --exclude for model filtering
-• [bright_white]Metadata preservation:[/bright_white] Keep Superset customizations with --preserve-metadata
+• [bright_white]Metadata preservation:[/bright_white] Keep Superset customizations
 
 [bold {COLORS.primary}]Supported Sources:[/bold {COLORS.primary}]
 • [bright_white]dbt Core:[/bright_white] Local manifest.json from dbt compile/run

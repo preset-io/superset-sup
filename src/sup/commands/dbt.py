@@ -529,21 +529,38 @@ def list_models(
 
         models = data.get("nodes", {})
 
-        # Filter to only model nodes
-        model_list = []
+        # Filter to only model nodes and convert to list
+        from preset_cli.cli.superset.sync.dbt.lib import apply_select
+        from preset_cli.cli.superset.sync.dbt.schemas import ModelSchema
+
+        model_schema = ModelSchema()
+        all_models = []
         for node_id, node in models.items():
             if node.get("resource_type") == "model":
-                # Apply selection criteria
-                # TODO: Implement dbt selection logic
-                model_list.append(
-                    {
-                        "name": node.get("name"),
-                        "schema": node.get("schema"),
-                        "database": node.get("database"),
-                        "tags": node.get("tags", []),
-                        "materialized": node.get("config", {}).get("materialized"),
-                    }
-                )
+                # Add children info for selection logic
+                unique_id = node["unique_id"]
+                node["children"] = data.get("child_map", {}).get(unique_id, [])
+                all_models.append(model_schema.load(node))
+
+        # Apply dbt selection logic
+        selected_models = apply_select(
+            all_models,
+            tuple(select or []),
+            tuple(exclude or [])
+        )
+
+        # Convert to display format
+        model_list = []
+        for model in selected_models:
+            model_list.append(
+                {
+                    "name": model["name"],
+                    "schema": model["schema"],
+                    "database": model["database"],
+                    "tags": model["tags"],
+                    "materialized": model["config"].get("materialized"),
+                }
+            )
 
         if format == "json":
             import json

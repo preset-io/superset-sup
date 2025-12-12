@@ -543,11 +543,7 @@ def list_models(
                 all_models.append(model_schema.load(node))
 
         # Apply dbt selection logic
-        selected_models = apply_select(
-            all_models,
-            tuple(select or []),
-            tuple(exclude or [])
-        )
+        selected_models = apply_select(all_models, tuple(select or []), tuple(exclude or []))
 
         # Convert to display format
         model_list = []

@@ -14,6 +14,7 @@ from sup.commands import (
     dashboard,
     database,
     dataset,
+    group,
     query,
     sql,
     sync,
@@ -146,6 +147,7 @@ app.add_typer(
 )
 app.add_typer(query.app, name="query", help="Manage saved queries", rich_help_panel="Manage Assets")
 app.add_typer(user.app, name="user", help="Manage users", rich_help_panel="Manage Assets")
+app.add_typer(group.app, name="group", help="Manage SCIM groups", rich_help_panel="Manage Assets")
 app.add_typer(sync.app, name="sync", rich_help_panel="Synchronize Assets Across Workspaces")
 app.add_typer(theme.app, name="theme", help="Test themes and colors", hidden=True)
 

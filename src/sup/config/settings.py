@@ -112,12 +112,12 @@ class SupGlobalConfig(BaseSettings):
 
     # Push target (only needed when pushing to different workspace than source)
     target_workspace_id: Optional[int] = None
-    
+
     # dbt Integration Settings
     # dbt Core
     dbt_profiles_dir: Optional[str] = None
     dbt_project_dir: Optional[str] = None
-    
+
     # dbt Cloud
     dbt_cloud_account_id: Optional[int] = None
     dbt_cloud_project_id: Optional[int] = None

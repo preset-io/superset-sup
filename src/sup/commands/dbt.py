@@ -6,7 +6,7 @@ Syncs models to datasets, metrics, and writes back exposures.
 """
 
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import List, Optional
 
 import typer
 from typing_extensions import Annotated
@@ -146,12 +146,12 @@ def sync_dbt_core(
             style=RICH_STYLES["header"],
         )
         console.print(f"📄 Manifest: {manifest_path}")
-        
+
         if select:
             console.print(f"✅ Selected: {', '.join(select)}")
         if exclude:
             console.print(f"❌ Excluded: {', '.join(exclude)}")
-        
+
         if import_db:
             console.print("🗄️  Will import database connection")
         if exposures_path:
@@ -169,7 +169,7 @@ def sync_dbt_core(
     try:
         # Get current context and client
         ctx = SupContext()
-        
+
         # Use specified workspace or current
         if workspace_id:
             if not porcelain:
@@ -183,7 +183,7 @@ def sync_dbt_core(
         from click.testing import CliRunner
 
         runner = CliRunner()
-        
+
         # Build command line args
         cmd_args = [str(manifest_path)]
         if project:
@@ -307,7 +307,9 @@ def sync_dbt_cloud(
     ] = None,
     database_name: Annotated[
         Optional[str],
-        typer.Option("--database-name", help="The DB connection name to associate synced models with"),
+        typer.Option(
+            "--database-name", help="The DB connection name to associate synced models with"
+        ),
     ] = None,
     workspace_id: Annotated[
         Optional[int],
@@ -379,12 +381,12 @@ def sync_dbt_cloud(
             console.print(f"📦 Project: {project_id}")
         if job_id:
             console.print(f"🔧 Job: {job_id}")
-        
+
         if select:
             console.print(f"✅ Selected: {', '.join(select)}")
         if exclude:
             console.print(f"❌ Excluded: {', '.join(exclude)}")
-        
+
         if exposures_path:
             console.print(f"📝 Will write exposures to: {exposures_path}")
 
@@ -414,7 +416,7 @@ def sync_dbt_cloud(
         from click.testing import CliRunner
 
         runner = CliRunner()
-        
+
         # Build args: token [account_id] [project_id] [job_id]
         cmd_args = [token]
         if account_id:
@@ -423,7 +425,7 @@ def sync_dbt_cloud(
             cmd_args.append(str(project_id))
         if job_id:
             cmd_args.append(str(job_id))
-        
+
         # Add options
         if exposures_path:
             cmd_args.extend(["--exposures", exposures_path])
@@ -526,26 +528,30 @@ def list_models(
             data = json.load(f)
 
         models = data.get("nodes", {})
-        
+
         # Filter to only model nodes
         model_list = []
         for node_id, node in models.items():
             if node.get("resource_type") == "model":
                 # Apply selection criteria
                 # TODO: Implement dbt selection logic
-                model_list.append({
-                    "name": node.get("name"),
-                    "schema": node.get("schema"),
-                    "database": node.get("database"),
-                    "tags": node.get("tags", []),
-                    "materialized": node.get("config", {}).get("materialized"),
-                })
+                model_list.append(
+                    {
+                        "name": node.get("name"),
+                        "schema": node.get("schema"),
+                        "database": node.get("database"),
+                        "tags": node.get("tags", []),
+                        "materialized": node.get("config", {}).get("materialized"),
+                    }
+                )
 
         if format == "json":
             import json
+
             console.print(json.dumps(model_list, indent=2))
         elif format == "yaml":
             import yaml
+
             console.print(yaml.dump(model_list, default_flow_style=False))
         else:
             # Table format

@@ -14,6 +14,10 @@ from typing_extensions import Annotated
 from sup.output.console import console
 from sup.output.styles import EMOJIS, RICH_STYLES
 
+# Constants for SCIM API pagination
+SCIM_PAGE_SIZE = 100  # Number of groups per page
+SCIM_INITIAL_TOTAL = 100  # Default total count to ensure at least one iteration
+
 app = typer.Typer(help="Manage SCIM groups", no_args_is_help=True)
 
 
@@ -61,7 +65,11 @@ def list_groups(
             # Get team if not specified
             if not team:
                 teams = client.get_teams()
-                if len(teams) == 1:
+                if len(teams) == 0:
+                    if not porcelain:
+                        console.print("No teams found.")
+                    return
+                elif len(teams) == 1:
                     team = teams[0]["name"]
                 else:
                     if not porcelain:
@@ -73,7 +81,7 @@ def list_groups(
             # Collect all groups with pagination
             all_groups = []
             start_at = 1
-            total_count = 100  # Default to ensure at least one iteration
+            total_count = SCIM_INITIAL_TOTAL  # Default to ensure at least one iteration
 
             while start_at <= total_count:
                 response = client.get_group_membership(team, start_at)  # type: ignore[arg-type]
@@ -82,7 +90,7 @@ def list_groups(
                 if response.get("Resources"):
                     all_groups.extend(response["Resources"])
 
-                start_at += 100
+                start_at += SCIM_PAGE_SIZE
 
             # Apply limit if specified
             if limit and limit > 0:
@@ -205,7 +213,11 @@ def sync_groups(
         # Get team if not specified
         if not team:
             teams = client.get_teams()
-            if len(teams) == 1:
+            if len(teams) == 0:
+                if not porcelain:
+                    console.print("No teams found.")
+                return
+            elif len(teams) == 1:
                 team = teams[0]
             else:
                 if not porcelain:
@@ -307,7 +319,11 @@ def create_group(
             # Get team if not specified
             if not team:
                 teams = client.get_teams()
-                if len(teams) == 1:
+                if len(teams) == 0:
+                    if not porcelain:
+                        console.print("No teams found.")
+                    return
+                elif len(teams) == 1:
                     team = teams[0]["name"]
                 else:
                     if not porcelain:
@@ -362,7 +378,7 @@ def get_all_groups(client, team: str) -> List[Dict[str, Any]]:
     """Fetch all groups for a team with pagination."""
     all_groups = []
     start_at = 1
-    total_count = 100  # Default to ensure at least one iteration
+    total_count = SCIM_INITIAL_TOTAL  # Default to ensure at least one iteration
 
     while start_at <= total_count:
         response = client.get_group_membership(team, start_at)
@@ -371,7 +387,7 @@ def get_all_groups(client, team: str) -> List[Dict[str, Any]]:
         if response.get("Resources"):
             all_groups.extend(response["Resources"])
 
-        start_at += 100
+        start_at += SCIM_PAGE_SIZE
 
     return all_groups
 

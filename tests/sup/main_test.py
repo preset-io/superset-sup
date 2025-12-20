@@ -4,6 +4,8 @@ Tests for ``sup.main``.
 
 # pylint: disable=redefined-outer-name, invalid-name
 
+import re
+
 from typer.testing import CliRunner
 
 from sup.main import app
@@ -29,7 +31,11 @@ def test_sup_version() -> None:
     result = runner.invoke(app, ["--version"], catch_exceptions=False)
 
     assert result.exit_code == 0
-    assert "version" in result.stdout.lower()
+    # Match "sup version" followed by any semantic version pattern (e.g., 0.1.0, 1.2.3, 2.0.0-beta.1)
+    version_pattern = r"sup version \d+\.\d+\.\d+(-[a-zA-Z0-9.-]+)?"
+    assert re.search(version_pattern, result.stdout.lower()), (
+        f"Expected version pattern '{version_pattern}' in output: {result.stdout}"
+    )
 
 
 def test_sup_no_command() -> None:

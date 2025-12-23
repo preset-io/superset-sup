@@ -106,7 +106,7 @@ def list_dashboards(
         if porcelain:
             display_porcelain_list(
                 dashboards,
-                ["id", "dashboard_title", "published", "created_on"],
+                ["id", "dashboard_title", "published", "created_on_delta_humanized"],
             )
         elif json_output:
             import json

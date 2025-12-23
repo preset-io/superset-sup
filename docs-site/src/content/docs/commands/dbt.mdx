@@ -1,0 +1,53 @@
+---
+title: "sup dbt"
+description: "dbt to Superset synchronization"
+---
+
+🔄 dbt to Superset synchronization
+
+## Key Features
+
+- Model sync: dbt models → Superset datasets with schema & metrics
+- Database sync: dbt profiles → Superset database connections
+- Exposures: Superset charts/dashboards → dbt exposures
+- Selective sync: Use --select and --exclude for model filtering
+- Metadata preservation: Keep Superset customizations with --preserve-metadata
+
+
+## Supported Sources
+
+- dbt Core: Local manifest.json from dbt compile/run
+- dbt Cloud: Remote manifest via API integration
+
+
+## Common Workflows
+
+- Initial setup: Import database, sync all models
+- Development: Sync specific models during iteration
+- Documentation: Write exposures back to dbt project
+
+## Usage
+
+```bash
+sup dbt [COMMAND] [OPTIONS]
+```
+
+## Subcommands
+
+| Command | Description |
+|---------|-------------|
+| `sup dbt core` | Sync a dbt Core project to Superset |
+| `sup dbt cloud` | Sync a dbt Cloud project to Superset |
+| `sup dbt list-models` | List dbt models from a manifest file |
+
+## Examples
+
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+
+<Tabs>
+  <TabItem label="Basic usage">
+    ```bash
+    sup dbt
+    ```
+  </TabItem>
+</Tabs>

@@ -164,7 +164,7 @@ def dashboard_info(
         if porcelain:
             # Simple key-value output
             print(
-                f"{dashboard_id}\t{dashboard.get('dashboard_title', '')}\t{dashboard.get('published', False)}",  # noqa: E501
+                f"{dashboard_id}\t{dashboard.get('dashboard_title', '')}\t{dashboard.get('published', False)}\t{dashboard.get('created_on_delta_humanized', '')}",  # noqa: E501
             )
         elif json_output:
             import json

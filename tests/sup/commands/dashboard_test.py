@@ -75,6 +75,24 @@ def sample_dashboards() -> List[Dict[str, Any]]:
     ]
 
 
+@pytest.fixture
+def sample_dashboard() -> Dict[str, Any]:
+    """
+    Sample single dashboard data for testing dashboard_info command.
+
+    This fixture can be reused in other dashboard info tests.
+    """
+    return {
+        "id": 1,
+        "dashboard_title": "Sales Dashboard",
+        "published": True,
+        "slug": "sales-dashboard",
+        "description": "A comprehensive sales dashboard",
+        "created_on_delta_humanized": "10 days ago",
+        "changed_on_delta_humanized": "5 days ago",
+    }
+
+
 def test_list_dashboards_basic(
     mocker: MockerFixture,
     mock_sup_context: MagicMock,
@@ -263,3 +281,179 @@ def test_list_dashboards_json_output(
     parsed = json.loads(json_output)
     assert isinstance(parsed, list)
     assert len(parsed) == len(sample_dashboards)
+
+
+def test_dashboard_info_basic(
+    mocker: MockerFixture,
+    mock_sup_context: MagicMock,
+    mock_superset_client: MagicMock,
+    sample_dashboard: Dict[str, Any],
+) -> None:
+    """
+    Test the basic functionality of ``dashboard_info`` command.
+    """
+    # Mock the spinner to avoid console output during tests
+    mock_spinner = mocker.patch("sup.output.spinners.data_spinner")
+    mock_spinner.return_value.__enter__.return_value = None
+
+    # Mock console to capture output
+    mock_console = mocker.patch("sup.commands.dashboard.console")
+
+    # Mock display_dashboard_details to avoid Rich table rendering
+    mock_display_details = mocker.patch("sup.commands.dashboard.display_dashboard_details")
+
+    # Set up mock return values
+    mock_superset_client.get_dashboard.return_value = sample_dashboard
+
+    # Run the command
+    runner = CliRunner()
+    result = runner.invoke(app, ["info", "1"], catch_exceptions=False)
+
+    # Assertions
+    assert result.exit_code == 0
+
+    # Verify SupContext was instantiated (at least once)
+    from sup.config.settings import SupContext
+
+    assert SupContext.call_count >= 1
+
+    # Verify client was created from context
+    from sup.clients.superset import SupSupersetClient
+
+    SupSupersetClient.from_context.assert_called_once_with(mock_sup_context, None)
+
+    # Verify get_dashboard was called with correct parameters
+    mock_superset_client.get_dashboard.assert_called_once_with(1, silent=True)
+
+    # Verify display_dashboard_details was called with correct parameters
+    mock_display_details.assert_called_once_with(sample_dashboard)
+
+
+def test_dashboard_info_porcelain_output(
+    mocker: MockerFixture,
+    mock_sup_context: MagicMock,
+    mock_superset_client: MagicMock,
+    sample_dashboard: Dict[str, Any],
+) -> None:
+    """
+    Test ``dashboard_info`` with porcelain output format.
+    """
+    # Mock the spinner
+    mock_spinner = mocker.patch("sup.output.spinners.data_spinner")
+    mock_spinner.return_value.__enter__.return_value = None
+
+    # Capture print output
+    printed_lines = []
+
+    def capture_print(*args, **kwargs):
+        if args:
+            printed_lines.append(str(args[0]) if len(args) == 1 else " ".join(str(arg) for arg in args))
+
+    mock_print = mocker.patch("builtins.print", side_effect=capture_print)
+
+    # Set up mock return values
+    mock_superset_client.get_dashboard.return_value = sample_dashboard
+
+    # Run the command with porcelain flag
+    runner = CliRunner()
+    result = runner.invoke(app, ["info", "1", "--porcelain"], catch_exceptions=False)
+
+    # Assertions
+    assert result.exit_code == 0
+
+    # Verify output format: tab-separated values
+    assert len(printed_lines) == 1, f"Expected 1 line, got {len(printed_lines)}: {printed_lines}"
+
+    # Verify line format: "1\tSales Dashboard\tTrue"
+    line_parts = printed_lines[0].split("\t")
+    assert len(line_parts) == 4, f"Expected 4 tab-separated fields, got {len(line_parts)}: {line_parts}"
+    assert line_parts[0] == "1"
+    assert line_parts[1] == "Sales Dashboard"
+    assert line_parts[2] == "True"
+    assert line_parts[3] == "10 days ago"
+
+
+def test_dashboard_info_json_output(
+    mocker: MockerFixture,
+    mock_sup_context: MagicMock,
+    mock_superset_client: MagicMock,
+    sample_dashboard: Dict[str, Any],
+) -> None:
+    """
+    Test ``dashboard_info`` with JSON output format.
+    """
+    # Mock the spinner
+    mock_spinner = mocker.patch("sup.output.spinners.data_spinner")
+    mock_spinner.return_value.__enter__.return_value = None
+
+    # Mock console.print to capture JSON output
+    mock_console_print = mocker.patch("sup.commands.dashboard.console.print")
+
+    # Set up mock return values
+    mock_superset_client.get_dashboard.return_value = sample_dashboard
+
+    # Run the command with JSON flag
+    runner = CliRunner()
+    result = runner.invoke(app, ["info", "1", "--json"], catch_exceptions=False)
+
+    # Assertions
+    assert result.exit_code == 0
+
+    # Verify console.print was called (for JSON output)
+    assert mock_console_print.called
+
+    # Verify the output contains JSON (check first call's args)
+    import json
+
+    call_args = mock_console_print.call_args_list
+    json_output = call_args[0][0][0] if call_args else ""
+
+    # Verify it's valid JSON
+    parsed = json.loads(json_output)
+    assert isinstance(parsed, dict)
+    assert parsed["id"] == sample_dashboard["id"]
+    assert parsed["dashboard_title"] == sample_dashboard["dashboard_title"]
+    assert parsed["published"] == sample_dashboard["published"]
+    assert parsed["created_on_delta_humanized"] == sample_dashboard["created_on_delta_humanized"]
+
+
+def test_dashboard_info_yaml_output(
+    mocker: MockerFixture,
+    mock_sup_context: MagicMock,
+    mock_superset_client: MagicMock,
+    sample_dashboard: Dict[str, Any],
+) -> None:
+    """
+    Test ``dashboard_info`` with YAML output format.
+    """
+    # Mock the spinner
+    mock_spinner = mocker.patch("sup.output.spinners.data_spinner")
+    mock_spinner.return_value.__enter__.return_value = None
+
+    # Mock console.print to capture YAML output
+    mock_console_print = mocker.patch("sup.commands.dashboard.console.print")
+
+    # Set up mock return values
+    mock_superset_client.get_dashboard.return_value = sample_dashboard
+
+    # Run the command with YAML flag
+    runner = CliRunner()
+    result = runner.invoke(app, ["info", "1", "--yaml"], catch_exceptions=False)
+
+    # Assertions
+    assert result.exit_code == 0
+
+    # Verify console.print was called (for YAML output)
+    assert mock_console_print.called
+
+    # Verify the output contains YAML (check first call's args)
+    import yaml
+
+    call_args = mock_console_print.call_args_list
+    yaml_output = call_args[0][0][0] if call_args else ""
+
+    # Verify it's valid YAML
+    parsed = yaml.safe_load(yaml_output)
+    assert isinstance(parsed, dict)
+    assert parsed["id"] == sample_dashboard["id"]
+    assert parsed["dashboard_title"] == sample_dashboard["dashboard_title"]

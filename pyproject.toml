@@ -96,7 +96,7 @@ exclude = ["tests"]
 version_scheme = "no-guess-dev"
 
 [tool.pytest.ini_options]
-addopts = "--cov preset_cli --cov-report term-missing --verbose"
+addopts = "--cov preset_cli --cov sup --cov-report term-missing --verbose"
 norecursedirs = ["dist", "build", ".tox"]
 testpaths = ["tests"]
 

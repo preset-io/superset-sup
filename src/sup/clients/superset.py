@@ -10,6 +10,7 @@ from typing import Any, Dict, List, Optional
 from rich.table import Table
 
 from preset_cli.api.clients.superset import SupersetClient
+from preset_cli.auth.factory import create_superset_auth
 from sup.auth.preset import SupPresetAuth
 from sup.config.settings import SupContext
 from sup.output.console import console
@@ -19,20 +20,155 @@ from sup.output.styles import COLORS, EMOJIS, RICH_STYLES
 class SupSupersetClient:
     """
     Superset client wrapper with sup-specific functionality.
+
+    Supports both:
+    1. Preset workspaces (uses workspace_id + SupPresetAuth)
+    2. Self-hosted Superset instances (uses instance_name + OAuthSupersetAuth/JWT/etc)
     """
 
-    def __init__(self, workspace_url: str, auth: SupPresetAuth):
+    def __init__(self, workspace_url: str, auth):
         self.workspace_url = workspace_url
         self.auth = auth
         self.client = SupersetClient(workspace_url, auth)
+        self.is_self_hosted = False  # Will be set by from_context
 
     @classmethod
     def from_context(
         cls,
         ctx: SupContext,
         workspace_id: Optional[int] = None,
+        instance_name: Optional[str] = None,
     ) -> "SupSupersetClient":
-        """Create Superset client from sup configuration context."""
+        """
+        Create Superset client from sup configuration context.
+
+        Supports both:
+        1. Preset workspaces (uses workspace_id + API tokens)
+        2. Self-hosted Superset instances (uses instance_name + OAuth2/OIDC)
+
+        Precedence:
+        1. instance_name parameter (explicit)
+        2. workspace_id parameter (explicit)
+        3. Current instance from context (SUP_INSTANCE_NAME or .sup/state.yml)
+        4. Current workspace from context (SUP_WORKSPACE_ID or .sup/state.yml)
+        5. Error with helpful message
+
+        Args:
+            ctx: SupContext with configuration and state
+            workspace_id: Preset workspace ID (legacy)
+            instance_name: Self-hosted instance name
+
+        Returns:
+            SupSupersetClient configured for the workspace or instance
+
+        Raises:
+            ValueError: If neither workspace nor instance is configured
+
+        Examples:
+            # Use self-hosted instance
+            client = SupSupersetClient.from_context(ctx, instance_name="prod")
+
+            # Use Preset workspace
+            client = SupSupersetClient.from_context(ctx, workspace_id=123)
+
+            # Auto-detect from context
+            client = SupSupersetClient.from_context(ctx)
+        """
+        # Determine which path to use
+
+        # If instance_name explicitly provided, use self-hosted path
+        if instance_name:
+            return cls._from_instance(ctx, instance_name)
+
+        # If workspace_id explicitly provided, use Preset path
+        if workspace_id:
+            return cls._from_preset_workspace(ctx, workspace_id)
+
+        # Check context for instance (self-hosted)
+        if ctx.get_instance_name():
+            return cls._from_instance(ctx, ctx.get_instance_name())
+
+        # Fall back to Preset path if workspace configured
+        if ctx.get_workspace_id():
+            return cls._from_preset_workspace(ctx, ctx.get_workspace_id())
+
+        # Neither configured - helpful error
+        raise ValueError(
+            "No workspace or instance configured.\n\n"
+            "For Preset users:\n"
+            "  sup workspace list\n"
+            "  sup workspace use <ID>\n\n"
+            "For self-hosted Superset:\n"
+            "  sup instance list\n"
+            "  sup instance use <NAME>"
+        )
+
+    @classmethod
+    def _from_instance(
+        cls,
+        ctx: SupContext,
+        instance_name: Optional[str] = None,
+    ) -> "SupSupersetClient":
+        """
+        Create client for self-hosted Superset instance.
+
+        Uses OAuth2/OIDC or other auth methods configured in superset_instances.
+        """
+        # Get instance name
+        name = instance_name or ctx.get_instance_name()
+        if not name:
+            console.print(
+                f"{EMOJIS['error']} No Superset instance configured",
+                style=RICH_STYLES["error"],
+            )
+            console.print(
+                "💡 Run [bold]sup instance list[/] and [bold]sup instance use <NAME>[/]",
+                style=RICH_STYLES["info"],
+            )
+            raise ValueError("No instance configured")
+
+        # Get instance configuration
+        instance_config = ctx.get_superset_instance_config(name)
+        if not instance_config:
+            console.print(
+                f"{EMOJIS['error']} Instance '{name}' not found",
+                style=RICH_STYLES["error"],
+            )
+            console.print(
+                "💡 Run [bold]sup instance list[/] to see available instances",
+                style=RICH_STYLES["info"],
+            )
+            raise ValueError(f"Instance '{name}' not configured")
+
+        # Create auth handler via factory (handles OAuth2, JWT, username/password)
+        try:
+            auth = create_superset_auth(instance_config)
+        except ValueError as e:
+            console.print(
+                f"{EMOJIS['error']} Authentication configuration error:",
+                style=RICH_STYLES["error"],
+            )
+            console.print(f"  {e}", style=RICH_STYLES["error"])
+            raise
+
+        # Create and return client
+        client = cls(instance_config.url, auth)
+        client.is_self_hosted = True
+        return client
+
+    @classmethod
+    def _from_preset_workspace(
+        cls,
+        ctx: SupContext,
+        workspace_id: Optional[int] = None,
+    ) -> "SupSupersetClient":
+        """
+        Create client for Preset workspace.
+
+        This is the existing implementation - kept unchanged for backward compatibility.
+        """
+        from sup.clients.preset import SupPresetClient
+
         # Get workspace ID from context if not provided
         if workspace_id is None:
             workspace_id = ctx.get_workspace_id()
@@ -49,7 +185,6 @@ class SupSupersetClient:
             raise ValueError("No workspace configured")
 
         # Check if we have cached hostname for this specific workspace
-        # Only use cache if the workspace_id matches the current workspace
         hostname = None
         current_workspace_id = ctx.get_workspace_id()
         if current_workspace_id == workspace_id:
@@ -57,12 +192,8 @@ class SupSupersetClient:
 
         if not hostname:
             # No cached hostname, fetch from Preset API
-            from sup.clients.preset import SupPresetClient
-
             preset_client = SupPresetClient.from_context(ctx, silent=True)
-            workspaces = preset_client.get_all_workspaces(
-                silent=True,
-            )  # Silent for internal operation
+            workspaces = preset_client.get_all_workspaces(silent=True)
 
             # Find our workspace
             workspace = None
@@ -91,11 +222,10 @@ class SupSupersetClient:
 
         workspace_url = f"https://{hostname}/"
 
-        auth = SupPresetAuth.from_sup_config(
-            ctx,
-            silent=True,
-        )  # Always silent for Superset client
-        return cls(workspace_url, auth)
+        auth = SupPresetAuth.from_sup_config(ctx, silent=True)
+        client = cls(workspace_url, auth)
+        client.is_self_hosted = False
+        return client
 
     def get_databases(self, silent: bool = False) -> List[Dict[str, Any]]:
         """Get all databases in the workspace."""

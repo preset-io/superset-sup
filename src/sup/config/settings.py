@@ -6,7 +6,7 @@ Type-safe configuration management with YAML support.
 
 from datetime import datetime
 from enum import Enum
-from typing import Dict, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import yaml
 from pydantic import BaseModel, ConfigDict, Field
@@ -152,6 +152,7 @@ class SupGlobalConfig(BaseSettings):
     # Current context (can be overridden by project state or env vars)
     current_workspace_id: Optional[int] = None
     current_database_id: Optional[int] = None
+    current_instance_name: Optional[str] = None  # Default Superset instance (self-hosted)
 
     # Push target (only needed when pushing to different workspace than source)
     target_workspace_id: Optional[int] = None
@@ -207,6 +208,7 @@ class SupProjectState(BaseSettings):
     current_workspace_hostname: Optional[str] = None  # Cache hostname for efficiency
     current_database_id: Optional[int] = None
     current_team: Optional[str] = None
+    current_instance_name: Optional[str] = None  # Selected Superset instance (self-hosted)
 
     # Push target (only needed when pushing to different workspace than source)
     target_workspace_id: Optional[int] = None
@@ -365,7 +367,7 @@ class SupContext:
     def set_target_workspace_id(self, workspace_id: int, persist: bool = False) -> None:
         """
         Set import target workspace for cross-workspace operations.
-
+    
         Only needed when you want imports to go to different workspace than exports.
         """
         if persist:
@@ -374,3 +376,60 @@ class SupContext:
         else:
             self.project_state.target_workspace_id = workspace_id
             self.project_state.save_to_file()
+
+    def get_instance_name(self, cli_override: Optional[str] = None) -> Optional[str]:
+        """Get current Superset instance name with proper precedence.
+    
+        Priority:
+        1. CLI argument override
+        2. Environment variable: SUP_INSTANCE_NAME
+        3. Project state (.sup/state.yml)
+        4. Global config (~/.sup/config.yml)
+    
+        Returns instance name or None if not configured.
+        """
+        env_instance_name = get_env_var("instance_name")
+        return (
+            cli_override
+            or env_instance_name
+            or self.project_state.current_instance_name
+            or self.global_config.current_instance_name
+        )
+
+    def get_superset_instance_config(
+        self, instance_name: Optional[str] = None
+    ) -> Optional["SupersetInstanceConfig"]:
+        """Get Superset instance configuration by name.
+    
+        Args:
+            instance_name: Instance name to lookup. If None, uses current instance.
+    
+        Returns:
+            SupersetInstanceConfig or None if not found.
+        """
+        name = instance_name or self.get_instance_name()
+        if not name:
+            return None
+        return self.global_config.superset_instances.get(name)
+
+    def has_superset_instances(self) -> bool:
+        """Check if any Superset instances are configured."""
+        return len(self.global_config.superset_instances) > 0
+
+    def set_instance_context(self, instance_name: str, persist: bool = False) -> None:
+        """Set current Superset instance.
+    
+        Args:
+            instance_name: Instance name to select
+            persist: If True, save to global config. If False, save to project state.
+        """
+        if persist:
+            self.global_config.current_instance_name = instance_name
+            self.global_config.save_to_file()
+        else:
+            self.project_state.current_instance_name = instance_name
+            self.project_state.save_to_file()
+
+    def get_all_instance_names(self) -> List[str]:
+        """Get list of all configured instance names."""
+        return list(self.global_config.superset_instances.keys())

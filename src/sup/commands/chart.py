@@ -101,9 +101,16 @@ def list_charts(
         typer.Option("--dataset-id", help="Filter by dataset ID"),
     ] = None,
     # Output options
+    instance: Annotated[
+        Optional[str],
+        typer.Option(
+            "--instance",
+            help="Superset instance name (self-hosted). Use 'sup instance list' to see available instances.",
+        ),
+    ] = None,
     workspace_id: Annotated[
         Optional[int],
-        typer.Option("--workspace-id", "-w", help="Workspace ID"),
+        typer.Option("--workspace-id", "-w", help="Preset workspace ID"),
     ] = None,
     json_output: Annotated[bool, typer.Option("--json", help="Output as JSON")] = False,
     yaml_output: Annotated[bool, typer.Option("--yaml", help="Output as YAML")] = False,
@@ -151,7 +158,9 @@ def list_charts(
         # Get charts from API with spinner (using server-side filtering for performance)
         with data_spinner("charts", silent=porcelain) as sp:
             ctx = SupContext()
-            client = SupSupersetClient.from_context(ctx, workspace_id)
+            client = SupSupersetClient.from_context(
+                ctx, workspace_id=workspace_id, instance_name=instance
+            )
 
             # Use server-side filtering where available
             page = (filters.page - 1) if filters.page else 0
@@ -220,9 +229,16 @@ def list_charts(
 @app.command("info")
 def chart_info(
     chart_id: Annotated[int, typer.Argument(help="Chart ID to inspect")],
+    instance: Annotated[
+        Optional[str],
+        typer.Option(
+            "--instance",
+            help="Superset instance name (self-hosted). Use 'sup instance list' to see available instances.",
+        ),
+    ] = None,
     workspace_id: Annotated[
         Optional[int],
-        typer.Option("--workspace-id", "-w", help="Workspace ID"),
+        typer.Option("--workspace-id", "-w", help="Preset workspace ID"),
     ] = None,
     json_output: Annotated[bool, typer.Option("--json", "-j", help="Output as JSON")] = False,
     yaml_output: Annotated[bool, typer.Option("--yaml", "-y", help="Output as YAML")] = False,
@@ -243,7 +259,9 @@ def chart_info(
     try:
         with data_spinner(f"chart {chart_id}", silent=porcelain):
             ctx = SupContext()
-            client = SupSupersetClient.from_context(ctx, workspace_id)
+            client = SupSupersetClient.from_context(
+                ctx, workspace_id=workspace_id, instance_name=instance
+            )
             chart = client.get_chart(chart_id, silent=True)
 
         if porcelain:
@@ -858,12 +876,19 @@ def pull_charts(
         typer.Option("--limit", "-l", help="Maximum number of charts to pull"),
     ] = None,
     # Export-specific options
+    instance: Annotated[
+        Optional[str],
+        typer.Option(
+            "--instance",
+            help="Superset instance name (self-hosted). Use 'sup instance list' to see available instances.",
+        ),
+    ] = None,
     workspace_id: Annotated[
         Optional[int],
         typer.Option(
             "--workspace-id",
             "-w",
-            help="Workspace ID (defaults to configured workspace)",
+            help="Preset workspace ID",
         ),
     ] = None,
     overwrite: Annotated[
@@ -987,7 +1012,9 @@ def pull_charts(
             raise typer.Exit(1)
 
         # Get charts using existing filtering logic
-        client = SupSupersetClient.from_context(ctx, workspace_id)
+        client = SupSupersetClient.from_context(
+            ctx, workspace_id=workspace_id, instance_name=instance
+        )
 
         with data_spinner("charts to export", silent=porcelain) as sp:
             # Parse filters using existing logic

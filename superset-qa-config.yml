@@ -1,0 +1,30 @@
+# Configuration for self-hosted Superset instances
+# Choose ONE authentication method per instance
+
+superset_instances:
+  # Option 1: Username/Password (Default for open-source Superset)
+  # Use this if your Superset instance uses built-in authentication
+  superset-qa:
+    url: https://bi-qa.ol.mit.edu
+    auth_method: username_password
+    username: superset_cli_user
+    password: ${ENV:SUPERSET_PASSWORD}
+
+  # Option 2: OAuth2/OIDC (For externally authenticated Superset)
+  # Uncomment to use OAuth2 instead. Keep only ONE instance per URL.
+  # superset-qa-oauth:
+  #   url: https://bi-qa.ol.mit.edu
+  #   auth_method: oauth
+  #   oauth_token_url: https://sso-qa.ol.mit.edu/realms/ol-data-platform/protocol/openid-connect/token
+  #   oauth_client_id: ol-superset-client
+  #   oauth_client_secret: ${ENV:SUPERSET_OAUTH_CLIENT_SECRET}
+  #   oauth_username: superset_service@ol.dev
+  #   oauth_password: ${ENV:SUPERSET_OAUTH_SERVICE_PASSWORD}
+  #   oauth_scope: "openid profile email"
+
+  # Option 3: JWT Token (For programmatic access with pre-generated tokens)
+  # Uncomment to use JWT instead. Keep only ONE instance per URL.
+  # superset-qa-jwt:
+  #   url: https://bi-qa.ol.mit.edu
+  #   auth_method: jwt
+  #   jwt_token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...

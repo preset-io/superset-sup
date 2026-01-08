@@ -50,6 +50,13 @@ def list_saved_queries(
         typer.Option("--schema", help="Filter by schema name"),
     ] = None,
     # Output options
+    instance: Annotated[
+        Optional[str],
+        typer.Option(
+            "--instance",
+            help="Superset instance name (self-hosted). Use 'sup instance list' to see available instances.",
+        ),
+    ] = None,
     workspace_id: Annotated[
         Optional[int],
         typer.Option("--workspace-id", "-w", help="Workspace ID"),
@@ -79,7 +86,9 @@ def list_saved_queries(
         # Get saved queries with spinner
         with data_spinner("saved queries", silent=porcelain) as sp:
             ctx = SupContext()
-            client = SupSupersetClient.from_context(ctx, workspace_id)
+            client = SupSupersetClient.from_context(
+                ctx, workspace_id=workspace_id, instance_name=instance
+            )
 
             # Fetch saved queries
             saved_queries = client.get_saved_queries(silent=True, limit=limit_filter)
@@ -152,6 +161,14 @@ def list_saved_queries(
             # Beautiful Rich table
             display_saved_queries_table(filtered_queries, ctx.get_workspace_hostname())
 
+    except ValueError as e:
+        # from_context() provides helpful error messages for missing config
+        if not porcelain:
+            console.print(
+                f"{EMOJIS['error']} {e}",
+                style=RICH_STYLES["error"],
+            )
+        raise typer.Exit(1)
     except Exception as e:
         if not porcelain:
             console.print(
@@ -164,6 +181,13 @@ def list_saved_queries(
 @app.command("info")
 def saved_query_info(
     query_id: Annotated[int, typer.Argument(help="Saved query ID to inspect")],
+    instance: Annotated[
+        Optional[str],
+        typer.Option(
+            "--instance",
+            help="Superset instance name (self-hosted). Use 'sup instance list' to see available instances.",
+        ),
+    ] = None,
     workspace_id: Annotated[
         Optional[int],
         typer.Option("--workspace-id", "-w", help="Workspace ID"),
@@ -187,7 +211,9 @@ def saved_query_info(
     try:
         with data_spinner(f"saved query {query_id}", silent=porcelain):
             ctx = SupContext()
-            client = SupSupersetClient.from_context(ctx, workspace_id)
+            client = SupSupersetClient.from_context(
+                ctx, workspace_id=workspace_id, instance_name=instance
+            )
             query = client.get_saved_query(query_id, silent=True)
 
         if porcelain:
@@ -207,6 +233,14 @@ def saved_query_info(
         else:
             display_saved_query_details(query)
 
+    except ValueError as e:
+        # from_context() provides helpful error messages for missing config
+        if not porcelain:
+            console.print(
+                f"{EMOJIS['error']} {e}",
+                style=RICH_STYLES["error"],
+            )
+        raise typer.Exit(1)
     except Exception as e:
         if not porcelain:
             console.print(

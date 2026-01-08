@@ -136,8 +136,33 @@ def list_workspaces(
     from sup.output.spinners import data_spinner
 
     try:
+        ctx = SupContext()
+        
+        # Check if Preset credentials are configured
+        token, secret = ctx.get_preset_credentials()
+        if not token or not secret:
+            if not porcelain:
+                console.print(
+                    f"{EMOJIS['error']} No Preset credentials configured",
+                    style=RICH_STYLES["error"],
+                )
+                console.print()
+                console.print(
+                    "💡 To use Preset workspaces:",
+                    style=RICH_STYLES["info"],
+                )
+                console.print("   [bold]sup config auth[/bold]    # Set up Preset API token")
+                console.print("   [bold]sup workspace list[/bold]")
+                console.print()
+                console.print(
+                    "💡 To use self-hosted Superset:",
+                    style=RICH_STYLES["info"],
+                )
+                console.print("   [bold]sup config auth[/bold]    # Set up instance authentication")
+                console.print("   [bold]sup instance list[/bold]")
+            raise typer.Exit(1)
+        
         with data_spinner("workspaces", silent=porcelain) as sp:
-            ctx = SupContext()
             client = SupPresetClient.from_context(
                 ctx,
                 silent=True,
@@ -178,6 +203,8 @@ def list_workspaces(
         else:
             client.display_workspaces_table(workspaces)
 
+    except typer.Exit:
+        raise
     except Exception as e:
         if not porcelain:
             console.print(
@@ -210,6 +237,29 @@ def use_workspace(
 
     try:
         ctx = SupContext()
+        
+        # Check if Preset credentials are configured
+        token, secret = ctx.get_preset_credentials()
+        if not token or not secret:
+            console.print(
+                f"{EMOJIS['error']} No Preset credentials configured",
+                style=RICH_STYLES["error"],
+            )
+            console.print()
+            console.print(
+                "💡 To use Preset workspaces:",
+                style=RICH_STYLES["info"],
+            )
+            console.print("   [bold]sup config auth[/bold]    # Set up Preset API token")
+            console.print()
+            console.print(
+                "💡 To use self-hosted Superset:",
+                style=RICH_STYLES["info"],
+            )
+            console.print("   [bold]sup config auth[/bold]    # Set up instance authentication")
+            console.print("   [bold]sup instance use <NAME>[/bold]")
+            raise typer.Exit(1)
+        
         client = SupPresetClient.from_context(
             ctx,
             silent=True,
@@ -256,6 +306,8 @@ def use_workspace(
                 style=RICH_STYLES["dim"],
             )
 
+    except typer.Exit:
+        raise
     except Exception as e:
         console.print(
             f"{EMOJIS['error']} Failed to set workspace: {e}",
@@ -293,6 +345,31 @@ def workspace_info(
 
     try:
         ctx = SupContext()
+        
+        # Check if Preset credentials are configured
+        token, secret = ctx.get_preset_credentials()
+        if not token or not secret:
+            if not porcelain:
+                console.print(
+                    f"{EMOJIS['error']} No Preset credentials configured",
+                    style=RICH_STYLES["error"],
+                )
+                console.print()
+                console.print(
+                    "💡 To use Preset workspaces:",
+                    style=RICH_STYLES["info"],
+                )
+                console.print("   [bold]sup config auth[/bold]    # Set up Preset API token")
+                console.print("   [bold]sup workspace list[/bold]")
+                console.print()
+                console.print(
+                    "💡 To use self-hosted Superset:",
+                    style=RICH_STYLES["info"],
+                )
+                console.print("   [bold]sup config auth[/bold]    # Set up instance authentication")
+                console.print("   [bold]sup instance list[/bold]")
+            raise typer.Exit(1)
+        
         client = SupPresetClient.from_context(ctx, silent=True)
 
         # Use provided workspace or get from context
@@ -356,6 +433,7 @@ def workspace_info(
                 style=RICH_STYLES["error"],
             )
         raise typer.Exit(1)
+
 
 
 def display_workspace_details(workspace: dict) -> None:

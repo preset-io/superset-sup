@@ -27,6 +27,13 @@ def list_groups(
         Optional[str],
         typer.Option("--team", "-t", help="Team name to list groups from"),
     ] = None,
+    instance: Annotated[
+        Optional[str],
+        typer.Option(
+            "--instance",
+            help="Superset instance name (self-hosted). Use 'sup instance list' to see available instances.",
+        ),
+    ] = None,
     json_output: Annotated[bool, typer.Option("--json", help="Output as JSON")] = False,
     yaml_output: Annotated[bool, typer.Option("--yaml", help="Output as YAML")] = False,
     csv_output: Annotated[bool, typer.Option("--csv", help="Output as CSV")] = False,
@@ -144,6 +151,13 @@ def sync_groups(
     team: Annotated[
         Optional[str],
         typer.Option("--team", "-t", help="Target team for group sync"),
+    ] = None,
+    instance: Annotated[
+        Optional[str],
+        typer.Option(
+            "--instance",
+            help="Superset instance name (self-hosted). Use 'sup instance list' to see available instances.",
+        ),
     ] = None,
     dry_run: Annotated[
         bool,

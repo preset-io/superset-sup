@@ -94,9 +94,16 @@ def list_datasets(
         typer.Option("--table-type", help="Filter by table type (table, view, etc.)"),
     ] = None,
     # Output options
+    instance: Annotated[
+        Optional[str],
+        typer.Option(
+            "--instance",
+            help="Superset instance name (self-hosted). Use 'sup instance list' to see available instances.",
+        ),
+    ] = None,
     workspace_id: Annotated[
         Optional[int],
-        typer.Option("--workspace-id", "-w", help="Workspace ID"),
+        typer.Option("--workspace-id", "-w", help="Preset workspace ID"),
     ] = None,
     json_output: Annotated[bool, typer.Option("--json", help="Output as JSON")] = False,
     yaml_output: Annotated[bool, typer.Option("--yaml", help="Output as YAML")] = False,
@@ -125,7 +132,9 @@ def list_datasets(
         # Get datasets from API with spinner (using server-side filtering for performance)
         with data_spinner("datasets", silent=porcelain) as sp:
             ctx = SupContext()
-            client = SupSupersetClient.from_context(ctx, workspace_id)
+            client = SupSupersetClient.from_context(
+                ctx, workspace_id=workspace_id, instance_name=instance
+            )
 
             # Use server-side filtering only - no client-side nonsense
             datasets = client.get_datasets(
@@ -160,6 +169,14 @@ def list_datasets(
             workspace_hostname = ctx.get_workspace_hostname()
             display_datasets_table(datasets, workspace_hostname)
 
+    except ValueError as e:
+        # from_context() provides helpful error messages for missing config
+        if not porcelain:
+            console.print(
+                f"{EMOJIS['error']} {e}",
+                style=RICH_STYLES["error"],
+            )
+        raise typer.Exit(1)
     except Exception as e:
         if not porcelain:
             console.print(
@@ -172,9 +189,16 @@ def list_datasets(
 @app.command("info")
 def dataset_info(
     dataset_id: Annotated[int, typer.Argument(help="Dataset ID to inspect")],
+    instance: Annotated[
+        Optional[str],
+        typer.Option(
+            "--instance",
+            help="Superset instance name (self-hosted). Use 'sup instance list' to see available instances.",
+        ),
+    ] = None,
     workspace_id: Annotated[
         Optional[int],
-        typer.Option("--workspace-id", "-w", help="Workspace ID"),
+        typer.Option("--workspace-id", "-w", help="Preset workspace ID"),
     ] = None,
     json_output: Annotated[bool, typer.Option("--json", help="Output as JSON")] = False,
     porcelain: Annotated[
@@ -194,7 +218,9 @@ def dataset_info(
     try:
         with data_spinner(f"dataset {dataset_id}", silent=porcelain):
             ctx = SupContext()
-            client = SupSupersetClient.from_context(ctx, workspace_id)
+            client = SupSupersetClient.from_context(
+                ctx, workspace_id=workspace_id, instance_name=instance
+            )
             dataset = client.get_dataset(dataset_id, silent=True)
 
         if porcelain:
@@ -209,6 +235,14 @@ def dataset_info(
         else:
             display_dataset_details(dataset)
 
+    except ValueError as e:
+        # from_context() provides helpful error messages for missing config
+        if not porcelain:
+            console.print(
+                f"{EMOJIS['error']} {e}",
+                style=RICH_STYLES["error"],
+            )
+        raise typer.Exit(1)
     except Exception as e:
         if not porcelain:
             console.print(
@@ -247,15 +281,19 @@ def pull_datasets(
         Optional[int],
         typer.Option("--limit", "-l", help="Maximum number of datasets to pull"),
     ] = None,
-    # Pull-specific options
-    workspace_id: Annotated[
-        Optional[int],
+    # Output/connection options
+    instance: Annotated[
+        Optional[str],
         typer.Option(
-            "--workspace-id",
-            "-w",
-            help="Workspace ID (defaults to configured workspace)",
+            "--instance",
+            help="Superset instance name (self-hosted). Use 'sup instance list' to see available instances.",
         ),
     ] = None,
+    workspace_id: Annotated[
+        Optional[int],
+        typer.Option("--workspace-id", "-w", help="Preset workspace ID"),
+    ] = None,
+    # Pull-specific options
     overwrite: Annotated[
         bool,
         typer.Option("--overwrite", help="Overwrite existing files"),
@@ -314,7 +352,9 @@ def pull_datasets(
             raise typer.Exit(1)
 
         # Get datasets using existing API
-        client = SupSupersetClient.from_context(ctx, workspace_id)
+        client = SupSupersetClient.from_context(
+            ctx, workspace_id=workspace_id, instance_name=instance
+        )
 
         with data_spinner("datasets to export", silent=porcelain) as sp:
             # Get datasets (server-side filtering)

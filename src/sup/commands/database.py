@@ -19,9 +19,16 @@ app = typer.Typer(help="Manage databases", no_args_is_help=True)
 
 @app.command("list")
 def list_databases(
+    instance: Annotated[
+        Optional[str],
+        typer.Option(
+            "--instance",
+            help="Superset instance name (self-hosted). Use 'sup instance list' to see available instances.",
+        ),
+    ] = None,
     workspace_id: Annotated[
         Optional[int],
-        typer.Option("--workspace-id", "-w", help="Workspace ID"),
+        typer.Option("--workspace-id", "-w", help="Preset workspace ID"),
     ] = None,
     json_output: Annotated[bool, typer.Option("--json", help="Output as JSON")] = False,
     yaml_output: Annotated[bool, typer.Option("--yaml", help="Output as YAML")] = False,
@@ -43,7 +50,9 @@ def list_databases(
     try:
         with data_spinner("databases", silent=porcelain) as sp:
             ctx = SupContext()
-            client = SupSupersetClient.from_context(ctx, workspace_id)
+            client = SupSupersetClient.from_context(
+                ctx, workspace_id=workspace_id, instance_name=instance
+            )
             databases = client.get_databases(
                 silent=True,
             )  # Always silent - spinner handles messages
@@ -69,6 +78,14 @@ def list_databases(
         else:
             client.display_databases_table(databases)
 
+    except ValueError as e:
+        # from_context() provides helpful error messages for missing config
+        if not porcelain:
+            console.print(
+                f"{EMOJIS['error']} {e}",
+                style=RICH_STYLES["error"],
+            )
+        raise typer.Exit(1)
     except Exception as e:
         if not porcelain:
             console.print(
@@ -128,9 +145,16 @@ def use_database(
 @app.command("info")
 def database_info(
     database_id: Annotated[int, typer.Argument(help="Database ID to inspect")],
+    instance: Annotated[
+        Optional[str],
+        typer.Option(
+            "--instance",
+            help="Superset instance name (self-hosted). Use 'sup instance list' to see available instances.",
+        ),
+    ] = None,
     workspace_id: Annotated[
         Optional[int],
-        typer.Option("--workspace-id", "-w", help="Workspace ID"),
+        typer.Option("--workspace-id", "-w", help="Preset workspace ID"),
     ] = None,
     json_output: Annotated[bool, typer.Option("--json", "-j", help="Output as JSON")] = False,
     yaml_output: Annotated[bool, typer.Option("--yaml", "-y", help="Output as YAML")] = False,
@@ -151,7 +175,9 @@ def database_info(
     try:
         with data_spinner(f"database {database_id}", silent=porcelain):
             ctx = SupContext()
-            client = SupSupersetClient.from_context(ctx, workspace_id)
+            client = SupSupersetClient.from_context(
+                ctx, workspace_id=workspace_id, instance_name=instance
+            )
 
             # Get database info
             database = client.get_database(database_id)
@@ -172,6 +198,14 @@ def database_info(
         else:
             display_database_details(database)
 
+    except ValueError as e:
+        # from_context() provides helpful error messages for missing config
+        if not porcelain:
+            console.print(
+                f"{EMOJIS['error']} {e}",
+                style=RICH_STYLES["error"],
+            )
+        raise typer.Exit(1)
     except Exception as e:
         if not porcelain:
             console.print(

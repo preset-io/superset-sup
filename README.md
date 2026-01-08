@@ -215,23 +215,54 @@ Efficient search across all entity types:
 
 ## 🏠 Superset Compatibility
 
-### Primary Focus: Preset-Hosted Instances
+### Preset-Hosted Instances (Primary Focus)
 'sup is primarily designed for **Preset-hosted Superset instances** and has been
 extensively tested with Preset workspaces. All features work seamlessly with
 Preset's multi-workspace environment.
 
-### Self-Hosted Superset ✨ (NEW!)
-**Phase 1 Implementation Complete:** Full support for self-hosted Superset with OAuth2/OIDC authentication!
+```bash
+sup config auth           # Set up Preset API credentials
+sup workspace list        # Browse your workspaces
+sup workspace use 123     # Set default workspace
+sup chart list --mine     # List your charts
+sup chart pull --mine     # Pull charts with dependencies
+```
 
-'sup now supports **self-hosted Superset instances** with multiple authentication methods:
+### Self-Hosted Superset ✨ (NEW - Full Support!)
+**Dual-Path CLI Complete:** Full support for self-hosted Superset with OAuth2/OIDC and multiple auth methods!
+
+'sup now supports **self-hosted Superset instances** alongside Preset workspaces in the same CLI:
 - **OAuth2/OIDC** - Works with Keycloak, Okta, Auth0, Dex, Azure AD, Cognito
 - **Username/Password** - Direct Superset authentication
 - **JWT Tokens** - Pre-generated JWT tokens
+- **Seamless switching** - Use `sup instance` commands to switch between self-hosted instances
+- **100% backward compatible** - Existing Preset workflows work unchanged
 
-#### Quick Setup for Self-Hosted Superset
+#### Quick Start: Self-Hosted Setup
 
 ```bash
-# Configure self-hosted instance in ~/.sup/config.yml
+# 1. Configure self-hosted instance
+sup config auth
+# → Choose "self-hosted Superset"
+# → Enter instance details and credentials
+
+# 2. View configured instances
+sup instance list
+
+# 3. Set your default instance
+sup instance use production
+
+# 4. Use 'sup with self-hosted
+sup dataset list
+sup chart pull --mine
+sup sql "SELECT * FROM your_table"
+```
+
+#### Configuration (Manual Setup)
+
+Add to `~/.sup/config.yml`:
+
+```yaml
 superset_instances:
   production:
     url: https://superset.example.com
@@ -241,20 +272,39 @@ superset_instances:
     oauth_client_secret: ${ENV:SUPERSET_OAUTH_SECRET}
     oauth_username: superset-service
     oauth_password: ${ENV:SUPERSET_SERVICE_PASSWORD}
-
-# Set environment variables
-export SUPERSET_OAUTH_SECRET="your-client-secret"
-export SUPERSET_SERVICE_PASSWORD="your-service-password"
-
-# Use 'sup with your self-hosted instance
-sup dataset list
-sup chart pull --mine
-sup sql "SELECT * FROM your_table"
 ```
 
-#### Authentication Methods for Self-Hosted Superset
+Set environment variables:
+```bash
+export SUPERSET_OAUTH_SECRET="your-client-secret"
+export SUPERSET_SERVICE_PASSWORD="your-service-password"
+```
 
-**OAuth2/OIDC (Recommended)** - For instances with external authentication:
+#### Dual-Path Workflows
+
+Switch between Preset and self-hosted seamlessly:
+
+```bash
+# Use Preset workspace
+sup workspace use 123
+sup chart list
+
+# Switch to self-hosted instance
+sup instance use production
+sup chart list         # Same commands, different backend!
+
+# Or use explicit flags
+sup chart list --workspace-id 123           # Preset
+sup chart list --instance production        # Self-hosted
+
+# Even pull/push across different systems
+sup chart pull --instance staging --mine    # From self-hosted
+sup chart push --workspace-id 456           # To Preset
+```
+
+#### Authentication Methods
+
+**OAuth2/OIDC (Recommended)** - Secure, token-based:
 ```yaml
 auth_method: oauth
 oauth_token_url: https://auth.example.com/oauth2/token
@@ -264,32 +314,24 @@ oauth_username: service-account
 oauth_password: ${ENV:SERVICE_PASSWORD}
 ```
 
-**Username/Password** - For direct Superset authentication:
+**Username/Password** - Direct auth:
 ```yaml
 auth_method: username_password
 username: admin
 password: ${ENV:SUPERSET_PASSWORD}
 ```
 
-**JWT Token** - For pre-generated JWT tokens:
+**JWT Token** - Pre-generated tokens:
 ```yaml
 auth_method: jwt
 jwt_token: eyJhbGc...
 ```
 
-#### Complete Self-Hosted Setup Guide
-See **[Self-Hosted Superset Setup Guide](docs/self_hosted_setup.rst)** for:
-- Step-by-step OAuth2 configuration
-- Provider-specific examples (Keycloak, Okta, Auth0, Azure AD)
-- Troubleshooting guide
-- Security best practices
-
-#### Contributing for Broader Compatibility
-We're open to contributions that extend 'sup for the entire Superset community.
-Areas we're actively working on:
-- Additional authentication methods
-- Single-instance mode (removing workspace concepts)
-- Different API endpoint structures
+#### Complete Setup Guides
+- **[Self-Hosted Setup Guide](docs/self_hosted_setup.rst)** - Step-by-step OAuth2/OIDC configuration
+- **[Provider Examples](docs/self_hosted_setup.rst#oauth2-oidc-setup)** - Keycloak, Okta, Auth0, Azure AD, Cognito
+- **[Troubleshooting](docs/self_hosted_setup.rst#troubleshooting)** - Common issues and solutions
+- **[Security Best Practices](docs/self_hosted_setup.rst#security-best-practices)** - Credential management
 
 ## 🔐 Authentication
 

@@ -58,6 +58,13 @@ def list_dashboards(
         typer.Option("--folder", help="Filter by folder path pattern"),
     ] = None,
     # Output options - same pattern as other commands
+    instance: Annotated[
+        Optional[str],
+        typer.Option(
+            "--instance",
+            help="Superset instance name (self-hosted). Use 'sup instance list' to see available instances.",
+        ),
+    ] = None,
     workspace_id: Annotated[
         Optional[int],
         typer.Option("--workspace-id", "-w", help="Workspace ID"),
@@ -89,7 +96,9 @@ def list_dashboards(
         # Get dashboards with spinner
         with data_spinner("dashboards", silent=porcelain) as sp:
             ctx = SupContext()
-            client = SupSupersetClient.from_context(ctx, workspace_id)
+            client = SupSupersetClient.from_context(
+                ctx, workspace_id=workspace_id, instance_name=instance
+            )
 
             # Fetch dashboards with server-side search only
             dashboards = client.get_dashboards(
@@ -123,6 +132,14 @@ def list_dashboards(
             workspace_hostname = ctx.get_workspace_hostname()
             display_dashboards_table(dashboards, workspace_hostname)
 
+    except ValueError as e:
+        # from_context() provides helpful error messages for missing config
+        if not porcelain:
+            console.print(
+                f"{EMOJIS['error']} {e}",
+                style=RICH_STYLES["error"],
+            )
+        raise typer.Exit(1)
     except Exception as e:
         if not porcelain:
             console.print(
@@ -135,6 +152,13 @@ def list_dashboards(
 @app.command("info")
 def dashboard_info(
     dashboard_id: Annotated[int, typer.Argument(help="Dashboard ID to inspect")],
+    instance: Annotated[
+        Optional[str],
+        typer.Option(
+            "--instance",
+            help="Superset instance name (self-hosted). Use 'sup instance list' to see available instances.",
+        ),
+    ] = None,
     workspace_id: Annotated[
         Optional[int],
         typer.Option("--workspace-id", "-w", help="Workspace ID"),
@@ -158,7 +182,9 @@ def dashboard_info(
     try:
         with data_spinner(f"dashboard {dashboard_id}", silent=porcelain):
             ctx = SupContext()
-            client = SupSupersetClient.from_context(ctx, workspace_id)
+            client = SupSupersetClient.from_context(
+                ctx, workspace_id=workspace_id, instance_name=instance
+            )
             dashboard = client.get_dashboard(dashboard_id, silent=True)
 
         if porcelain:
@@ -177,6 +203,14 @@ def dashboard_info(
         else:
             display_dashboard_details(dashboard)
 
+    except ValueError as e:
+        # from_context() provides helpful error messages for missing config
+        if not porcelain:
+            console.print(
+                f"{EMOJIS['error']} {e}",
+                style=RICH_STYLES["error"],
+            )
+        raise typer.Exit(1)
     except Exception as e:
         if not porcelain:
             console.print(
@@ -317,6 +351,13 @@ def pull_dashboards(
         typer.Option("--limit", "-l", help="Maximum number of dashboards to pull"),
     ] = None,
     # Pull-specific options
+    instance: Annotated[
+        Optional[str],
+        typer.Option(
+            "--instance",
+            help="Superset instance name (self-hosted). Use 'sup instance list' to see available instances.",
+        ),
+    ] = None,
     workspace_id: Annotated[
         Optional[int],
         typer.Option(
@@ -383,7 +424,7 @@ def pull_dashboards(
             raise typer.Exit(1)
 
         # Get dashboards using existing API
-        client = SupSupersetClient.from_context(ctx, workspace_id)
+        client = SupSupersetClient.from_context(ctx, workspace_id=workspace_id, instance_name=instance)
 
         with data_spinner("dashboards to export", silent=porcelain) as sp:
             # Get dashboards (server-side filtering)

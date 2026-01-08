@@ -16,6 +16,7 @@ from sup.commands import (
     dataset,
     dbt,
     group,
+    instance,
     query,
     sql,
     sync,
@@ -137,6 +138,9 @@ app.add_typer(config_cmd.app, name="config", rich_help_panel="Configuration & Se
 app.add_typer(sql.app, name="sql", rich_help_panel="Direct Data Access")
 app.add_typer(
     workspace.app, name="workspace", help="Manage workspaces", rich_help_panel="Manage Assets"
+)
+app.add_typer(
+    instance.app, name="instance", help="Manage self-hosted Superset instances", rich_help_panel="Manage Assets"
 )
 app.add_typer(
     database.app, name="database", help="Manage databases", rich_help_panel="Manage Assets"

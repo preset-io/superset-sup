@@ -4,9 +4,11 @@ Pydantic configuration models for sup CLI.
 Type-safe configuration management with YAML support.
 """
 
+import os
+import re
 from datetime import datetime
 from enum import Enum
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import yaml
 from pydantic import BaseModel, ConfigDict, Field
@@ -18,6 +20,37 @@ from sup.config.paths import (
     get_global_config_file,
     get_project_state_file,
 )
+
+
+def resolve_env_vars(data: Any) -> Any:
+    """
+    Recursively resolve environment variable references in config data.
+    
+    Supports syntax: ${ENV:VARIABLE_NAME}
+    
+    Args:
+        data: Configuration data (dict, list, or scalar)
+        
+    Returns:
+        Configuration data with environment variables resolved
+    """
+    if isinstance(data, dict):
+        return {k: resolve_env_vars(v) for k, v in data.items()}
+    elif isinstance(data, list):
+        return [resolve_env_vars(item) for item in data]
+    elif isinstance(data, str):
+        # Replace ${ENV:VAR_NAME} with environment variable value
+        def replace_env(match):
+            var_name = match.group(1)
+            value = os.environ.get(var_name)
+            if value is None:
+                # Leave unresolved if env var doesn't exist
+                return match.group(0)
+            return value
+        
+        return re.sub(r'\$\{ENV:([A-Za-z_][A-Za-z0-9_]*)\}', replace_env, data)
+    else:
+        return data
 
 
 class OutputFormat(str, Enum):
@@ -89,6 +122,10 @@ class SupersetInstanceConfig(BaseModel):
     )
 
     # OAuth2/OIDC authentication (NEW)
+    oauth_authorization_url: Optional[str] = Field(
+        default=None,
+        description="OAuth2 authorization endpoint URL for interactive browser flow (e.g., https://auth.example.com/oauth2/authorize)",
+    )
     oauth_token_url: Optional[str] = Field(
         default=None,
         description="OAuth2 token endpoint URL (e.g., https://auth.example.com/oauth2/token)",
@@ -99,7 +136,7 @@ class SupersetInstanceConfig(BaseModel):
     )
     oauth_client_secret: Optional[str] = Field(
         default=None,
-        description="OAuth2 client secret. Use environment variables: ${ENV:SUPERSET_OAUTH_SECRET}",
+        description="OAuth2 client secret (optional for interactive flow). Use environment variables: ${ENV:SUPERSET_OAUTH_SECRET}",
     )
     oauth_username: Optional[str] = Field(
         default=None,
@@ -179,6 +216,8 @@ class SupGlobalConfig(BaseSettings):
         try:
             with open(config_file, "r") as f:
                 data = yaml.safe_load(f) or {}
+            # Resolve environment variable references in config
+            data = resolve_env_vars(data)
             return cls(**data)
         except Exception as e:
             # If config is corrupted, return default config

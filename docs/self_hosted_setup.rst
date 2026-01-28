@@ -52,10 +52,91 @@ If you see datasets, it's working! ✅
 Authentication Methods
 ----------------------
 
-OAuth2/OIDC (Recommended)
-~~~~~~~~~~~~~~~~~~~~~~~~~
+Interactive OAuth (Recommended for Developers)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-**Best for:** Self-hosted Superset with external identity providers
+**Best for:** Developer workstations and interactive CLI usage
+
+**Zero configuration needed** - Browser-based authentication with automatic token caching.
+
+**Providers Supported:**
+
+- Keycloak
+- Okta
+- Auth0
+- Dex
+- Azure AD
+- Amazon Cognito
+- Google Identity Platform
+- Any OAuth2 provider supporting authorization code flow with PKCE
+
+**Configuration:**
+
+.. code-block:: yaml
+
+   superset_instances:
+     production:
+       url: https://superset.example.com
+       auth_method: oauth
+       oauth_authorization_url: https://auth.example.com/oauth2/authorize
+       oauth_token_url: https://auth.example.com/oauth2/token
+       oauth_client_id: superset-cli
+       oauth_scope: "openid profile email"
+
+**Usage:**
+
+First time - opens browser for authentication:
+
+.. code-block:: bash
+
+   $ sup dataset list
+   🔐 Opening browser for authentication...
+   ⏳ Waiting for you to complete authentication in browser...
+   ✓ Authentication successful! Exchanging code for tokens...
+   [Shows datasets]
+
+All subsequent commands use cached tokens:
+
+.. code-block:: bash
+
+   $ sup chart list
+   [Instantly shows charts - no browser!]
+   
+   $ sup sql "SELECT * FROM users"
+   [Uses cached token - instant access!]
+
+**Advantages:**
+
+- **Zero secrets**: No client secrets or passwords to manage
+- **Browser SSO**: Use your existing browser session (SAML, MFA, etc.)
+- **Automatic refresh**: Tokens refreshed automatically when expired
+- **Secure caching**: Tokens stored with 0600 permissions in ``~/.sup/tokens/``
+- **Per-instance**: Separate token cache for each Superset instance
+- **PKCE security**: Industry-standard OAuth2 flow without client secrets
+- **Multiple identities**: Different cached tokens per instance
+
+**Token Management:**
+
+Tokens are cached in ``~/.sup/tokens/`` with filenames based on the Superset hostname:
+
+.. code-block:: bash
+
+   ~/.sup/tokens/
+   ├── bi.example.com.json       # Production instance
+   ├── bi-staging.example.com.json  # Staging instance
+   └── localhost_8088.json       # Local development
+
+To force re-authentication (logout and login):
+
+.. code-block:: bash
+
+   rm ~/.sup/tokens/bi.example.com.json
+   sup dataset list  # Will open browser again
+
+OAuth2 with Service Account (Recommended for Automation)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Best for:** CI/CD pipelines, automation scripts, and service accounts
 
 **Providers Supported:**
 
@@ -139,6 +220,66 @@ Keycloak
 ~~~~~~~~
 
 Keycloak is an open-source identity provider. Here's how to configure it:
+
+Interactive OAuth (For Developers)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+**Setup for browser-based authentication:**
+
+1. **Create Public Client in Keycloak**
+
+   - Go to Keycloak Admin Console
+   - Select your realm
+   - Navigate to **Clients** → **Create**
+   - Client ID: ``superset-cli``
+   - Client Protocol: ``openid-connect``
+   - Save
+
+2. **Configure Client Settings**
+
+   In client settings:
+
+   - **Access Type:** ``public`` (no secret needed!)
+   - **Standard Flow Enabled:** ``ON``
+   - **Direct Access Grants Enabled:** ``OFF``
+   - **Implicit Flow Enabled:** ``OFF``
+   - **Service Accounts Enabled:** ``OFF``
+   - **Valid Redirect URIs:** 
+     
+     - ``http://localhost:8080/callback``
+     - ``http://127.0.0.1:8080/callback``
+   
+   - **Web Origins:** ``+``
+
+   Click **Save**.
+
+3. **Configure sup**
+
+   .. code-block:: yaml
+
+      superset_instances:
+        production:
+          url: https://superset.example.com
+          auth_method: oauth
+          oauth_authorization_url: https://keycloak.example.com/realms/master/protocol/openid-connect/auth
+          oauth_token_url: https://keycloak.example.com/realms/master/protocol/openid-connect/token
+          oauth_client_id: superset-cli
+          oauth_scope: "openid profile email"
+
+4. **Test**
+
+   .. code-block:: bash
+
+      $ sup dataset list
+      🔐 Opening browser for authentication...
+      [Browser opens, you log in]
+      ✓ Authentication successful!
+      [Shows datasets]
+
+Service Account OAuth (For Automation)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+**Setup for CI/CD and automated scripts:**
 
 1. Create Client in Keycloak
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^

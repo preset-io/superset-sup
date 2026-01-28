@@ -46,11 +46,27 @@ class Auth:  # pylint: disable=too-few-public-methods
         if r.status_code != 401:
             return r
 
+        # Prevent infinite recursion by temporarily disabling the hook
+        hooks = self.session.hooks
+        self.session.hooks = {"response": []}
+
         try:
             self.auth()
         except NotImplementedError:
+            self.session.hooks = hooks
+            return r
+        except Exception:
+            # If auth fails, restore hooks and return the 401 response
+            self.session.hooks = hooks
             return r
 
         self.session.headers.update(self.get_headers())
         r.request.headers.update(self.get_headers())
-        return self.session.send(r.request, verify=False)
+        
+        try:
+            # Retry without triggering hooks again
+            retry_response = self.session.send(r.request, verify=False)
+            return retry_response
+        finally:
+            # Restore the hooks
+            self.session.hooks = hooks

@@ -29,10 +29,53 @@ Self-Hosted Superset
 
 Configure instances in ``~/.sup/config.yml`` under ``superset_instances``.
 
-OAuth2/OIDC (Recommended)
-~~~~~~~~~~~~~~~~~~~~~~~~~
+Interactive OAuth (Recommended)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-For instances with external identity providers (Keycloak, Okta, Auth0, Azure AD, Cognito, Dex):
+For interactive use with zero configuration - browser-based authentication with PKCE:
+
+.. code-block:: yaml
+
+   superset_instances:
+     production:
+       url: https://superset.example.com
+       auth_method: oauth
+       oauth_authorization_url: https://auth.example.com/oauth2/authorize
+       oauth_token_url: https://auth.example.com/oauth2/token
+       oauth_client_id: superset-cli
+       oauth_scope: "openid profile email"
+
+**No secrets needed!** Tokens are cached in ``~/.sup/tokens/`` after first authentication.
+
+First run:
+
+.. code-block:: bash
+
+   $ sup dataset list
+   🔐 Opening browser for authentication...
+   ⏳ Waiting for you to complete authentication in browser...
+   ✓ Authentication successful!
+   [Shows datasets]
+
+Subsequent runs use cached tokens:
+
+.. code-block:: bash
+
+   $ sup chart list
+   [Uses cached token - instant, no browser!]
+
+Token features:
+
+- **Zero configuration**: No secrets to manage
+- **Automatic refresh**: Tokens refreshed automatically when expired
+- **Secure storage**: Cached with 0600 permissions in ``~/.sup/tokens/``
+- **Per-instance**: Separate cache for each Superset instance
+- **PKCE flow**: Industry-standard secure authentication without client secrets
+
+OAuth2 with Service Account
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+For automation, CI/CD, and service accounts (requires client secret):
 
 .. code-block:: yaml
 
@@ -41,7 +84,7 @@ For instances with external identity providers (Keycloak, Okta, Auth0, Azure AD,
        url: https://superset.example.com
        auth_method: oauth
        oauth_token_url: https://auth.example.com/oauth2/token
-       oauth_client_id: superset-cli
+       oauth_client_id: superset-service
        oauth_client_secret: ${ENV:SUPERSET_OAUTH_SECRET}
        oauth_username: superset-service
        oauth_password: ${ENV:SUPERSET_SERVICE_PASSWORD}

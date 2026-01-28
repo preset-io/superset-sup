@@ -58,8 +58,8 @@ class OAuthSupersetAuth(Auth):  # pylint: disable=too-few-public-methods
         token_url: URL,
         client_id: str,
         client_secret: str,
-        username: str,
-        password: str,
+        username: Optional[str] = None,
+        password: Optional[str] = None,
         scope: str = "openid profile email roles",
         token_type: str = "Bearer",
     ):
@@ -73,8 +73,9 @@ class OAuthSupersetAuth(Auth):  # pylint: disable=too-few-public-methods
                 (e.g., https://auth.example.com/oauth2/token)
             client_id: OAuth2 client ID registered with OIDC provider
             client_secret: OAuth2 client secret for client authentication
-            username: Service account username (not a regular user email)
-            password: Service account password
+            username: Service account username (optional, for password grant flow)
+            password: Service account password (optional, for password grant flow)
+                If username/password are omitted, uses client credentials grant flow.
             scope: OAuth2 scopes to request. Default includes standard OIDC scopes
                 for profile information and roles. Can be customized per provider.
             token_type: Authorization header token type. Default "Bearer" works
@@ -123,12 +124,15 @@ class OAuthSupersetAuth(Auth):  # pylint: disable=too-few-public-methods
         """
         Fetch a new access token from the OAuth2 token endpoint.
 
-        Implements the OAuth2 resource owner password grant flow:
-        https://tools.ietf.org/html/rfc6749#section-4.3
+        Supports two grant types:
+        - Client credentials grant (if username/password not provided)
+        - Resource owner password credentials grant (if username/password provided)
 
-        Sends the client credentials (client_id, client_secret) and
-        user credentials (username, password) to the token endpoint
-        and retrieves an access token.
+        Client credentials grant:
+        https://tools.ietf.org/html/rfc6749#section-4.4
+
+        Resource owner password grant:
+        https://tools.ietf.org/html/rfc6749#section-4.3
 
         Returns:
             Access token string
@@ -137,23 +141,65 @@ class OAuthSupersetAuth(Auth):  # pylint: disable=too-few-public-methods
             requests.HTTPError: If token endpoint returns an error
             KeyError: If response is missing required 'access_token' field
         """
-        payload = {
-            "grant_type": "password",
-            "client_id": self.client_id,
-            "client_secret": self.client_secret,
-            "username": self.username,
-            "password": self.password,
-            "scope": self.scope,
-        }
-
-        _logger.debug(
-            "Fetching access token from %s for user %s",
-            self.token_url,
-            self.username,
-        )
+        # Use client credentials grant if no username/password provided
+        if not self.username or not self.password:
+            payload = {
+                "grant_type": "client_credentials",
+                "client_id": self.client_id,
+                "client_secret": self.client_secret,
+                "scope": self.scope,
+            }
+            _logger.debug(
+                "Fetching access token from %s using client credentials",
+                self.token_url,
+            )
+        else:
+            # Use resource owner password credentials grant
+            payload = {
+                "grant_type": "password",
+                "client_id": self.client_id,
+                "client_secret": self.client_secret,
+                "username": self.username,
+                "password": self.password,
+                "scope": self.scope,
+            }
+            _logger.debug(
+                "Fetching access token from %s for user %s",
+                self.token_url,
+                self.username,
+            )
 
         response = self.session.post(self.token_url, data=payload)
-        response.raise_for_status()
+        
+        try:
+            response.raise_for_status()
+        except Exception as e:
+            # Provide helpful error details from OAuth provider
+            error_detail = response.text or str(e)
+            try:
+                error_data = response.json()
+                error_detail = error_data.get('error_description', error_data.get('error', error_detail))
+            except (ValueError, KeyError):
+                pass
+            
+            error_msg = (
+                f"OAuth2 token request failed: {error_detail}\n"
+                f"Token URL: {self.token_url}\n"
+                f"Client ID: {self.client_id}\n"
+                f"Username: {self.username}\n"
+                f"Status: {response.status_code}"
+            )
+            
+            # Helpful hint for unresolved environment variables
+            if "${ENV:" in str(self.client_secret) or "${ENV:" in str(self.password):
+                error_msg += (
+                    "\n\n⚠️  Environment variables in config were NOT resolved. "
+                    "Make sure these are set:\n"
+                    "  export SUPERSET_OAUTH_CLIENT_SECRET='your_secret'\n"
+                    "  export SUPERSET_OAUTH_SERVICE_PASSWORD='your_password'"
+                )
+            
+            raise ValueError(error_msg) from e
 
         token_data = response.json()
         self._access_token = token_data["access_token"]

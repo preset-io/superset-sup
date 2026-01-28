@@ -304,7 +304,27 @@ sup chart push --workspace-id 456           # To Preset
 
 #### Authentication Methods
 
-**OAuth2/OIDC (Recommended)** - Secure, token-based:
+**Interactive OAuth (Recommended)** - Browser-based, zero-configuration:
+```yaml
+auth_method: oauth
+oauth_authorization_url: https://auth.example.com/oauth2/authorize
+oauth_token_url: https://auth.example.com/oauth2/token
+oauth_client_id: superset-cli
+# No secrets needed! Browser-based auth with PKCE
+```
+
+First run opens your browser for authentication, then tokens are cached:
+```bash
+$ sup dataset list
+🔐 Opening browser for authentication...
+✓ Authentication successful!
+[Shows datasets]
+
+$ sup chart list
+[Uses cached token - no browser needed!]
+```
+
+**OAuth2 with Service Account** - For automation/CI:
 ```yaml
 auth_method: oauth
 oauth_token_url: https://auth.example.com/oauth2/token

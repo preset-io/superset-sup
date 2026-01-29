@@ -25,12 +25,12 @@ from sup.config.paths import (
 def resolve_env_vars(data: Any) -> Any:
     """
     Recursively resolve environment variable references in config data.
-    
+
     Supports syntax: ${ENV:VARIABLE_NAME}
-    
+
     Args:
         data: Configuration data (dict, list, or scalar)
-        
+
     Returns:
         Configuration data with environment variables resolved
     """
@@ -47,8 +47,8 @@ def resolve_env_vars(data: Any) -> Any:
                 # Leave unresolved if env var doesn't exist
                 return match.group(0)
             return value
-        
-        return re.sub(r'\$\{ENV:([A-Za-z_][A-Za-z0-9_]*)\}', replace_env, data)
+
+        return re.sub(r"\$\{ENV:([A-Za-z_][A-Za-z0-9_]*)\}", replace_env, data)
     else:
         return data
 
@@ -406,7 +406,7 @@ class SupContext:
     def set_target_workspace_id(self, workspace_id: int, persist: bool = False) -> None:
         """
         Set import target workspace for cross-workspace operations.
-    
+
         Only needed when you want imports to go to different workspace than exports.
         """
         if persist:
@@ -418,13 +418,13 @@ class SupContext:
 
     def get_instance_name(self, cli_override: Optional[str] = None) -> Optional[str]:
         """Get current Superset instance name with proper precedence.
-    
+
         Priority:
         1. CLI argument override
         2. Environment variable: SUP_INSTANCE_NAME
         3. Project state (.sup/state.yml)
         4. Global config (~/.sup/config.yml)
-    
+
         Returns instance name or None if not configured.
         """
         env_instance_name = get_env_var("instance_name")
@@ -439,10 +439,10 @@ class SupContext:
         self, instance_name: Optional[str] = None
     ) -> Optional["SupersetInstanceConfig"]:
         """Get Superset instance configuration by name.
-    
+
         Args:
             instance_name: Instance name to lookup. If None, uses current instance.
-    
+
         Returns:
             SupersetInstanceConfig or None if not found.
         """
@@ -457,7 +457,7 @@ class SupContext:
 
     def set_instance_context(self, instance_name: str, persist: bool = False) -> None:
         """Set current Superset instance.
-    
+
         Args:
             instance_name: Instance name to select
             persist: If True, save to global config. If False, save to project state.

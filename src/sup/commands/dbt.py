@@ -182,7 +182,9 @@ def sync_dbt_core(
             if not porcelain:
                 workspace_display = workspace_id or instance
                 console.print(f"🎯 Using workspace/instance: {workspace_display}")
-            client = SupSupersetClient.from_context(ctx, workspace_id=workspace_id, instance_name=instance)
+            client = SupSupersetClient.from_context(
+                ctx, workspace_id=workspace_id, instance_name=instance
+            )
         else:
             client = SupSupersetClient.from_context(ctx)
 
@@ -423,7 +425,9 @@ def sync_dbt_cloud(
             if not porcelain:
                 workspace_display = workspace_id or instance
                 console.print(f"🎯 Using workspace/instance: {workspace_display}")
-            client = SupSupersetClient.from_context(ctx, workspace_id=workspace_id, instance_name=instance)
+            client = SupSupersetClient.from_context(
+                ctx, workspace_id=workspace_id, instance_name=instance
+            )
         else:
             client = SupSupersetClient.from_context(ctx)
 

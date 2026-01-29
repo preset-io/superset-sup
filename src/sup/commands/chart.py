@@ -1156,6 +1156,28 @@ def push_charts(
             help="Continue importing even if some charts fail",
         ),
     ] = False,
+    # Database transformation options
+    database_uuid: Annotated[
+        Optional[str],
+        typer.Option(
+            "--database-uuid",
+            help="Replace all database UUIDs with this UUID in target",
+        ),
+    ] = None,
+    database_name: Annotated[
+        Optional[str],
+        typer.Option(
+            "--database-name",
+            help="Use database with this name from target (auto-fetches UUID)",
+        ),
+    ] = None,
+    auto_map_databases: Annotated[
+        bool,
+        typer.Option(
+            "--auto-map-databases",
+            help="Auto-map databases by matching names between source and target",
+        ),
+    ] = False,
     force: Annotated[
         bool,
         typer.Option(
@@ -1241,7 +1263,7 @@ def push_charts(
         # Check if we're using self-hosted instance or Preset workspace
         instance_name = ctx.get_instance_name()
         source_workspace_id = ctx.get_workspace_id()
-        
+
         # For self-hosted instances, we don't need workspace IDs
         if instance_name:
             # Self-hosted path - instance is the target
@@ -1249,7 +1271,7 @@ def push_charts(
                 f"{EMOJIS['info']} Using self-hosted instance: [cyan]{instance_name}[/cyan]",
                 style=RICH_STYLES["info"],
             )
-            
+
             # Skip workspace ID validation for self-hosted
             use_instance_path = True
         else:
@@ -1333,14 +1355,14 @@ def push_charts(
                     style=RICH_STYLES["error"],
                 )
                 raise typer.Exit(1)
-            
+
             workspace_url = instance_config.url
-            if not workspace_url.endswith('/'):
-                workspace_url += '/'
-            
+            if not workspace_url.endswith("/"):
+                workspace_url += "/"
+
             # Create auth for self-hosted instance
             from preset_cli.auth.factory import create_superset_auth
-            
+
             try:
                 auth = create_superset_auth(instance_config)
             except ValueError as e:
@@ -1349,11 +1371,11 @@ def push_charts(
                     style=RICH_STYLES["error"],
                 )
                 raise typer.Exit(1)
-            
+
         else:
             # Preset workspace path (original logic)
-            from sup.clients.preset import SupPresetClient
             from sup.auth.preset import SupPresetAuth
+            from sup.clients.preset import SupPresetClient
 
             preset_client = SupPresetClient.from_context(ctx, silent=True)
             workspaces = preset_client.get_all_workspaces(silent=True)
@@ -1381,6 +1403,53 @@ def push_charts(
 
             workspace_url = f"https://{target_hostname}/"
             auth = SupPresetAuth.from_sup_config(ctx, silent=True)
+
+        # Apply database UUID transformation if requested
+        temp_dir = None
+        try:
+            if database_uuid or database_name or auto_map_databases:
+                from sup.utils.database_transform import transform_database_refs
+
+                if not porcelain:
+                    if database_uuid:
+                        console.print(
+                            f"{EMOJIS['info']} Transforming database refs to UUID: {database_uuid}",
+                            style=RICH_STYLES["info"],
+                        )
+                    elif database_name:
+                        console.print(
+                            f"{EMOJIS['info']} Looking up database: {database_name}",
+                            style=RICH_STYLES["info"],
+                        )
+                    elif auto_map_databases:
+                        console.print(
+                            f"{EMOJIS['info']} Auto-mapping databases by name...",
+                            style=RICH_STYLES["info"],
+                        )
+
+                temp_dir = transform_database_refs(
+                    assets_dir=resolved_assets_folder,
+                    instance_url=workspace_url,
+                    auth=auth,
+                    database_uuid=database_uuid,
+                    database_name=database_name,
+                    auto_map=auto_map_databases,
+                )
+
+                # Use transformed assets
+                if temp_dir:
+                    resolved_assets_folder = temp_dir
+                    if not porcelain:
+                        console.print(
+                            f"{EMOJIS['success']} Database UUIDs transformed",
+                            style=RICH_STYLES["success"],
+                        )
+        except ValueError as e:
+            console.print(
+                f"{EMOJIS['error']} Database transformation failed: {e}",
+                style=RICH_STYLES["error"],
+            )
+            raise typer.Exit(1)
 
         # Create mock click context that native() expects
         # Use a minimal command for the context
@@ -1424,6 +1493,12 @@ def push_charts(
                 f"{EMOJIS['success']} Chart import completed successfully",
                 style=RICH_STYLES["success"],
             )
+
+        # Clean up temporary directory
+        if temp_dir:
+            import shutil
+
+            shutil.rmtree(temp_dir, ignore_errors=True)
 
     except typer.Exit:
         # Re-raise typer exits (our own error handling)

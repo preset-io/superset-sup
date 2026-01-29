@@ -598,6 +598,28 @@ def push_dashboards(
             help="Jinja2 template variable (format: KEY=VALUE). Can be used multiple times.",
         ),
     ] = None,
+    # Database transformation options
+    database_uuid: Annotated[
+        Optional[str],
+        typer.Option(
+            "--database-uuid",
+            help="Replace all database UUIDs with this UUID in target",
+        ),
+    ] = None,
+    database_name: Annotated[
+        Optional[str],
+        typer.Option(
+            "--database-name",
+            help="Use database with this name from target (auto-fetches UUID)",
+        ),
+    ] = None,
+    auto_map_databases: Annotated[
+        bool,
+        typer.Option(
+            "--auto-map-databases",
+            help="Auto-map databases by matching names between source and target",
+        ),
+    ] = False,
     # Control flags
     force: Annotated[
         bool,
@@ -621,6 +643,9 @@ def push_dashboards(
     Supports both self-hosted Superset instances and Preset workspaces with full
     dependency resolution (automatically imports required datasets and databases).
 
+    Database UUID transformation allows importing assets across environments
+    by updating database references to match target instance databases.
+
     Examples:
         # Import to self-hosted instance
         sup instance use production
@@ -628,6 +653,15 @@ def push_dashboards(
 
         # Import to Preset workspace
         sup dashboard push assets/ --workspace-id 123
+
+        # Import with auto-mapped databases (recommended)
+        sup dashboard push assets/ --auto-map-databases
+
+        # Import with specific database UUID
+        sup dashboard push assets/ --database-uuid abc-123-def
+
+        # Import with database name lookup
+        sup dashboard push assets/ --database-name "Trino"
 
         # Import with overwrite
         sup dashboard push assets/ --overwrite --force
@@ -813,6 +847,53 @@ def push_dashboards(
             workspace_url = f"https://{target_hostname}/"
             auth = SupPresetAuth.from_sup_config(ctx, silent=True)
 
+        # Apply database UUID transformation if requested
+        temp_dir = None
+        try:
+            if database_uuid or database_name or auto_map_databases:
+                from sup.utils.database_transform import transform_database_refs
+
+                if not porcelain:
+                    if database_uuid:
+                        console.print(
+                            f"{EMOJIS['info']} Transforming database refs to UUID: {database_uuid}",
+                            style=RICH_STYLES["info"],
+                        )
+                    elif database_name:
+                        console.print(
+                            f"{EMOJIS['info']} Looking up database: {database_name}",
+                            style=RICH_STYLES["info"],
+                        )
+                    elif auto_map_databases:
+                        console.print(
+                            f"{EMOJIS['info']} Auto-mapping databases by name...",
+                            style=RICH_STYLES["info"],
+                        )
+
+                temp_dir = transform_database_refs(
+                    assets_dir=resolved_assets_folder,
+                    instance_url=workspace_url,
+                    auth=auth,
+                    database_uuid=database_uuid,
+                    database_name=database_name,
+                    auto_map=auto_map_databases,
+                )
+
+                # Use transformed assets
+                if temp_dir:
+                    resolved_assets_folder = temp_dir
+                    if not porcelain:
+                        console.print(
+                            f"{EMOJIS['success']} Database UUIDs transformed",
+                            style=RICH_STYLES["success"],
+                        )
+        except ValueError as e:
+            console.print(
+                f"{EMOJIS['error']} Database transformation failed: {e}",
+                style=RICH_STYLES["error"],
+            )
+            raise typer.Exit(1)
+
         # Create mock click context that native() expects
         import_command = click.Command("import")
         mock_ctx = click.Context(import_command)
@@ -849,6 +930,12 @@ def push_dashboards(
                 f"{EMOJIS['success']} Dashboard import completed successfully",
                 style=RICH_STYLES["success"],
             )
+
+        # Clean up temporary directory
+        if temp_dir:
+            import shutil
+
+            shutil.rmtree(temp_dir, ignore_errors=True)
 
     except typer.Exit:
         # Re-raise typer exits (our own error handling)

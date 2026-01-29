@@ -140,7 +140,10 @@ app.add_typer(
     workspace.app, name="workspace", help="Manage workspaces", rich_help_panel="Manage Assets"
 )
 app.add_typer(
-    instance.app, name="instance", help="Manage self-hosted Superset instances", rich_help_panel="Manage Assets"
+    instance.app,
+    name="instance",
+    help="Manage self-hosted Superset instances",
+    rich_help_panel="Manage Assets",
 )
 app.add_typer(
     database.app, name="database", help="Manage databases", rich_help_panel="Manage Assets"

@@ -637,9 +637,7 @@ def push_dashboards(
     """
     from pathlib import Path
 
-    from preset_cli.cli.superset.types import ResourceType
-
-    from preset_cli.cli.superset.sync.native.command import native
+    from preset_cli.cli.superset.sync.native.command import ResourceType, native
     from sup.config.settings import SupContext
 
     try:

@@ -282,8 +282,9 @@ def parse_universal_filters(
     if modified_after:
         modified_after_dt = UniversalFilters.parse_date(modified_after)
 
-    # Handle special case: limit=0 means unlimited
-    final_limit = None if limit_filter == 0 else (limit_filter if limit_filter is not None else 50)
+    # Handle special case: limit=0 means unlimited for backward compatibility
+    # If limit not specified (None), keep it as None to allow pagination in commands
+    final_limit = None if (limit_filter == 0 or limit_filter is None) else limit_filter
 
     return UniversalFilters(
         id=id_filter,

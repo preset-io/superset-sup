@@ -101,9 +101,16 @@ def list_charts(
         typer.Option("--dataset-id", help="Filter by dataset ID"),
     ] = None,
     # Output options
+    instance: Annotated[
+        Optional[str],
+        typer.Option(
+            "--instance",
+            help="Superset instance name (self-hosted). Use 'sup instance list' to see available instances.",
+        ),
+    ] = None,
     workspace_id: Annotated[
         Optional[int],
-        typer.Option("--workspace-id", "-w", help="Workspace ID"),
+        typer.Option("--workspace-id", "-w", help="Preset workspace ID"),
     ] = None,
     json_output: Annotated[bool, typer.Option("--json", help="Output as JSON")] = False,
     yaml_output: Annotated[bool, typer.Option("--yaml", help="Output as YAML")] = False,
@@ -151,16 +158,30 @@ def list_charts(
         # Get charts from API with spinner (using server-side filtering for performance)
         with data_spinner("charts", silent=porcelain) as sp:
             ctx = SupContext()
-            client = SupSupersetClient.from_context(ctx, workspace_id)
+            client = SupSupersetClient.from_context(
+                ctx, workspace_id=workspace_id, instance_name=instance
+            )
 
             # Use server-side filtering where available
             page = (filters.page - 1) if filters.page else 0
-            charts = client.get_charts(
-                silent=True,
-                limit=None,  # Get all charts for client-side filtering
-                page=page,
-                text_search=filters.search,  # Pass search term to server
-            )
+            
+            # Fetch charts with proper limit handling
+            if filters.limit:
+                # User specified a limit - fetch that many
+                charts = client.get_charts(
+                    silent=True,
+                    limit=filters.limit,
+                    page=page,
+                    text_search=filters.search,
+                )
+            else:
+                # No limit specified - use default page size of 100
+                charts = client.get_charts(
+                    silent=True,
+                    limit=100,  # Reasonable default for list view
+                    page=page,
+                    text_search=filters.search,
+                )
 
             # Apply client-side filters for chart-specific options
             from sup.filters.chart import apply_chart_filters
@@ -220,9 +241,16 @@ def list_charts(
 @app.command("info")
 def chart_info(
     chart_id: Annotated[int, typer.Argument(help="Chart ID to inspect")],
+    instance: Annotated[
+        Optional[str],
+        typer.Option(
+            "--instance",
+            help="Superset instance name (self-hosted). Use 'sup instance list' to see available instances.",
+        ),
+    ] = None,
     workspace_id: Annotated[
         Optional[int],
-        typer.Option("--workspace-id", "-w", help="Workspace ID"),
+        typer.Option("--workspace-id", "-w", help="Preset workspace ID"),
     ] = None,
     json_output: Annotated[bool, typer.Option("--json", "-j", help="Output as JSON")] = False,
     yaml_output: Annotated[bool, typer.Option("--yaml", "-y", help="Output as YAML")] = False,
@@ -243,7 +271,9 @@ def chart_info(
     try:
         with data_spinner(f"chart {chart_id}", silent=porcelain):
             ctx = SupContext()
-            client = SupSupersetClient.from_context(ctx, workspace_id)
+            client = SupSupersetClient.from_context(
+                ctx, workspace_id=workspace_id, instance_name=instance
+            )
             chart = client.get_chart(chart_id, silent=True)
 
         if porcelain:
@@ -858,12 +888,19 @@ def pull_charts(
         typer.Option("--limit", "-l", help="Maximum number of charts to pull"),
     ] = None,
     # Export-specific options
+    instance: Annotated[
+        Optional[str],
+        typer.Option(
+            "--instance",
+            help="Superset instance name (self-hosted). Use 'sup instance list' to see available instances.",
+        ),
+    ] = None,
     workspace_id: Annotated[
         Optional[int],
         typer.Option(
             "--workspace-id",
             "-w",
-            help="Workspace ID (defaults to configured workspace)",
+            help="Preset workspace ID",
         ),
     ] = None,
     overwrite: Annotated[
@@ -987,7 +1024,9 @@ def pull_charts(
             raise typer.Exit(1)
 
         # Get charts using existing filtering logic
-        client = SupSupersetClient.from_context(ctx, workspace_id)
+        client = SupSupersetClient.from_context(
+            ctx, workspace_id=workspace_id, instance_name=instance
+        )
 
         with data_spinner("charts to export", silent=porcelain) as sp:
             # Parse filters using existing logic
@@ -1003,11 +1042,32 @@ def pull_charts(
             )
 
             # Get charts with server-side filtering only
-            charts = client.get_charts(
-                silent=True,
-                limit=None,  # Get all matching charts
-                text_search=filters.search,  # Server-side search
-            )
+            # If no limit specified in filters, fetch all charts via pagination
+            if filters.limit:
+                charts = client.get_charts(
+                    silent=True,
+                    limit=filters.limit,
+                    text_search=filters.search,
+                )
+            else:
+                # Fetch all charts via pagination
+                charts = []
+                page = 0
+                page_size = 100  # Larger page size for efficiency
+                while True:
+                    page_charts = client.get_charts(
+                        silent=True,
+                        limit=page_size,
+                        page=page,
+                        text_search=filters.search,
+                    )
+                    if not page_charts:
+                        break
+                    charts.extend(page_charts)
+                    # If we got less than page_size, we've reached the end
+                    if len(page_charts) < page_size:
+                        break
+                    page += 1
 
             # Extract IDs for export
             chart_ids = [chart["id"] for chart in charts]
@@ -1105,6 +1165,14 @@ def push_charts(
             help="Assets folder to push chart definitions from (defaults to configured folder)",
         ),
     ] = None,
+    # Target configuration
+    instance: Annotated[
+        Optional[str],
+        typer.Option(
+            "--instance",
+            help="Target self-hosted instance name. Use 'sup instance list'.",
+        ),
+    ] = None,
     # Import-specific options
     workspace_id: Annotated[
         Optional[int],
@@ -1127,6 +1195,28 @@ def push_charts(
         typer.Option(
             "--continue-on-error",
             help="Continue importing even if some charts fail",
+        ),
+    ] = False,
+    # Database transformation options
+    database_uuid: Annotated[
+        Optional[str],
+        typer.Option(
+            "--database-uuid",
+            help="Replace all database UUIDs with this UUID in target",
+        ),
+    ] = None,
+    database_name: Annotated[
+        Optional[str],
+        typer.Option(
+            "--database-name",
+            help="Use database with this name from target (auto-fetches UUID)",
+        ),
+    ] = None,
+    auto_map_databases: Annotated[
+        bool,
+        typer.Option(
+            "--auto-map-databases",
+            help="Auto-map databases by matching names between source and target",
         ),
     ] = False,
     force: Annotated[
@@ -1211,54 +1301,83 @@ def push_charts(
 
         from sup.auth.preset import SupPresetAuth
 
-        # Get source and target workspace context
+        # Check if we're using self-hosted instance or Preset workspace
+        instance_name = instance or ctx.get_instance_name()
         source_workspace_id = ctx.get_workspace_id()
-        target_workspace_id = ctx.get_target_workspace_id(cli_override=workspace_id)
 
-        if not source_workspace_id:
+        # For self-hosted instances, we don't need workspace IDs
+        if instance_name:
+            # Self-hosted path - instance is the target
             console.print(
-                f"{EMOJIS['error']} No source workspace configured",
-                style=RICH_STYLES["error"],
-            )
-            console.print(
-                "💡 Run [bold]sup workspace list[/] and [bold]sup workspace use <ID>[/]",
+                f"{EMOJIS['info']} Using self-hosted instance: [cyan]{instance_name}[/cyan]",
                 style=RICH_STYLES["info"],
             )
-            raise typer.Exit(1)
 
-        if not target_workspace_id:
-            console.print(
-                f"{EMOJIS['error']} No target workspace configured",
-                style=RICH_STYLES["error"],
-            )
-            console.print(
-                "💡 Set target: [bold]sup workspace set-import-target[/]",
-                style=RICH_STYLES["info"],
-            )
-            raise typer.Exit(1)
+            # Skip workspace ID validation for self-hosted
+            use_instance_path = True
+        else:
+            # Preset workspace path - need workspace IDs
+            use_instance_path = False
+            target_workspace_id = ctx.get_target_workspace_id(cli_override=workspace_id)
+
+            if not source_workspace_id:
+                console.print(
+                    f"{EMOJIS['error']} No source workspace configured",
+                    style=RICH_STYLES["error"],
+                )
+                console.print(
+                    "💡 Run [bold]sup workspace list[/] and [bold]sup workspace use <ID>[/]",
+                    style=RICH_STYLES["info"],
+                )
+                raise typer.Exit(1)
+
+            if not target_workspace_id:
+                console.print(
+                    f"{EMOJIS['error']} No target workspace configured",
+                    style=RICH_STYLES["error"],
+                )
+                console.print(
+                    "💡 Set target: [bold]sup workspace set-import-target[/]",
+                    style=RICH_STYLES["info"],
+                )
+                raise typer.Exit(1)
 
         # Safety confirmation for potentially destructive imports
         if not force and not porcelain:
-            is_cross_workspace = target_workspace_id != source_workspace_id
-
-            console.print(
-                f"{EMOJIS['warning']} Import Operation Summary",
-                style=RICH_STYLES["warning"],
-            )
-            console.print(f"📁 Assets folder: [cyan]{resolved_assets_folder}[/cyan]")
-            console.print(f"📤 Source workspace: [cyan]{source_workspace_id}[/cyan]")
-            console.print(f"📥 Target workspace: [cyan]{target_workspace_id}[/cyan]")
-
-            if is_cross_workspace:
+            if use_instance_path:
+                # Self-hosted instance confirmation
                 console.print(
-                    "🔄 [bold]Cross-workspace import[/bold] - assets copied to different workspace",
-                    style=RICH_STYLES["info"],
-                )
-            else:
-                console.print(
-                    "⚠️  [bold]Same-workspace import[/bold] - may overwrite existing charts",
+                    f"{EMOJIS['warning']} Import Operation Summary",
                     style=RICH_STYLES["warning"],
                 )
+                console.print(f"📁 Assets folder: [cyan]{resolved_assets_folder}[/cyan]")
+                console.print(f"📥 Target instance: [cyan]{instance_name}[/cyan]")
+                console.print(
+                    "⚠️  [bold]This will import charts to the instance[/bold] - may overwrite existing assets",
+                    style=RICH_STYLES["warning"],
+                )
+            else:
+                # Preset workspace confirmation
+                is_cross_workspace = target_workspace_id != source_workspace_id
+
+                console.print(
+                    f"{EMOJIS['warning']} Import Operation Summary",
+                    style=RICH_STYLES["warning"],
+                )
+                console.print(f"📁 Assets folder: [cyan]{resolved_assets_folder}[/cyan]")
+                console.print(f"📤 Source workspace: [cyan]{source_workspace_id}[/cyan]")
+                console.print(f"📥 Target workspace: [cyan]{target_workspace_id}[/cyan]")
+
+                if is_cross_workspace:
+                    console.print(
+                        "🔄 [bold]Cross-workspace import[/bold] - assets copied to different workspace",
+                        style=RICH_STYLES["info"],
+                    )
+                else:
+                    console.print(
+                        "⚠️  [bold]Same-workspace import[/bold] - may overwrite existing charts",
+                        style=RICH_STYLES["warning"],
+                    )
 
             if not typer.confirm("Continue with import operation?"):
                 console.print(
@@ -1267,36 +1386,113 @@ def push_charts(
                 )
                 raise typer.Exit(0)
 
-        # Get target workspace URL (where we're importing TO)
-        # We need to resolve the hostname for the TARGET workspace, not source
-        from sup.clients.preset import SupPresetClient
+        # Get target URL and auth based on instance or workspace
+        if use_instance_path:
+            # Self-hosted instance path
+            instance_config = ctx.get_superset_instance_config(instance_name)
+            if not instance_config:
+                console.print(
+                    f"{EMOJIS['error']} Instance configuration not found: {instance_name}",
+                    style=RICH_STYLES["error"],
+                )
+                raise typer.Exit(1)
 
-        preset_client = SupPresetClient.from_context(ctx, silent=True)
-        workspaces = preset_client.get_all_workspaces(silent=True)
+            workspace_url = instance_config.url
+            if not workspace_url.endswith("/"):
+                workspace_url += "/"
 
-        target_workspace = None
-        for ws in workspaces:
-            if ws.get("id") == target_workspace_id:
-                target_workspace = ws
-                break
+            # Create auth for self-hosted instance
+            from preset_cli.auth.factory import create_superset_auth
 
-        if not target_workspace:
+            try:
+                auth = create_superset_auth(instance_config)
+            except ValueError as e:
+                console.print(
+                    f"{EMOJIS['error']} Authentication configuration error: {e}",
+                    style=RICH_STYLES["error"],
+                )
+                raise typer.Exit(1)
+
+        else:
+            # Preset workspace path (original logic)
+            from sup.auth.preset import SupPresetAuth
+            from sup.clients.preset import SupPresetClient
+
+            preset_client = SupPresetClient.from_context(ctx, silent=True)
+            workspaces = preset_client.get_all_workspaces(silent=True)
+
+            target_workspace = None
+            for ws in workspaces:
+                if ws.get("id") == target_workspace_id:
+                    target_workspace = ws
+                    break
+
+            if not target_workspace:
+                console.print(
+                    f"{EMOJIS['error']} Target workspace {target_workspace_id} not found",
+                    style=RICH_STYLES["error"],
+                )
+                raise typer.Exit(1)
+
+            target_hostname = target_workspace.get("hostname")
+            if not target_hostname:
+                console.print(
+                    f"{EMOJIS['error']} No hostname for target workspace {target_workspace_id}",
+                    style=RICH_STYLES["error"],
+                )
+                raise typer.Exit(1)
+
+            workspace_url = f"https://{target_hostname}/"
+            auth = SupPresetAuth.from_sup_config(ctx, silent=True)
+
+        # Apply database UUID transformation if requested
+        temp_dir = None
+        use_split_import = not auto_map_databases  # Don't use split when auto-mapping
+        
+        try:
+            if database_uuid or database_name or auto_map_databases:
+                from sup.utils.database_transform import transform_database_refs
+
+                if not porcelain:
+                    if database_uuid:
+                        console.print(
+                            f"{EMOJIS['info']} Transforming database refs to UUID: {database_uuid}",
+                            style=RICH_STYLES["info"],
+                        )
+                    elif database_name:
+                        console.print(
+                            f"{EMOJIS['info']} Looking up database: {database_name}",
+                            style=RICH_STYLES["info"],
+                        )
+                    elif auto_map_databases:
+                        console.print(
+                            f"{EMOJIS['info']} Auto-mapping databases by name...",
+                            style=RICH_STYLES["info"],
+                        )
+
+                temp_dir = transform_database_refs(
+                    assets_dir=resolved_assets_folder,
+                    instance_url=workspace_url,
+                    auth=auth,
+                    database_uuid=database_uuid,
+                    database_name=database_name,
+                    auto_map=auto_map_databases,
+                )
+
+                # Use transformed assets
+                if temp_dir:
+                    resolved_assets_folder = temp_dir
+                    if not porcelain:
+                        console.print(
+                            f"{EMOJIS['success']} Database UUIDs transformed",
+                            style=RICH_STYLES["success"],
+                        )
+        except ValueError as e:
             console.print(
-                f"{EMOJIS['error']} Target workspace {target_workspace_id} not found",
+                f"{EMOJIS['error']} Database transformation failed: {e}",
                 style=RICH_STYLES["error"],
             )
             raise typer.Exit(1)
-
-        target_hostname = target_workspace.get("hostname")
-        if not target_hostname:
-            console.print(
-                f"{EMOJIS['error']} No hostname for target workspace {target_workspace_id}",
-                style=RICH_STYLES["error"],
-            )
-            raise typer.Exit(1)
-
-        workspace_url = f"https://{target_hostname}/"
-        auth = SupPresetAuth.from_sup_config(ctx, silent=True)
 
         # Create mock click context that native() expects
         # Use a minimal command for the context
@@ -1330,7 +1526,7 @@ def push_charts(
                 disallow_edits=True,  # Mark as externally managed
                 external_url_prefix="",  # No external URL prefix
                 load_env=load_env,  # Load environment variables if requested
-                split=True,  # Import individually with dependency resolution
+                split=use_split_import,  # Use bundle import when auto-mapping to avoid password prompts
                 continue_on_error=continue_on_error,
                 db_password=(),  # No database passwords specified
             )
@@ -1340,6 +1536,12 @@ def push_charts(
                 f"{EMOJIS['success']} Chart import completed successfully",
                 style=RICH_STYLES["success"],
             )
+
+        # Clean up temporary directory
+        if temp_dir:
+            import shutil
+
+            shutil.rmtree(temp_dir, ignore_errors=True)
 
     except typer.Exit:
         # Re-raise typer exits (our own error handling)

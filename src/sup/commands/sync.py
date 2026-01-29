@@ -415,7 +415,9 @@ def execute_pull(sync_config: SyncConfig, sync_path: Path, dry_run: bool, porcel
     try:
         # Get current context and client
         ctx = SupContext()
-        client = SupSupersetClient.from_context(ctx, sync_config.source.workspace_id)
+        client = SupSupersetClient.from_context(
+            ctx, workspace_id=sync_config.source.workspace_id, instance_name=None
+        )
 
         # Use the sync config's assets folder method
         assets_path = sync_config.assets_folder(sync_path)
@@ -527,7 +529,9 @@ def execute_push(
             ctx = SupContext()
             if not porcelain:
                 console.print(f"   🎯 Target workspace ID from config: {target.workspace_id}")
-            client = SupSupersetClient.from_context(ctx, target.workspace_id)
+            client = SupSupersetClient.from_context(
+                ctx, workspace_id=target.workspace_id, instance_name=None
+            )
 
             # Verify we're using the right workspace
             if not porcelain:

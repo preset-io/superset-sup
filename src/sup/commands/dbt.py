@@ -100,6 +100,13 @@ def sync_dbt_core(
         bool,
         typer.Option("--raise-failures", help="Exit with error if a model fails to sync"),
     ] = False,
+    instance: Annotated[
+        Optional[str],
+        typer.Option(
+            "--instance",
+            help="Superset instance name (self-hosted). Use 'sup instance list' to see available instances.",
+        ),
+    ] = None,
     workspace_id: Annotated[
         Optional[int],
         typer.Option("--workspace-id", "-w", help="Target workspace ID (overrides config)"),
@@ -170,11 +177,14 @@ def sync_dbt_core(
         # Get current context and client
         ctx = SupContext()
 
-        # Use specified workspace or current
-        if workspace_id:
+        # Use specified workspace or instance or current
+        if workspace_id or instance:
             if not porcelain:
-                console.print(f"🎯 Using workspace: {workspace_id}")
-            client = SupSupersetClient.from_context(ctx, workspace_id)
+                workspace_display = workspace_id or instance
+                console.print(f"🎯 Using workspace/instance: {workspace_display}")
+            client = SupSupersetClient.from_context(
+                ctx, workspace_id=workspace_id, instance_name=instance
+            )
         else:
             client = SupSupersetClient.from_context(ctx)
 
@@ -311,6 +321,13 @@ def sync_dbt_cloud(
             "--database-name", help="The DB connection name to associate synced models with"
         ),
     ] = None,
+    instance: Annotated[
+        Optional[str],
+        typer.Option(
+            "--instance",
+            help="Superset instance name (self-hosted). Use 'sup instance list' to see available instances.",
+        ),
+    ] = None,
     workspace_id: Annotated[
         Optional[int],
         typer.Option("--workspace-id", "-w", help="Target workspace ID (overrides config)"),
@@ -403,11 +420,14 @@ def sync_dbt_cloud(
         from preset_cli.cli.superset.sync.dbt.command import dbt_cloud as legacy_dbt_cloud
         from sup.clients.superset import SupSupersetClient
 
-        # Get client for workspace
-        if workspace_id:
+        # Get client for workspace or instance
+        if workspace_id or instance:
             if not porcelain:
-                console.print(f"🎯 Using workspace: {workspace_id}")
-            client = SupSupersetClient.from_context(ctx, workspace_id)
+                workspace_display = workspace_id or instance
+                console.print(f"🎯 Using workspace/instance: {workspace_display}")
+            client = SupSupersetClient.from_context(
+                ctx, workspace_id=workspace_id, instance_name=instance
+            )
         else:
             client = SupSupersetClient.from_context(ctx)
 

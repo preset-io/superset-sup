@@ -29,9 +29,16 @@ def sql_main(
         bool,
         typer.Option("--interactive", "-i", help="Start interactive SQL session"),
     ] = False,
+    instance: Annotated[
+        Optional[str],
+        typer.Option(
+            "--instance",
+            help="Superset instance name (self-hosted). Use 'sup instance list' to see available instances.",
+        ),
+    ] = None,
     workspace_id: Annotated[
         Optional[int],
-        typer.Option("--workspace-id", "-w", help="Workspace ID"),
+        typer.Option("--workspace-id", "-w", help="Preset workspace ID"),
     ] = None,
     database_id: Annotated[
         Optional[int],
@@ -59,6 +66,7 @@ def sql_main(
         sql_command(
             query,
             interactive,
+            instance,
             workspace_id,
             database_id,
             json_output,
@@ -72,6 +80,7 @@ def sql_main(
 
 def execute_sql_query(
     query: str,
+    instance: Optional[str] = None,
     workspace_id: Optional[int] = None,
     database_id: Optional[int] = None,
     json_output: bool = False,
@@ -118,7 +127,9 @@ def execute_sql_query(
 
     with query_spinner(query, silent=porcelain) as sp:
         # Create Superset client and execute query
-        client = SupSupersetClient.from_context(ctx, final_workspace_id)
+        client = SupSupersetClient.from_context(
+            ctx, workspace_id=final_workspace_id, instance_name=instance
+        )
 
         with QueryTimer() as timer:
             df = client.client.run_query(final_database_id, query, limit=limit)
@@ -153,9 +164,16 @@ def sql_command(
         bool,
         typer.Option("--interactive", "-i", help="Start interactive SQL session"),
     ] = False,
+    instance: Annotated[
+        Optional[str],
+        typer.Option(
+            "--instance",
+            help="Superset instance name (self-hosted). Use 'sup instance list' to see available instances.",
+        ),
+    ] = None,
     workspace_id: Annotated[
         Optional[int],
-        typer.Option("--workspace-id", "-w", help="Workspace ID"),
+        typer.Option("--workspace-id", "-w", help="Preset workspace ID"),
     ] = None,
     database_id: Annotated[
         Optional[int],
@@ -202,6 +220,7 @@ def sql_command(
     try:
         execute_sql_query(
             query=query,
+            instance=instance,
             workspace_id=workspace_id,
             database_id=database_id,
             json_output=json_output,
@@ -211,6 +230,14 @@ def sql_command(
             limit=limit,
             max_display_rows=max_display_rows,
         )
+    except ValueError as e:
+        # from_context() provides helpful error messages for missing config
+        if not porcelain:
+            console.print(
+                f"{EMOJIS['error']} {e}",
+                style=RICH_STYLES["error"],
+            )
+        raise typer.Exit(1)
     except Exception as e:
         if not porcelain:
             console.print(

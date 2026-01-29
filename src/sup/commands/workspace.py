@@ -137,7 +137,7 @@ def list_workspaces(
 
     try:
         ctx = SupContext()
-        
+
         # Check if Preset credentials are configured
         token, secret = ctx.get_preset_credentials()
         if not token or not secret:
@@ -161,7 +161,7 @@ def list_workspaces(
                 console.print("   [bold]sup config auth[/bold]    # Set up instance authentication")
                 console.print("   [bold]sup instance list[/bold]")
             raise typer.Exit(1)
-        
+
         with data_spinner("workspaces", silent=porcelain) as sp:
             client = SupPresetClient.from_context(
                 ctx,
@@ -237,7 +237,7 @@ def use_workspace(
 
     try:
         ctx = SupContext()
-        
+
         # Check if Preset credentials are configured
         token, secret = ctx.get_preset_credentials()
         if not token or not secret:
@@ -259,7 +259,7 @@ def use_workspace(
             console.print("   [bold]sup config auth[/bold]    # Set up instance authentication")
             console.print("   [bold]sup instance use <NAME>[/bold]")
             raise typer.Exit(1)
-        
+
         client = SupPresetClient.from_context(
             ctx,
             silent=True,
@@ -340,7 +340,7 @@ def workspace_info(
 
     try:
         ctx = SupContext()
-        
+
         # Check if Preset credentials are configured
         token, secret = ctx.get_preset_credentials()
         if not token or not secret:
@@ -364,7 +364,7 @@ def workspace_info(
                 console.print("   [bold]sup config auth[/bold]    # Set up instance authentication")
                 console.print("   [bold]sup instance list[/bold]")
             raise typer.Exit(1)
-        
+
         client = SupPresetClient.from_context(ctx, silent=True)
 
         # Use provided workspace or get from context
@@ -428,7 +428,6 @@ def workspace_info(
                 style=RICH_STYLES["error"],
             )
         raise typer.Exit(1)
-
 
 
 def display_workspace_details(workspace: dict) -> None:

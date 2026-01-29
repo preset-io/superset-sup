@@ -4,10 +4,8 @@ Superset instance management commands for sup CLI.
 Handles listing and selecting self-hosted Superset instances for CLI operations.
 """
 
-from typing import Optional
 
 import typer
-
 from typing_extensions import Annotated
 
 from sup.output.console import console

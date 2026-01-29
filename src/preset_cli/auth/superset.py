@@ -4,47 +4,9 @@ Mechanisms for authentication and authorization for Superset instances.
 
 from typing import Dict, Optional
 
-from bs4 import BeautifulSoup
 from yarl import URL
 
-from preset_cli.auth.main import Auth
 from preset_cli.auth.token import TokenAuth
-
-
-class UsernamePasswordAuth(Auth):  # pylint: disable=too-few-public-methods
-    """
-    Auth to Superset via username/password.
-    """
-
-    def __init__(self, baseurl: URL, username: str, password: Optional[str] = None):
-        super().__init__()
-
-        self.csrf_token: Optional[str] = None
-        self.baseurl = baseurl
-        self.username = username
-        self.password = password
-        self.auth()
-
-    def get_headers(self) -> Dict[str, str]:
-        return {"X-CSRFToken": self.csrf_token} if self.csrf_token else {}
-
-    def auth(self) -> None:
-        """
-        Login to get CSRF token and cookies.
-        """
-        data = {"username": self.username, "password": self.password}
-
-        response = self.session.get(self.baseurl / "login/")
-        soup = BeautifulSoup(response.text, "html.parser")
-        input_ = soup.find("input", {"id": "csrf_token"})
-        csrf_token = input_["value"] if input_ else None
-        if csrf_token:
-            self.session.headers["X-CSRFToken"] = csrf_token
-            data["csrf_token"] = csrf_token
-            self.csrf_token = csrf_token
-
-        # set cookies
-        self.session.post(self.baseurl / "login/", data=data)
 
 
 class SupersetJWTAuth(TokenAuth):  # pylint: disable=abstract-method
@@ -61,7 +23,7 @@ class SupersetJWTAuth(TokenAuth):  # pylint: disable=abstract-method
         Get a CSRF token.
         """
         response = self.session.get(
-            self.baseurl / "api/v1/security/csrf_token/",  # type: ignore
+            self.baseurl / "api/v1/security/csrf_token",  # type: ignore
             headers={"Authorization": f"Bearer {jwt}"},
         )
         response.raise_for_status()
@@ -73,3 +35,40 @@ class SupersetJWTAuth(TokenAuth):  # pylint: disable=abstract-method
             "Authorization": f"Bearer {self.token}",
             "X-CSRFToken": self.get_csrf_token(self.token),
         }
+
+
+class UsernamePasswordAuth(SupersetJWTAuth):  # pylint: disable=too-few-public-methods
+    """
+    Auth to Superset via username/password.
+
+    Uses Superset's /api/v1/security/login endpoint to get a JWT token,
+    then inherits JWT authentication behavior from SupersetJWTAuth.
+    """
+
+    def __init__(self, baseurl: URL, username: str, password: Optional[str] = None):
+        super().__init__("", baseurl)
+
+        self.baseurl = baseurl
+        self.username = username
+        self.password = password
+        self.token = self.auth()
+
+    def auth(self) -> str:
+        """
+        Login to Superset using username/password and return access token.
+        Uses /api/v1/security/login endpoint.
+        """
+        payload = {
+            "username": self.username,
+            "password": self.password,
+            "provider": "db",
+        }
+
+        response = self.session.post(
+            self.baseurl / "api/v1/security/login",  # type: ignore
+            json=payload,
+        )
+        response.raise_for_status()
+        payload = response.json()
+
+        return payload["access_token"]

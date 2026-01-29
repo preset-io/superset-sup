@@ -849,6 +849,8 @@ def push_dashboards(
 
         # Apply database UUID transformation if requested
         temp_dir = None
+        use_split_import = not auto_map_databases  # Don't use split when auto-mapping
+        
         try:
             if database_uuid or database_name or auto_map_databases:
                 from sup.utils.database_transform import transform_database_refs
@@ -920,7 +922,7 @@ def push_dashboards(
                 disallow_edits=True,
                 external_url_prefix="",
                 load_env=load_env,
-                split=True,
+                split=use_split_import,  # Use bundle import when auto-mapping to avoid password prompts
                 continue_on_error=continue_on_error,
                 db_password=(),
             )

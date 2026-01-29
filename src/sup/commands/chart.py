@@ -164,12 +164,24 @@ def list_charts(
 
             # Use server-side filtering where available
             page = (filters.page - 1) if filters.page else 0
-            charts = client.get_charts(
-                silent=True,
-                limit=None,  # Get all charts for client-side filtering
-                page=page,
-                text_search=filters.search,  # Pass search term to server
-            )
+            
+            # Fetch charts with proper limit handling
+            if filters.limit:
+                # User specified a limit - fetch that many
+                charts = client.get_charts(
+                    silent=True,
+                    limit=filters.limit,
+                    page=page,
+                    text_search=filters.search,
+                )
+            else:
+                # No limit specified - use default page size of 100
+                charts = client.get_charts(
+                    silent=True,
+                    limit=100,  # Reasonable default for list view
+                    page=page,
+                    text_search=filters.search,
+                )
 
             # Apply client-side filters for chart-specific options
             from sup.filters.chart import apply_chart_filters
@@ -1030,11 +1042,32 @@ def pull_charts(
             )
 
             # Get charts with server-side filtering only
-            charts = client.get_charts(
-                silent=True,
-                limit=None,  # Get all matching charts
-                text_search=filters.search,  # Server-side search
-            )
+            # If no limit specified in filters, fetch all charts via pagination
+            if filters.limit:
+                charts = client.get_charts(
+                    silent=True,
+                    limit=filters.limit,
+                    text_search=filters.search,
+                )
+            else:
+                # Fetch all charts via pagination
+                charts = []
+                page = 0
+                page_size = 100  # Larger page size for efficiency
+                while True:
+                    page_charts = client.get_charts(
+                        silent=True,
+                        limit=page_size,
+                        page=page,
+                        text_search=filters.search,
+                    )
+                    if not page_charts:
+                        break
+                    charts.extend(page_charts)
+                    # If we got less than page_size, we've reached the end
+                    if len(page_charts) < page_size:
+                        break
+                    page += 1
 
             # Extract IDs for export
             chart_ids = [chart["id"] for chart in charts]

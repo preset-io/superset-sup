@@ -96,6 +96,12 @@ def transform_database_refs(
         # Auto-map by matching database names
         target_dbs = get_target_databases(instance_url, auth)
         _auto_map_database_uuids(temp_path, target_dbs)
+        
+        # Remove databases/ directory to prevent connection validation
+        # When using bundle import, databases are referenced by UUID only
+        databases_dir = temp_path / "databases"
+        if databases_dir.exists():
+            shutil.rmtree(databases_dir)
 
     return temp_dir
 
@@ -114,23 +120,52 @@ def _auto_map_database_uuids(assets_path: Path, target_dbs: Dict[str, str]) -> N
     """
     Auto-map database UUIDs by fetching database names from source assets
     and matching with target database names.
+    
+    Matches databases by name between source (from databases/ metadata) and target.
+    Also updates the database config files themselves to have target UUIDs.
     """
     # First pass: collect all database UUIDs and their names from assets
     source_db_map = _collect_database_info_from_assets(assets_path)
 
     # Build UUID mapping: source UUID -> target UUID
     uuid_mapping = {}
-    for source_uuid, db_name in source_db_map.items():
-        if db_name in target_dbs:
-            target_uuid = target_dbs[db_name]
-            uuid_mapping[source_uuid] = target_uuid
-
-    # Second pass: update all YAML files with mapping
+    
+    if source_db_map:
+        # Have database metadata - map by name
+        for source_uuid, db_name in source_db_map.items():
+            if db_name in target_dbs:
+                target_uuid = target_dbs[db_name]
+                uuid_mapping[source_uuid] = target_uuid
+    
+    # Second pass: update all YAML files with mapping (datasets and charts)
     for yaml_file in assets_path.rglob("*.yaml"):
+        # Skip database files - handle them separately
+        if yaml_file.parent.name == "databases":
+            continue
         try:
             _update_yaml_database_uuid_from_mapping(yaml_file, uuid_mapping)
         except Exception:
             pass
+    
+    # Third pass: update database config files to use target UUIDs
+    # This allows them to be included in the import without password prompts
+    databases_dir = assets_path / "databases"
+    if databases_dir.exists():
+        for db_file in databases_dir.glob("*.yaml"):
+            try:
+                with open(db_file) as f:
+                    content = yaml.safe_load(f)
+                
+                if isinstance(content, dict):
+                    db_name = content.get("database_name")
+                    if db_name and db_name in target_dbs:
+                        # Update UUID to match target
+                        content["uuid"] = target_dbs[db_name]
+                        
+                        with open(db_file, "w") as f:
+                            yaml.dump(content, f, default_flow_style=False, sort_keys=False)
+            except Exception:
+                pass
 
 
 def _collect_database_info_from_assets(assets_path: Path) -> Dict[str, str]:

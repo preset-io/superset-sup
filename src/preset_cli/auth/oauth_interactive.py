@@ -494,16 +494,62 @@ class InteractiveOAuthAuth(Auth):
 
         return self._fetch_access_token()
 
+    def _fetch_csrf_token(self) -> str:
+        """
+        Fetch a CSRF token from the Superset security endpoint.
+
+        The Superset API requires CSRF tokens for state-changing
+        operations (POST, PUT, DELETE). Fetches the token by making
+        an authenticated GET request to the CSRF endpoint.
+
+        Returns:
+            CSRF token string
+
+        Raises:
+            requests.HTTPError: If CSRF endpoint returns an error
+            KeyError: If response is missing 'result' field
+        """
+        headers = {
+            "Authorization": f"{self.token_type} {self.get_token()}",
+        }
+
+        _logger.debug("Fetching CSRF token from Superset")
+
+        response = self.session.get(
+            self.base_url / "api/v1/security/csrf_token/",
+            headers=headers,
+        )
+        response.raise_for_status()
+
+        self._csrf_token = response.json().get("result")
+        _logger.debug("Successfully fetched CSRF token")
+
+        return self._csrf_token
+
+    def get_csrf_token(self) -> str:
+        """
+        Get CSRF token, fetching if needed.
+
+        CSRF tokens are stateless and can be reused across requests.
+
+        Returns:
+            CSRF token string
+        """
+        if self._csrf_token is None:
+            return self._fetch_csrf_token()
+        return self._csrf_token
+
     def get_headers(self) -> Dict[str, str]:
         """
         Get authentication headers for requests.
 
         Returns:
-            Dictionary with Authorization header
+            Dictionary with Authorization and X-CSRFToken headers
         """
         token = self.get_token()
         return {
             "Authorization": f"{self.token_type} {token}",
+            "X-CSRFToken": self.get_csrf_token(),
         }
     
     def clear_cached_tokens(self):

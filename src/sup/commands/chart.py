@@ -1132,6 +1132,14 @@ def push_charts(
             help="Assets folder to push chart definitions from (defaults to configured folder)",
         ),
     ] = None,
+    # Target configuration
+    instance: Annotated[
+        Optional[str],
+        typer.Option(
+            "--instance",
+            help="Target self-hosted instance name. Use 'sup instance list'.",
+        ),
+    ] = None,
     # Import-specific options
     workspace_id: Annotated[
         Optional[int],
@@ -1261,7 +1269,7 @@ def push_charts(
         from sup.auth.preset import SupPresetAuth
 
         # Check if we're using self-hosted instance or Preset workspace
-        instance_name = ctx.get_instance_name()
+        instance_name = instance or ctx.get_instance_name()
         source_workspace_id = ctx.get_workspace_id()
 
         # For self-hosted instances, we don't need workspace IDs
@@ -1406,6 +1414,8 @@ def push_charts(
 
         # Apply database UUID transformation if requested
         temp_dir = None
+        use_split_import = not auto_map_databases  # Don't use split when auto-mapping
+        
         try:
             if database_uuid or database_name or auto_map_databases:
                 from sup.utils.database_transform import transform_database_refs
@@ -1483,7 +1493,7 @@ def push_charts(
                 disallow_edits=True,  # Mark as externally managed
                 external_url_prefix="",  # No external URL prefix
                 load_env=load_env,  # Load environment variables if requested
-                split=True,  # Import individually with dependency resolution
+                split=use_split_import,  # Use bundle import when auto-mapping to avoid password prompts
                 continue_on_error=continue_on_error,
                 db_password=(),  # No database passwords specified
             )

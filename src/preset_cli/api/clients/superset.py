@@ -759,6 +759,14 @@ class SupersetClient:  # pylint: disable=too-many-public-methods
         url = self.baseurl / "api/v1" / resource_name / "import/"
 
         self.session.headers.update({"Accept": "application/json"})
+        
+        # Force fresh CSRF token fetch for multipart/form-data POST requests
+        # Superset requires a fresh CSRF token for these endpoints
+        if hasattr(self.auth, '_fetch_csrf_token'):
+            self.auth._fetch_csrf_token()
+            auth_headers = self.auth.get_headers()
+            self.session.headers.update(auth_headers)
+        
         data = {"overwrite": json.dumps(overwrite)}
         _logger.debug("POST %s\n%s", url, json.dumps(data, indent=4))
         response = self.session.post(

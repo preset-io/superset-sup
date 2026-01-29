@@ -1238,54 +1238,83 @@ def push_charts(
 
         from sup.auth.preset import SupPresetAuth
 
-        # Get source and target workspace context
+        # Check if we're using self-hosted instance or Preset workspace
+        instance_name = ctx.get_instance_name()
         source_workspace_id = ctx.get_workspace_id()
-        target_workspace_id = ctx.get_target_workspace_id(cli_override=workspace_id)
-
-        if not source_workspace_id:
+        
+        # For self-hosted instances, we don't need workspace IDs
+        if instance_name:
+            # Self-hosted path - instance is the target
             console.print(
-                f"{EMOJIS['error']} No source workspace configured",
-                style=RICH_STYLES["error"],
-            )
-            console.print(
-                "💡 Run [bold]sup workspace list[/] and [bold]sup workspace use <ID>[/]",
+                f"{EMOJIS['info']} Using self-hosted instance: [cyan]{instance_name}[/cyan]",
                 style=RICH_STYLES["info"],
             )
-            raise typer.Exit(1)
+            
+            # Skip workspace ID validation for self-hosted
+            use_instance_path = True
+        else:
+            # Preset workspace path - need workspace IDs
+            use_instance_path = False
+            target_workspace_id = ctx.get_target_workspace_id(cli_override=workspace_id)
 
-        if not target_workspace_id:
-            console.print(
-                f"{EMOJIS['error']} No target workspace configured",
-                style=RICH_STYLES["error"],
-            )
-            console.print(
-                "💡 Set target: [bold]sup workspace set-import-target[/]",
-                style=RICH_STYLES["info"],
-            )
-            raise typer.Exit(1)
+            if not source_workspace_id:
+                console.print(
+                    f"{EMOJIS['error']} No source workspace configured",
+                    style=RICH_STYLES["error"],
+                )
+                console.print(
+                    "💡 Run [bold]sup workspace list[/] and [bold]sup workspace use <ID>[/]",
+                    style=RICH_STYLES["info"],
+                )
+                raise typer.Exit(1)
+
+            if not target_workspace_id:
+                console.print(
+                    f"{EMOJIS['error']} No target workspace configured",
+                    style=RICH_STYLES["error"],
+                )
+                console.print(
+                    "💡 Set target: [bold]sup workspace set-import-target[/]",
+                    style=RICH_STYLES["info"],
+                )
+                raise typer.Exit(1)
 
         # Safety confirmation for potentially destructive imports
         if not force and not porcelain:
-            is_cross_workspace = target_workspace_id != source_workspace_id
-
-            console.print(
-                f"{EMOJIS['warning']} Import Operation Summary",
-                style=RICH_STYLES["warning"],
-            )
-            console.print(f"📁 Assets folder: [cyan]{resolved_assets_folder}[/cyan]")
-            console.print(f"📤 Source workspace: [cyan]{source_workspace_id}[/cyan]")
-            console.print(f"📥 Target workspace: [cyan]{target_workspace_id}[/cyan]")
-
-            if is_cross_workspace:
+            if use_instance_path:
+                # Self-hosted instance confirmation
                 console.print(
-                    "🔄 [bold]Cross-workspace import[/bold] - assets copied to different workspace",
-                    style=RICH_STYLES["info"],
-                )
-            else:
-                console.print(
-                    "⚠️  [bold]Same-workspace import[/bold] - may overwrite existing charts",
+                    f"{EMOJIS['warning']} Import Operation Summary",
                     style=RICH_STYLES["warning"],
                 )
+                console.print(f"📁 Assets folder: [cyan]{resolved_assets_folder}[/cyan]")
+                console.print(f"📥 Target instance: [cyan]{instance_name}[/cyan]")
+                console.print(
+                    "⚠️  [bold]This will import charts to the instance[/bold] - may overwrite existing assets",
+                    style=RICH_STYLES["warning"],
+                )
+            else:
+                # Preset workspace confirmation
+                is_cross_workspace = target_workspace_id != source_workspace_id
+
+                console.print(
+                    f"{EMOJIS['warning']} Import Operation Summary",
+                    style=RICH_STYLES["warning"],
+                )
+                console.print(f"📁 Assets folder: [cyan]{resolved_assets_folder}[/cyan]")
+                console.print(f"📤 Source workspace: [cyan]{source_workspace_id}[/cyan]")
+                console.print(f"📥 Target workspace: [cyan]{target_workspace_id}[/cyan]")
+
+                if is_cross_workspace:
+                    console.print(
+                        "🔄 [bold]Cross-workspace import[/bold] - assets copied to different workspace",
+                        style=RICH_STYLES["info"],
+                    )
+                else:
+                    console.print(
+                        "⚠️  [bold]Same-workspace import[/bold] - may overwrite existing charts",
+                        style=RICH_STYLES["warning"],
+                    )
 
             if not typer.confirm("Continue with import operation?"):
                 console.print(
@@ -1294,36 +1323,64 @@ def push_charts(
                 )
                 raise typer.Exit(0)
 
-        # Get target workspace URL (where we're importing TO)
-        # We need to resolve the hostname for the TARGET workspace, not source
-        from sup.clients.preset import SupPresetClient
+        # Get target URL and auth based on instance or workspace
+        if use_instance_path:
+            # Self-hosted instance path
+            instance_config = ctx.get_superset_instance_config(instance_name)
+            if not instance_config:
+                console.print(
+                    f"{EMOJIS['error']} Instance configuration not found: {instance_name}",
+                    style=RICH_STYLES["error"],
+                )
+                raise typer.Exit(1)
+            
+            workspace_url = instance_config.url
+            if not workspace_url.endswith('/'):
+                workspace_url += '/'
+            
+            # Create auth for self-hosted instance
+            from preset_cli.auth.factory import create_superset_auth
+            
+            try:
+                auth = create_superset_auth(instance_config)
+            except ValueError as e:
+                console.print(
+                    f"{EMOJIS['error']} Authentication configuration error: {e}",
+                    style=RICH_STYLES["error"],
+                )
+                raise typer.Exit(1)
+            
+        else:
+            # Preset workspace path (original logic)
+            from sup.clients.preset import SupPresetClient
+            from sup.auth.preset import SupPresetAuth
 
-        preset_client = SupPresetClient.from_context(ctx, silent=True)
-        workspaces = preset_client.get_all_workspaces(silent=True)
+            preset_client = SupPresetClient.from_context(ctx, silent=True)
+            workspaces = preset_client.get_all_workspaces(silent=True)
 
-        target_workspace = None
-        for ws in workspaces:
-            if ws.get("id") == target_workspace_id:
-                target_workspace = ws
-                break
+            target_workspace = None
+            for ws in workspaces:
+                if ws.get("id") == target_workspace_id:
+                    target_workspace = ws
+                    break
 
-        if not target_workspace:
-            console.print(
-                f"{EMOJIS['error']} Target workspace {target_workspace_id} not found",
-                style=RICH_STYLES["error"],
-            )
-            raise typer.Exit(1)
+            if not target_workspace:
+                console.print(
+                    f"{EMOJIS['error']} Target workspace {target_workspace_id} not found",
+                    style=RICH_STYLES["error"],
+                )
+                raise typer.Exit(1)
 
-        target_hostname = target_workspace.get("hostname")
-        if not target_hostname:
-            console.print(
-                f"{EMOJIS['error']} No hostname for target workspace {target_workspace_id}",
-                style=RICH_STYLES["error"],
-            )
-            raise typer.Exit(1)
+            target_hostname = target_workspace.get("hostname")
+            if not target_hostname:
+                console.print(
+                    f"{EMOJIS['error']} No hostname for target workspace {target_workspace_id}",
+                    style=RICH_STYLES["error"],
+                )
+                raise typer.Exit(1)
 
-        workspace_url = f"https://{target_hostname}/"
-        auth = SupPresetAuth.from_sup_config(ctx, silent=True)
+            workspace_url = f"https://{target_hostname}/"
+            auth = SupPresetAuth.from_sup_config(ctx, silent=True)
 
         # Create mock click context that native() expects
         # Use a minimal command for the context

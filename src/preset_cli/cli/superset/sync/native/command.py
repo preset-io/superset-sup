@@ -423,6 +423,9 @@ def get_dataset_filter_uuids(config: AssetConfig) -> Set[str]:
     Extract dataset UUID for datasets that are used in dashboard filters.
     """
     dataset_uuids = set()
+    # Skip if metadata key doesn't exist (empty/untitled dashboards)
+    if "metadata" not in config:
+        return dataset_uuids
     for filter_config in config["metadata"].get("native_filter_configuration", []):
         for target in filter_config.get("targets", {}):
             if uuid := target.get("datasetUuid"):

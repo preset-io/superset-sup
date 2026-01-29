@@ -153,7 +153,7 @@ def list_datasets(
 
             datasets = client.get_datasets(
                 silent=True,
-                limit=limit_filter,
+                limit=limit_filter or 100,  # Default to 100 for list view
                 text_search=search_filter,  # Server-side table name search
                 filters=api_filters,
                 # When filtering, fetch every page so matches aren't capped to page 1
@@ -379,10 +379,32 @@ def pull_datasets(
 
         with data_spinner("datasets to export", silent=porcelain) as sp:
             # Get datasets (server-side filtering)
-            datasets = client.get_datasets(
-                silent=True,
-                text_search=search_filter,
-            )
+            # If no limit specified, fetch all datasets via pagination
+            if limit:
+                datasets = client.get_datasets(
+                    silent=True,
+                    text_search=search_filter,
+                    limit=limit,
+                )
+            else:
+                # Fetch all datasets via pagination
+                datasets = []
+                page = 0
+                page_size = 100  # Larger page size for efficiency
+                while True:
+                    page_datasets = client.get_datasets(
+                        silent=True,
+                        text_search=search_filter,
+                        limit=page_size,
+                        page=page,
+                    )
+                    if not page_datasets:
+                        break
+                    datasets.extend(page_datasets)
+                    # If we got less than page_size, we've reached the end
+                    if len(page_datasets) < page_size:
+                        break
+                    page += 1
 
             # Client-side filtering
             if id_filter:
@@ -928,6 +950,8 @@ def push_datasets(
 
         # Apply database UUID transformation if requested
         temp_dir = None
+        use_split_import = not auto_map_databases  # Don't use split when auto-mapping
+        
         try:
             if database_uuid or database_name or auto_map_databases:
                 from sup.utils.database_transform import transform_database_refs
@@ -999,7 +1023,7 @@ def push_datasets(
                 disallow_edits=True,
                 external_url_prefix="",
                 load_env=load_env,
-                split=True,
+                split=use_split_import,  # Use bundle import when auto-mapping to avoid password prompts
                 continue_on_error=continue_on_error,
                 db_password=(),
             )

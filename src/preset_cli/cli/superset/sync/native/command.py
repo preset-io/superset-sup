@@ -315,6 +315,17 @@ def native(  # pylint: disable=too-many-locals, too-many-arguments, too-many-bra
 
             configs["bundle" / relative_path] = config
 
+    # Build passwords dict for API: maps file paths to passwords
+    # Superset expects paths WITHOUT the "bundle/" prefix because
+    # get_contents_from_bundle() calls remove_root() to strip the first directory.
+    # So we need: {"databases/MyDB.yaml": "password"}
+    passwords_for_api: Dict[str, str] = {}
+    for path, config in configs.items():
+        if str(path).startswith("bundle/databases/") and config.get("password"):
+            # Remove "bundle/" prefix - Superset expects "databases/file.yaml"
+            path_without_bundle = str(path).replace("bundle/", "", 1)
+            passwords_for_api[path_without_bundle] = config["password"]
+
     if split:
         import_resources_individually(
             configs,
@@ -322,10 +333,17 @@ def native(  # pylint: disable=too-many-locals, too-many-arguments, too-many-bra
             overwrite,
             asset_type,
             continue_on_error,
+            passwords_for_api if passwords_for_api else None,
         )
     else:
         contents = {str(k): yaml.dump(v) for k, v in configs.items()}
-        import_resources(contents, client, overwrite, asset_type)
+        import_resources(
+            contents,
+            client,
+            overwrite,
+            asset_type,
+            passwords_for_api if passwords_for_api else None,
+        )
 
 
 def import_resources_individually(  # pylint: disable=too-many-locals
@@ -334,6 +352,7 @@ def import_resources_individually(  # pylint: disable=too-many-locals
     overwrite: bool,
     asset_type: ResourceType,
     continue_on_error: bool = False,
+    passwords: Dict[str, str] | None = None,
 ) -> None:
     """
     Import contents individually.
@@ -345,6 +364,14 @@ def import_resources_individually(  # pylint: disable=too-many-locals
     By default, the import logs all assets imported correctly to a checkpoint file so that
     if one fails, a future import continues from where it's left. If ``continue_on_error``
     is set to True, then only failures are logged to the file, and the import continues.
+
+    Args:
+        configs: Dict mapping file paths to asset configurations
+        client: SupersetClient instance
+        overwrite: Whether to overwrite existing resources
+        asset_type: The type of resource being imported
+        continue_on_error: Whether to continue if an asset fails to import
+        passwords: Optional dict mapping file paths to passwords
     """
     imports = [
         ("databases", lambda config: []),
@@ -385,7 +412,11 @@ def import_resources_individually(  # pylint: disable=too-many-locals
                     _logger.info("Importing %s", path.relative_to("bundle"))
 
                     contents = {str(k): yaml.dump(v) for k, v in asset_configs.items()}
-                    import_resources(contents, client, overwrite, asset_type)
+                    # Filter passwords to only include those for current asset configs
+                    asset_passwords = (
+                        {k: v for k, v in passwords.items() if k in contents} if passwords else None
+                    )
+                    import_resources(contents, client, overwrite, asset_type, asset_passwords)
                 except Exception:  # pylint: disable=broad-except
                     if not continue_on_error:
                         raise
@@ -487,9 +518,18 @@ def import_resources(
     client: SupersetClient,
     overwrite: bool,
     asset_type: ResourceType,
+    passwords: Dict[str, str] | None = None,
 ) -> None:
     """
     Import a bundle of assets.
+
+    Args:
+        contents: Dict mapping file paths to YAML content
+        client: SupersetClient instance
+        overwrite: Whether to overwrite existing resources
+        asset_type: The type of resource being imported
+        passwords: Optional dict mapping file paths to passwords
+                   (e.g., {"bundle/databases/MyDB.yaml": "my_password"})
     """
     contents["bundle/metadata.yaml"] = yaml.dump(
         dict(
@@ -506,7 +546,7 @@ def import_resources(
                 output.write(file_content.encode())
     buf.seek(0)
     try:
-        client.import_zip(asset_type.resource_name, buf, overwrite=overwrite)
+        client.import_zip(asset_type.resource_name, buf, overwrite=overwrite, passwords=passwords)
     except SupersetError as ex:
         click.echo(
             click.style(

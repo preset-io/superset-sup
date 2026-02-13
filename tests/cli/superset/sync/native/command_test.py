@@ -130,7 +130,7 @@ def test_import_resources(mocker: MockerFixture) -> None:
         import_resources(contents, client, False, ResourceType.ASSET)
 
     call = client.import_zip.mock_calls[0]
-    assert call.kwargs == {"overwrite": False}
+    assert call.kwargs == {"overwrite": False, "passwords": None}
 
     resource, buf = call.args
     assert resource == "assets"
@@ -161,7 +161,7 @@ def test_import_resources_asset_types(
         import_resources(contents, client, False, resource_type)
 
     call = client.import_zip.mock_calls[0]
-    assert call.kwargs == {"overwrite": False}
+    assert call.kwargs == {"overwrite": False, "passwords": None}
 
     resource, buf = call.args
     assert resource == resource_type.resource_name
@@ -394,6 +394,7 @@ def test_native(mocker: MockerFixture, fs: FakeFilesystem) -> None:
         client,
         False,
         ResourceType.ASSET,
+        None,
     )
     client.get_uuids.assert_not_called()
 
@@ -456,6 +457,7 @@ def test_native_params_as_str(mocker: MockerFixture, fs: FakeFilesystem) -> None
         client,
         False,
         ResourceType.ASSET,
+        None,
     )
     client.get_uuids.assert_not_called()
 
@@ -583,6 +585,7 @@ def test_native_load_env(
         client,
         False,
         ResourceType.ASSET,
+        None,
     )
     client.get_uuids.assert_not_called()
 
@@ -650,6 +653,7 @@ def test_native_external_url(mocker: MockerFixture, fs: FakeFilesystem) -> None:
         client,
         False,
         ResourceType.ASSET,
+        None,
     )
     client.get_uuids.assert_not_called()
 
@@ -799,6 +803,7 @@ def test_template_in_environment(mocker: MockerFixture, fs: FakeFilesystem) -> N
         client,
         False,
         ResourceType.ASSET,
+        None,
     )
     client.get_uuids.assert_not_called()
 
@@ -1070,6 +1075,7 @@ def test_native_split(  # pylint: disable=too-many-locals
                 client,
                 False,
                 ResourceType.ASSET,
+                None,
             ),
             mock.call(
                 {
@@ -1081,6 +1087,7 @@ def test_native_split(  # pylint: disable=too-many-locals
                 client,
                 False,
                 ResourceType.ASSET,
+                None,
             ),
             mock.call(
                 {
@@ -1090,6 +1097,7 @@ def test_native_split(  # pylint: disable=too-many-locals
                 client,
                 False,
                 ResourceType.ASSET,
+                None,
             ),
             mock.call(
                 {
@@ -1100,6 +1108,7 @@ def test_native_split(  # pylint: disable=too-many-locals
                 client,
                 False,
                 ResourceType.ASSET,
+                None,
             ),
             mock.call(
                 {
@@ -1110,6 +1119,7 @@ def test_native_split(  # pylint: disable=too-many-locals
                 client,
                 False,
                 ResourceType.ASSET,
+                None,
             ),
             mock.call(
                 {
@@ -1120,6 +1130,7 @@ def test_native_split(  # pylint: disable=too-many-locals
                 client,
                 False,
                 ResourceType.ASSET,
+                None,
             ),
             mock.call(
                 {
@@ -1135,6 +1146,7 @@ def test_native_split(  # pylint: disable=too-many-locals
                 client,
                 False,
                 ResourceType.ASSET,
+                None,
             ),
             mock.call(
                 {
@@ -1146,6 +1158,7 @@ def test_native_split(  # pylint: disable=too-many-locals
                 client,
                 False,
                 ResourceType.ASSET,
+                None,
             ),
             mock.call(
                 {
@@ -1160,6 +1173,7 @@ def test_native_split(  # pylint: disable=too-many-locals
                 client,
                 False,
                 ResourceType.ASSET,
+                None,
             ),
         ],
         any_order=True,
@@ -1308,6 +1322,7 @@ def test_native_split_continue(  # pylint: disable=too-many-locals
                 client,
                 False,
                 ResourceType.ASSET,
+                None,
             ),
             mock.call(
                 {
@@ -1317,6 +1332,7 @@ def test_native_split_continue(  # pylint: disable=too-many-locals
                 client,
                 False,
                 ResourceType.ASSET,
+                None,
             ),
             mock.call(
                 {
@@ -1327,6 +1343,7 @@ def test_native_split_continue(  # pylint: disable=too-many-locals
                 client,
                 False,
                 ResourceType.ASSET,
+                None,
             ),
             mock.call(
                 {
@@ -1337,6 +1354,7 @@ def test_native_split_continue(  # pylint: disable=too-many-locals
                 client,
                 False,
                 ResourceType.ASSET,
+                None,
             ),
             mock.call(
                 {
@@ -1348,6 +1366,7 @@ def test_native_split_continue(  # pylint: disable=too-many-locals
                 client,
                 False,
                 ResourceType.ASSET,
+                None,
             ),
         ],
         any_order=True,
@@ -1505,6 +1524,7 @@ def test_import_resources_individually_checkpoint(
                 client,
                 True,
                 ResourceType.ASSET,
+                None,
             ),
             mocker.call(
                 {
@@ -1515,6 +1535,7 @@ def test_import_resources_individually_checkpoint(
                 client,
                 True,
                 ResourceType.ASSET,
+                None,
             ),
         ],
     )
@@ -1545,6 +1566,7 @@ def test_import_resources_individually_checkpoint(
         client,
         True,
         ResourceType.ASSET,
+        None,
     )
 
     assert not Path("progress.log").exists()
@@ -1585,6 +1607,7 @@ def test_import_resources_individually_continue(
         True,
         ResourceType.ASSET,
         continue_on_error=True,
+        passwords=None,
     )
 
     with open("progress.log", encoding="utf-8") as log:
@@ -1618,6 +1641,7 @@ def test_import_resources_individually_continue(
         True,
         ResourceType.ASSET,
         continue_on_error=True,
+        passwords=None,
     )
     import_resources.assert_has_calls(
         [
@@ -1630,6 +1654,7 @@ def test_import_resources_individually_continue(
                 client,
                 True,
                 ResourceType.ASSET,
+                None,
             ),
             mocker.call(
                 {
@@ -1640,6 +1665,7 @@ def test_import_resources_individually_continue(
                 client,
                 True,
                 ResourceType.ASSET,
+                None,
             ),
             mocker.call(
                 {
@@ -1650,6 +1676,7 @@ def test_import_resources_individually_continue(
                 client,
                 True,
                 ResourceType.ASSET,
+                None,
             ),
             mocker.call(
                 {
@@ -1660,6 +1687,7 @@ def test_import_resources_individually_continue(
                 client,
                 True,
                 ResourceType.ASSET,
+                None,
             ),
         ],
     )
@@ -1822,6 +1850,7 @@ GROUP BY action""",
         client,
         False,
         ResourceType.ASSET,
+        None,
     )
     client.get_uuids.assert_not_called()
 
@@ -1936,7 +1965,7 @@ def test_native_asset_types(
         "bundle/dashboards/dashboard.yaml": yaml.dump(dashboard_config),
     }
 
-    import_resources.assert_called_once_with(contents, client, False, resource_type)
+    import_resources.assert_called_once_with(contents, client, False, resource_type, None)
     client.get_uuids.assert_not_called()
 
 
@@ -2192,6 +2221,7 @@ def test_native_split_asset_types(
                 client,
                 False,
                 resource_type,
+                None,
             )
             for content in expected_contents
         ],
@@ -2384,11 +2414,24 @@ def test_native_with_db_passwords(mocker: MockerFixture, fs: FakeFilesystem) -> 
         ),
     }
 
+    # Passwords should be passed as a separate dict mapping file paths to passwords
+    # Superset's import API expects paths WITHOUT the "bundle/" prefix because
+    # get_contents_from_bundle() calls remove_root() to strip the first directory
+    expected_passwords = {
+        "databases/db_config_masked_no_password.yaml": "pwd_from_command=1",
+        "databases/other_db_config_masked_no_password.yaml": "pwd_from_prompt",
+        "databases/db_config_masked_with_password.yaml": "pwd_from_command=2",
+        "databases/other_db_config_masked_with_password.yaml": "directpwd!again",
+        "databases/db_config_unmasked.yaml": "pwd_from_command=3",
+        "databases/db_config_unmasked_with_password.yaml": "pwd_from_command=4",
+        "databases/final_db_config_unmasked_with_password.yaml": "unmaskedpwd!again",
+    }
     import_resources.assert_called_once_with(
         contents,
         client,
         False,
         ResourceType.ASSET,
+        expected_passwords,
     )
     getpass.getpass.assert_called_once_with(
         "Please provide the password for databases/other_db_config_masked_no_password.yaml: ",

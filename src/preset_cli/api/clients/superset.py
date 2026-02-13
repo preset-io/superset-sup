@@ -750,16 +750,26 @@ class SupersetClient:  # pylint: disable=too-many-public-methods
         resource_name: str,
         form_data: BytesIO,
         overwrite: bool = False,
+        passwords: Optional[Dict[str, str]] = None,
     ) -> bool:
         """
         Import a ZIP bundle.
+
+        Args:
+            resource_name: The type of resource to import (e.g., "assets", "database")
+            form_data: The ZIP bundle as a BytesIO object
+            overwrite: Whether to overwrite existing resources
+            passwords: Optional dict mapping file paths to passwords
+                       (e.g., {"databases/MyDB.yaml": "my_password"})
         """
         key = "bundle" if resource_name == "assets" else "formData"
         files = {key: form_data}
         url = self.baseurl / "api/v1" / resource_name / "import/"
 
         self.session.headers.update({"Accept": "application/json"})
-        data = {"overwrite": json.dumps(overwrite)}
+        data: Dict[str, str] = {"overwrite": json.dumps(overwrite)}
+        if passwords:
+            data["passwords"] = json.dumps(passwords)
         _logger.debug("POST %s\n%s", url, json.dumps(data, indent=4))
         response = self.session.post(
             url,

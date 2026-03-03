@@ -5,11 +5,19 @@ Changelog
 Next
 ====
 
-- **BREAKING**: Package renamed from ``preset-cli`` to ``superset-sup`` for PyPI publication
-- All three CLIs now ship together: ``sup`` (modern, recommended), ``preset-cli`` (legacy), and ``superset-cli`` (legacy)
-- Added comprehensive beta/experimental release documentation for Preset customers
-- Enhanced README with migration guide from legacy CLIs to modern ``sup`` CLI
-- Added PUBLISHING.md with detailed PyPI publication instructions
+- Renamed workspace role display names from ``Contributor`` to ``Creator``.
+- Added backwards compatibility for deprecated ``contributor`` role names.
+- Added support for parsing workspace URLs as command arguments (`#21 <https://github.com/preset-io/superset-sup/pull/21>`_).
+- Implemented group management commands (`#24 <https://github.com/preset-io/superset-sup/pull/24>`_).
+- Implemented dbt commands (`#25 <https://github.com/preset-io/superset-sup/pull/25>`_).
+- Added SQL icon support (`#16 <https://github.com/preset-io/superset-sup/pull/16>`_).
+- Updated ``requests`` dependency to ``2.32.4`` (`#4 <https://github.com/preset-io/superset-sup/pull/4>`_).
+
+Release lineage
+---------------
+
+- ``v0.1.0`` (2025-11-18) and ``v0.1.1`` (2025-11-19) are the release tags in this repository.
+- ``0.2.x`` and ``0.3.x`` entries below are legacy preset-cli release notes inherited from the pre-split codebase.
 
 Version 0.3.7 - 2025-07-24
 ==========================
@@ -266,14 +274,16 @@ Version 0.2.0 - 2023-05-23
 - dbt models can now be filtered using ``config`` options (`#204 <https://github.com/preset-io/backend-sdk/pull/204>`_).
 - It's now possible to disable Jinja syntax escaping during export, and Jinja syntax rendering during import (`#205 <https://github.com/preset-io/backend-sdk/pull/205>`_).
 
-Version 0.1.1 - 2022-09-13
+Version 0.1.1 - 2025-11-19
 ==========================
 
-- File path is now passed to template as ``filepath`` in the ``sync native`` command.
-- CLI can now invite users to Preset from a YAML file created by ``export-users``.
-- Fix database update in the dbt sync.
+- Added ``sup sync push`` functionality and fixed workspace targeting behavior (`#11 <https://github.com/preset-io/superset-sup/pull/11>`_).
+- Added global monochrome mode and centralized console creation (`#17 <https://github.com/preset-io/superset-sup/pull/17>`_).
+- Improved documentation and fixed docs links (`#12 <https://github.com/preset-io/superset-sup/pull/12>`_, `#13 <https://github.com/preset-io/superset-sup/pull/13>`_, and `#14 <https://github.com/preset-io/superset-sup/pull/14>`_).
 
-Version 0.1.0 - 2022-09-09
+Version 0.1.0 - 2025-11-18
 ==========================
 
-- Initial release.
+- Renamed the package to ``superset-sup`` and prepared for PyPI publication (`#2 <https://github.com/preset-io/superset-sup/pull/2>`_).
+- Standardized ``sup`` CLI pull/push terminology and fixed SQL query API behavior (`#1 <https://github.com/preset-io/superset-sup/pull/1>`_).
+- Added installation instructions for ``pip install`` from GitHub (`#10 <https://github.com/preset-io/superset-sup/pull/10>`_).

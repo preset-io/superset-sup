@@ -5,6 +5,9 @@ Changelog
 Next
 ====
 
+Version 0.1.2 - 2026-03-04
+===========================
+
 - Renamed workspace role display names from ``Contributor`` to ``Creator``.
 - Added backwards compatibility for deprecated ``contributor`` role names.
 - Added support for parsing workspace URLs as command arguments (`#21 <https://github.com/preset-io/superset-sup/pull/21>`_).

@@ -208,8 +208,7 @@ def test_export_users_full_flow(mocker: MockerFixture) -> None:
         assert alice["teams"]["Team One"] == "admin"
         assert alice["workspaces"]["Team One/Workspace One"]["workspace_role"] == "workspace admin"
         assert (
-            alice["workspaces"]["Team One/Workspace Two"]["workspace_role"]
-            == "secondary contributor"
+            alice["workspaces"]["Team One/Workspace Two"]["workspace_role"] == "secondary creator"
         )
 
         # Check Bob's data
@@ -218,9 +217,7 @@ def test_export_users_full_flow(mocker: MockerFixture) -> None:
         assert bob["last_name"] == "Jones"
         assert bob["username"] == "bob"
         assert bob["teams"]["Team One"] == "user"
-        assert (
-            bob["workspaces"]["Team One/Workspace One"]["workspace_role"] == "primary contributor"
-        )
+        assert bob["workspaces"]["Team One/Workspace One"]["workspace_role"] == "primary creator"
         assert "Team One/Workspace Two" not in bob["workspaces"]
 
 

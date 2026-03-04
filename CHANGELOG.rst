@@ -2,8 +2,8 @@
 Changelog
 =========
 
-Next
-====
+Version 0.1.2 - 2026-03-04
+===========================
 
 - Renamed workspace role display names from ``Contributor`` to ``Creator``.
 - Added backwards compatibility for deprecated ``contributor`` role names.

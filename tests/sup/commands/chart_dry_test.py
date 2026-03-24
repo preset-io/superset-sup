@@ -48,10 +48,20 @@ def _make_spinner_cm(sp_obj=None):
 
 def _filters(**overrides):
     defaults = dict(
-        id=None, ids=None, name=None, search=None, mine=False,
-        team_id=None, created_after=None, modified_after=None,
-        limit=None, offset=None, page=None, page_size=None,
-        order=None, desc=False,
+        id=None,
+        ids=None,
+        name=None,
+        search=None,
+        mine=False,
+        team_id=None,
+        created_after=None,
+        modified_after=None,
+        limit=None,
+        offset=None,
+        page=None,
+        page_size=None,
+        order=None,
+        desc=False,
     )
     defaults.update(overrides)
     return UniversalFilters(**defaults)
@@ -65,11 +75,13 @@ def _output(**overrides):
 
 def _get_list_charts():
     from sup.commands.chart_dry import list_charts
+
     return list_charts.__wrapped__.__wrapped__
 
 
 def _get_chart_info():
     from sup.commands.chart_dry import chart_info
+
     return chart_info.__wrapped__
 
 
@@ -157,7 +169,9 @@ def test_list_yaml(mock_ctx_cls, mock_client_cls, mock_data_spinner, mock_apply,
 @patch(SPINNER)
 @patch(CLIENT)
 @patch(CTX)
-def test_list_workspace_id(mock_ctx_cls, mock_client_cls, mock_data_spinner, mock_apply, mock_display):
+def test_list_workspace_id(
+    mock_ctx_cls, mock_client_cls, mock_data_spinner, mock_apply, mock_display
+):
     cm, _ = _make_spinner_cm()
     mock_data_spinner.return_value = cm
     ctx = MagicMock()
@@ -176,7 +190,9 @@ def test_list_workspace_id(mock_ctx_cls, mock_client_cls, mock_data_spinner, moc
 @patch(SPINNER)
 @patch(CLIENT)
 @patch(CTX)
-def test_list_chart_specific_filters(mock_ctx_cls, mock_client_cls, mock_data_spinner, mock_apply, mock_display):
+def test_list_chart_specific_filters(
+    mock_ctx_cls, mock_client_cls, mock_data_spinner, mock_apply, mock_display
+):
     cm, _ = _make_spinner_cm()
     mock_data_spinner.return_value = cm
     mock_ctx_cls.return_value = MagicMock()
@@ -186,8 +202,11 @@ def test_list_chart_specific_filters(mock_ctx_cls, mock_client_cls, mock_data_sp
     mock_apply.return_value = [SAMPLE_CHARTS[0]]
 
     _get_list_charts()(
-        filters=_filters(), output=_output(),
-        dashboard_id=10, viz_type="bar", dataset_id=100,
+        filters=_filters(),
+        output=_output(),
+        dashboard_id=10,
+        viz_type="bar",
+        dataset_id=100,
     )
     cf = mock_apply.call_args[0][1]
     assert cf.dashboard_id == 10
@@ -200,7 +219,9 @@ def test_list_chart_specific_filters(mock_ctx_cls, mock_client_cls, mock_data_sp
 @patch(SPINNER)
 @patch(CLIENT)
 @patch(CTX)
-def test_list_universal_filters(mock_ctx_cls, mock_client_cls, mock_data_spinner, mock_apply, mock_display):
+def test_list_universal_filters(
+    mock_ctx_cls, mock_client_cls, mock_data_spinner, mock_apply, mock_display
+):
     cm, _ = _make_spinner_cm()
     mock_data_spinner.return_value = cm
     mock_ctx_cls.return_value = MagicMock()
@@ -225,7 +246,9 @@ def test_list_universal_filters(mock_ctx_cls, mock_client_cls, mock_data_spinner
 @patch(SPINNER)
 @patch(CLIENT)
 @patch(CTX)
-def test_list_page_filter(mock_ctx_cls, mock_client_cls, mock_data_spinner, mock_apply, mock_display):
+def test_list_page_filter(
+    mock_ctx_cls, mock_client_cls, mock_data_spinner, mock_apply, mock_display
+):
     cm, _ = _make_spinner_cm()
     mock_data_spinner.return_value = cm
     mock_ctx_cls.return_value = MagicMock()
@@ -243,7 +266,9 @@ def test_list_page_filter(mock_ctx_cls, mock_client_cls, mock_data_spinner, mock
 @patch(SPINNER)
 @patch(CLIENT)
 @patch(CTX)
-def test_list_no_page_defaults_zero(mock_ctx_cls, mock_client_cls, mock_data_spinner, mock_apply, mock_display):
+def test_list_no_page_defaults_zero(
+    mock_ctx_cls, mock_client_cls, mock_data_spinner, mock_apply, mock_display
+):
     cm, _ = _make_spinner_cm()
     mock_data_spinner.return_value = cm
     mock_ctx_cls.return_value = MagicMock()
@@ -261,7 +286,9 @@ def test_list_no_page_defaults_zero(mock_ctx_cls, mock_client_cls, mock_data_spi
 @patch(SPINNER)
 @patch(CLIENT)
 @patch(CTX)
-def test_list_table_display_func(mock_ctx_cls, mock_client_cls, mock_data_spinner, mock_apply, mock_display):
+def test_list_table_display_func(
+    mock_ctx_cls, mock_client_cls, mock_data_spinner, mock_apply, mock_display
+):
     cm, _ = _make_spinner_cm()
     mock_data_spinner.return_value = cm
     ctx = MagicMock()
@@ -279,13 +306,14 @@ def test_list_table_display_func(mock_ctx_cls, mock_client_cls, mock_data_spinne
         mock_charts_table.assert_called_once_with(SAMPLE_CHARTS, "host.io")
 
 
-
 @patch("sup.commands.chart_dry.display_entity_results")
 @patch("sup.commands.chart_dry.apply_chart_filters")
 @patch(SPINNER)
 @patch(CLIENT)
 @patch(CTX)
-def test_list_spinner_silent_none(mock_ctx_cls, mock_client_cls, mock_data_spinner, mock_apply, mock_display):
+def test_list_spinner_silent_none(
+    mock_ctx_cls, mock_client_cls, mock_data_spinner, mock_apply, mock_display
+):
     """When sp is None (porcelain/silent), `if sp:` branch is skipped."""
     cm = MagicMock()
     cm.__enter__ = MagicMock(return_value=None)
@@ -299,6 +327,7 @@ def test_list_spinner_silent_none(mock_ctx_cls, mock_client_cls, mock_data_spinn
 
     _get_list_charts()(filters=_filters(), output=_output(porcelain=True))
     mock_display.assert_called_once()
+
 
 @patch(CTX)
 def test_list_error_no_porcelain(mock_ctx_cls):
@@ -371,8 +400,7 @@ def test_info_workspace_id(mock_ctx_cls, mock_client_cls):
     client.get_chart.return_value = {"id": 1, "slice_name": "X", "viz_type": "bar"}
     mock_client_cls.from_context.return_value = client
 
-    with patch("sup.commands.chart.display_chart_details"), \
-         patch("sup.commands.chart_dry.console"):
+    with patch("sup.commands.chart.display_chart_details"), patch("sup.commands.chart_dry.console"):
         _get_chart_info()(chart_id=1, output=_output(workspace_id=77))
     mock_client_cls.from_context.assert_called_once_with(ctx, 77)
 
@@ -403,7 +431,8 @@ def test_info_loading_message(mock_ctx_cls, mock_client_cls):
     client.get_chart.return_value = {"id": 1, "slice_name": "X", "viz_type": "bar"}
     mock_client_cls.from_context.return_value = client
 
-    with patch("sup.commands.chart.display_chart_details"), \
-         patch("sup.commands.chart_dry.console") as mock_console:
+    with patch("sup.commands.chart.display_chart_details"), patch(
+        "sup.commands.chart_dry.console"
+    ) as mock_console:
         _get_chart_info()(chart_id=1, output=_output())
     assert any("Loading chart 1" in str(c) for c in mock_console.print.call_args_list)

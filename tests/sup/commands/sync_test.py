@@ -1,7 +1,7 @@
 """Tests for sup.commands.sync module."""
 
 from pathlib import Path
-from unittest.mock import MagicMock, call, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 from typer.testing import CliRunner
@@ -20,6 +20,7 @@ runner = CliRunner()
 # ---------------------------------------------------------------------------
 # Helpers to build mock SyncConfig and related objects
 # ---------------------------------------------------------------------------
+
 
 def _make_asset_selection(selection="all", ids=None, include_dependencies=True):
     m = MagicMock()
@@ -66,6 +67,7 @@ def _make_sync_config(
 # format_sync_help
 # ---------------------------------------------------------------------------
 
+
 class TestFormatSyncHelp:
     def test_returns_string(self):
         result = format_sync_help()
@@ -77,6 +79,7 @@ class TestFormatSyncHelp:
 # ---------------------------------------------------------------------------
 # run_sync command
 # ---------------------------------------------------------------------------
+
 
 class TestRunSync:
     @patch("sup.commands.sync.validate_sync_folder")
@@ -125,9 +128,9 @@ class TestRunSync:
         cfg.get_target_by_name.return_value = target
         mock_cfg_cls.from_yaml.return_value = cfg
 
-        with patch("sup.commands.sync.execute_pull"), \
-             patch("sup.commands.sync.execute_push"), \
-             patch("sup.commands.sync.display_sync_summary"):
+        with patch("sup.commands.sync.execute_pull"), patch(
+            "sup.commands.sync.execute_push"
+        ), patch("sup.commands.sync.display_sync_summary"):
             result = runner.invoke(app, ["run", "/tmp/s", "--target", "prod", "--force"])
         assert result.exit_code == 0
 
@@ -140,9 +143,9 @@ class TestRunSync:
         cfg.get_target_by_workspace_id.return_value = target
         mock_cfg_cls.from_yaml.return_value = cfg
 
-        with patch("sup.commands.sync.execute_pull"), \
-             patch("sup.commands.sync.execute_push"), \
-             patch("sup.commands.sync.display_sync_summary"):
+        with patch("sup.commands.sync.execute_pull"), patch(
+            "sup.commands.sync.execute_push"
+        ), patch("sup.commands.sync.display_sync_summary"):
             result = runner.invoke(app, ["run", "/tmp/s", "--target", "456", "--force"])
         assert result.exit_code == 0
 
@@ -242,7 +245,9 @@ class TestRunSync:
     @patch("sup.commands.sync.display_sync_summary")
     @patch("sup.commands.sync.SyncConfig")
     @patch("sup.commands.sync.validate_sync_folder", return_value=True)
-    def test_dry_run_skips_confirm(self, mock_validate, mock_cfg_cls, mock_display, mock_pull, mock_push):
+    def test_dry_run_skips_confirm(
+        self, mock_validate, mock_cfg_cls, mock_display, mock_pull, mock_push
+    ):
         cfg = _make_sync_config()
         mock_cfg_cls.from_yaml.return_value = cfg
 
@@ -303,6 +308,7 @@ class TestRunSync:
 # create_sync command
 # ---------------------------------------------------------------------------
 
+
 class TestCreateSync:
     @patch("sup.commands.sync.SyncConfig")
     def test_folder_exists_no_force(self, mock_cfg_cls, tmp_path):
@@ -326,7 +332,9 @@ class TestCreateSync:
         cfg.sync_config_path.return_value = folder / "sync_config.yml"
         mock_cfg_cls.create_example.return_value = cfg
 
-        result = runner.invoke(app, ["create", str(folder), "--source", "123", "--targets", "456,789"])
+        result = runner.invoke(
+            app, ["create", str(folder), "--source", "123", "--targets", "456,789"]
+        )
         assert result.exit_code == 0
         assert "Created sync folder" in result.output
         assert (folder / "assets" / "charts").exists()
@@ -344,7 +352,9 @@ class TestCreateSync:
         cfg.sync_config_path.return_value = folder / "sync_config.yml"
         mock_cfg_cls.create_example.return_value = cfg
 
-        result = runner.invoke(app, ["create", str(folder), "--source", "1", "--targets", "2", "--force"])
+        result = runner.invoke(
+            app, ["create", str(folder), "--source", "1", "--targets", "2", "--force"]
+        )
         assert result.exit_code == 0
 
     @patch("sup.commands.sync.SyncConfig")
@@ -360,6 +370,7 @@ class TestCreateSync:
 # ---------------------------------------------------------------------------
 # validate_sync command
 # ---------------------------------------------------------------------------
+
 
 class TestValidateSync:
     def test_folder_does_not_exist(self, tmp_path):
@@ -404,13 +415,15 @@ class TestValidateSync:
 # display_sync_summary
 # ---------------------------------------------------------------------------
 
+
 class TestDisplaySyncSummary:
     @patch("sup.commands.sync.console")
     def test_pull_only(self, mock_console):
         cfg = _make_sync_config()
         targets = [_make_target(name="prod")]
-        display_sync_summary(cfg, targets, pull_only=True, push_only=False,
-                             dry_run=False, sync_path=Path("/tmp/s"))
+        display_sync_summary(
+            cfg, targets, pull_only=True, push_only=False, dry_run=False, sync_path=Path("/tmp/s")
+        )
         calls = [str(c) for c in mock_console.print.call_args_list]
         assert any("Pull Only" in c for c in calls)
         assert any("prod" in c for c in calls)
@@ -419,8 +432,9 @@ class TestDisplaySyncSummary:
     def test_push_only(self, mock_console):
         cfg = _make_sync_config()
         targets = [_make_target()]
-        display_sync_summary(cfg, targets, pull_only=False, push_only=True,
-                             dry_run=False, sync_path=Path("/tmp/s"))
+        display_sync_summary(
+            cfg, targets, pull_only=False, push_only=True, dry_run=False, sync_path=Path("/tmp/s")
+        )
         calls = [str(c) for c in mock_console.print.call_args_list]
         assert any("Push Only" in c for c in calls)
 
@@ -428,8 +442,9 @@ class TestDisplaySyncSummary:
     def test_full_sync(self, mock_console):
         cfg = _make_sync_config()
         targets = [_make_target()]
-        display_sync_summary(cfg, targets, pull_only=False, push_only=False,
-                             dry_run=False, sync_path=Path("/tmp/s"))
+        display_sync_summary(
+            cfg, targets, pull_only=False, push_only=False, dry_run=False, sync_path=Path("/tmp/s")
+        )
         calls = [str(c) for c in mock_console.print.call_args_list]
         assert any("Full Sync" in c for c in calls)
 
@@ -437,8 +452,9 @@ class TestDisplaySyncSummary:
     def test_dry_run_appends(self, mock_console):
         cfg = _make_sync_config()
         targets = [_make_target()]
-        display_sync_summary(cfg, targets, pull_only=True, push_only=False,
-                             dry_run=True, sync_path=Path("/tmp/s"))
+        display_sync_summary(
+            cfg, targets, pull_only=True, push_only=False, dry_run=True, sync_path=Path("/tmp/s")
+        )
         calls = [str(c) for c in mock_console.print.call_args_list]
         assert any("Dry Run" in c for c in calls)
 
@@ -480,6 +496,7 @@ class TestDisplaySyncSummary:
 # ---------------------------------------------------------------------------
 # execute_pull
 # ---------------------------------------------------------------------------
+
 
 class TestExecutePull:
     @patch("sup.commands.sync.console")
@@ -567,7 +584,9 @@ class TestExecutePull:
     @patch("sup.config.settings.SupContext")
     @patch("sup.clients.superset.SupSupersetClient")
     @patch("preset_cli.cli.superset.export.export_resource")
-    def test_real_pull_other_selection_skipped(self, mock_export, mock_client_cls, mock_ctx_cls, tmp_path):
+    def test_real_pull_other_selection_skipped(
+        self, mock_export, mock_client_cls, mock_ctx_cls, tmp_path
+    ):
         mock_client = MagicMock()
         mock_client_cls.from_context.return_value = mock_client
 
@@ -674,7 +693,9 @@ class TestExecutePull:
     @patch("sup.config.settings.SupContext")
     @patch("sup.clients.superset.SupSupersetClient")
     @patch("preset_cli.cli.superset.export.export_resource")
-    def test_real_pull_other_selection_porcelain(self, mock_export, mock_client_cls, mock_ctx_cls, tmp_path):
+    def test_real_pull_other_selection_porcelain(
+        self, mock_export, mock_client_cls, mock_ctx_cls, tmp_path
+    ):
         """Other selection with porcelain -> skip silently."""
         mock_client = MagicMock()
         mock_client_cls.from_context.return_value = mock_client
@@ -693,7 +714,9 @@ class TestExecutePull:
     @patch("sup.config.settings.SupContext")
     @patch("sup.clients.superset.SupSupersetClient")
     @patch("preset_cli.cli.superset.export.export_resource")
-    def test_real_pull_empty_ids_porcelain(self, mock_export, mock_client_cls, mock_ctx_cls, tmp_path):
+    def test_real_pull_empty_ids_porcelain(
+        self, mock_export, mock_client_cls, mock_ctx_cls, tmp_path
+    ):
         """ids selection with empty list -> porcelain skip."""
         mock_client = MagicMock()
         mock_client_cls.from_context.return_value = mock_client
@@ -731,6 +754,7 @@ class TestExecutePull:
 # ---------------------------------------------------------------------------
 # execute_push
 # ---------------------------------------------------------------------------
+
 
 class TestExecutePush:
     @patch("sup.commands.sync.console")
@@ -770,8 +794,16 @@ class TestExecutePush:
     @patch("sup.clients.superset.SupSupersetClient")
     @patch("sup.config.settings.SupContext")
     def test_assets_path_not_exist(
-        self, mock_ctx, mock_client_cls, mock_rt, mock_import,
-        mock_is_yaml, mock_render, mock_load, mock_raise, tmp_path,
+        self,
+        mock_ctx,
+        mock_client_cls,
+        mock_rt,
+        mock_import,
+        mock_is_yaml,
+        mock_render,
+        mock_load,
+        mock_raise,
+        tmp_path,
     ):
         mock_client = MagicMock()
         mock_client.client.baseurl = "https://test.preset.io"
@@ -794,8 +826,16 @@ class TestExecutePush:
     @patch("sup.clients.superset.SupSupersetClient")
     @patch("sup.config.settings.SupContext")
     def test_push_with_configs(
-        self, mock_ctx, mock_client_cls, mock_rt, mock_import,
-        mock_is_yaml, mock_render, mock_load, mock_raise, tmp_path,
+        self,
+        mock_ctx,
+        mock_client_cls,
+        mock_rt,
+        mock_import,
+        mock_is_yaml,
+        mock_render,
+        mock_load,
+        mock_raise,
+        tmp_path,
     ):
         mock_client = MagicMock()
         mock_client.client.baseurl = "https://test.preset.io"
@@ -828,8 +868,16 @@ class TestExecutePush:
     @patch("sup.clients.superset.SupSupersetClient")
     @patch("sup.config.settings.SupContext")
     def test_push_skip_metadata_yaml(
-        self, mock_ctx, mock_client_cls, mock_rt, mock_import,
-        mock_is_yaml, mock_render, mock_load, mock_raise, tmp_path,
+        self,
+        mock_ctx,
+        mock_client_cls,
+        mock_rt,
+        mock_import,
+        mock_is_yaml,
+        mock_render,
+        mock_load,
+        mock_raise,
+        tmp_path,
     ):
         mock_client = MagicMock()
         mock_client.client.baseurl = "https://test.preset.io"
@@ -859,8 +907,16 @@ class TestExecutePush:
     @patch("sup.clients.superset.SupSupersetClient")
     @patch("sup.config.settings.SupContext")
     def test_push_skip_hidden_dirs(
-        self, mock_ctx, mock_client_cls, mock_rt, mock_import,
-        mock_is_yaml, mock_render, mock_load, mock_raise, tmp_path,
+        self,
+        mock_ctx,
+        mock_client_cls,
+        mock_rt,
+        mock_import,
+        mock_is_yaml,
+        mock_render,
+        mock_load,
+        mock_raise,
+        tmp_path,
     ):
         mock_client = MagicMock()
         mock_client.client.baseurl = "https://test.preset.io"
@@ -890,8 +946,16 @@ class TestExecutePush:
     @patch("sup.clients.superset.SupSupersetClient")
     @patch("sup.config.settings.SupContext")
     def test_push_non_yaml_skipped(
-        self, mock_ctx, mock_client_cls, mock_rt, mock_import,
-        mock_is_yaml, mock_render, mock_load, mock_raise, tmp_path,
+        self,
+        mock_ctx,
+        mock_client_cls,
+        mock_rt,
+        mock_import,
+        mock_is_yaml,
+        mock_render,
+        mock_load,
+        mock_raise,
+        tmp_path,
     ):
         mock_client = MagicMock()
         mock_client.client.baseurl = "https://test.preset.io"
@@ -920,8 +984,16 @@ class TestExecutePush:
     @patch("sup.clients.superset.SupSupersetClient")
     @patch("sup.config.settings.SupContext")
     def test_push_no_configs_warning(
-        self, mock_ctx, mock_client_cls, mock_rt, mock_import,
-        mock_is_yaml, mock_render, mock_load, mock_raise, tmp_path,
+        self,
+        mock_ctx,
+        mock_client_cls,
+        mock_rt,
+        mock_import,
+        mock_is_yaml,
+        mock_render,
+        mock_load,
+        mock_raise,
+        tmp_path,
     ):
         mock_client = MagicMock()
         mock_client.client.baseurl = "https://test.preset.io"
@@ -948,8 +1020,16 @@ class TestExecutePush:
     @patch("sup.clients.superset.SupSupersetClient")
     @patch("sup.config.settings.SupContext")
     def test_push_no_configs_porcelain(
-        self, mock_ctx, mock_client_cls, mock_rt, mock_import,
-        mock_is_yaml, mock_render, mock_load, mock_raise, tmp_path,
+        self,
+        mock_ctx,
+        mock_client_cls,
+        mock_rt,
+        mock_import,
+        mock_is_yaml,
+        mock_render,
+        mock_load,
+        mock_raise,
+        tmp_path,
     ):
         mock_client = MagicMock()
         mock_client.client.baseurl = "https://test.preset.io"
@@ -977,8 +1057,17 @@ class TestExecutePush:
     @patch("sup.clients.superset.SupSupersetClient")
     @patch("sup.config.settings.SupContext")
     def test_push_with_overrides(
-        self, mock_ctx, mock_client_cls, mock_rt, mock_import,
-        mock_is_yaml, mock_render, mock_load, mock_raise, mock_dict_merge, tmp_path,
+        self,
+        mock_ctx,
+        mock_client_cls,
+        mock_rt,
+        mock_import,
+        mock_is_yaml,
+        mock_render,
+        mock_load,
+        mock_raise,
+        mock_dict_merge,
+        tmp_path,
     ):
         mock_client = MagicMock()
         mock_client.client.baseurl = "https://test.preset.io"
@@ -1013,8 +1102,16 @@ class TestExecutePush:
     @patch("sup.clients.superset.SupSupersetClient")
     @patch("sup.config.settings.SupContext")
     def test_push_import_failure_with_errors_attr(
-        self, mock_ctx, mock_client_cls, mock_rt, mock_import,
-        mock_is_yaml, mock_render, mock_load, mock_raise, tmp_path,
+        self,
+        mock_ctx,
+        mock_client_cls,
+        mock_rt,
+        mock_import,
+        mock_is_yaml,
+        mock_render,
+        mock_load,
+        mock_raise,
+        tmp_path,
     ):
         mock_client = MagicMock()
         mock_client.client.baseurl = "https://test.preset.io"
@@ -1049,8 +1146,16 @@ class TestExecutePush:
     @patch("sup.clients.superset.SupSupersetClient")
     @patch("sup.config.settings.SupContext")
     def test_push_import_failure_no_errors_attr(
-        self, mock_ctx, mock_client_cls, mock_rt, mock_import,
-        mock_is_yaml, mock_render, mock_load, mock_raise, tmp_path,
+        self,
+        mock_ctx,
+        mock_client_cls,
+        mock_rt,
+        mock_import,
+        mock_is_yaml,
+        mock_render,
+        mock_load,
+        mock_raise,
+        tmp_path,
     ):
         mock_client = MagicMock()
         mock_client.client.baseurl = "https://test.preset.io"
@@ -1082,8 +1187,16 @@ class TestExecutePush:
     @patch("sup.clients.superset.SupSupersetClient")
     @patch("sup.config.settings.SupContext")
     def test_push_porcelain_success(
-        self, mock_ctx, mock_client_cls, mock_rt, mock_import,
-        mock_is_yaml, mock_render, mock_load, mock_raise, tmp_path,
+        self,
+        mock_ctx,
+        mock_client_cls,
+        mock_rt,
+        mock_import,
+        mock_is_yaml,
+        mock_render,
+        mock_load,
+        mock_raise,
+        tmp_path,
     ):
         """Push with porcelain=True, configs present, no debug bundle."""
         mock_client = MagicMock()
@@ -1115,8 +1228,16 @@ class TestExecutePush:
     @patch("sup.clients.superset.SupSupersetClient")
     @patch("sup.config.settings.SupContext")
     def test_push_import_failure_porcelain(
-        self, mock_ctx, mock_client_cls, mock_rt, mock_import,
-        mock_is_yaml, mock_render, mock_load, mock_raise, tmp_path,
+        self,
+        mock_ctx,
+        mock_client_cls,
+        mock_rt,
+        mock_import,
+        mock_is_yaml,
+        mock_render,
+        mock_load,
+        mock_raise,
+        tmp_path,
     ):
         """Push failure with porcelain=True should reraise without console output."""
         mock_client = MagicMock()
@@ -1149,8 +1270,16 @@ class TestExecutePush:
     @patch("sup.clients.superset.SupSupersetClient")
     @patch("sup.config.settings.SupContext")
     def test_push_multiple_targets(
-        self, mock_ctx, mock_client_cls, mock_rt, mock_import,
-        mock_is_yaml, mock_render, mock_load, mock_raise, tmp_path,
+        self,
+        mock_ctx,
+        mock_client_cls,
+        mock_rt,
+        mock_import,
+        mock_is_yaml,
+        mock_render,
+        mock_load,
+        mock_raise,
+        tmp_path,
     ):
         mock_client = MagicMock()
         mock_client.client.baseurl = "https://test.preset.io"
@@ -1181,8 +1310,16 @@ class TestExecutePush:
     @patch("sup.clients.superset.SupSupersetClient")
     @patch("sup.config.settings.SupContext")
     def test_push_with_subdirectory_configs(
-        self, mock_ctx, mock_client_cls, mock_rt, mock_import,
-        mock_is_yaml, mock_render, mock_load, mock_raise, tmp_path,
+        self,
+        mock_ctx,
+        mock_client_cls,
+        mock_rt,
+        mock_import,
+        mock_is_yaml,
+        mock_render,
+        mock_load,
+        mock_raise,
+        tmp_path,
     ):
         """YAML files in subdirectories get included and asset_counts works."""
         mock_client = MagicMock()
@@ -1240,8 +1377,16 @@ class TestExecutePush:
     @patch("sup.clients.superset.SupSupersetClient")
     @patch("sup.config.settings.SupContext")
     def test_push_import_captures_stdout(
-        self, mock_ctx, mock_client_cls, mock_rt, mock_import,
-        mock_is_yaml, mock_render, mock_load, mock_raise, tmp_path,
+        self,
+        mock_ctx,
+        mock_client_cls,
+        mock_rt,
+        mock_import,
+        mock_is_yaml,
+        mock_render,
+        mock_load,
+        mock_raise,
+        tmp_path,
     ):
         """Verify stdout/stderr capture and restore during import."""
         import sys
@@ -1267,6 +1412,7 @@ class TestExecutePush:
 
         def side_effect(*args, **kwargs):
             import sys
+
             sys.stdout.write("import output")
 
         mock_import.side_effect = side_effect

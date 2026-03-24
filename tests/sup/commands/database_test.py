@@ -109,17 +109,13 @@ class TestListDatabases:
         mock_client.get_databases.return_value = SAMPLE_DATABASES
 
         with (
-            patch(
-                "sup.output.spinners.data_spinner", return_value=spinner_cm
-            ) as mock_ds,
+            patch("sup.output.spinners.data_spinner", return_value=spinner_cm) as mock_ds,
             patch("sup.config.settings.SupContext"),
             patch(
                 "sup.clients.superset.SupSupersetClient.from_context",
                 return_value=mock_client,
             ),
-            patch(
-                "sup.output.formatters.display_porcelain_list"
-            ) as mock_porcelain,
+            patch("sup.output.formatters.display_porcelain_list") as mock_porcelain,
         ):
             result = runner.invoke(app, ["list", "--porcelain"])
 

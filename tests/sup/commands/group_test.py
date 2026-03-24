@@ -1,16 +1,11 @@
 """Tests for sup.commands.group module."""
 
-import csv
-import io
-from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import yaml
 from typer.testing import CliRunner
 
 from sup.commands.group import (
-    SCIM_INITIAL_TOTAL,
-    SCIM_PAGE_SIZE,
     app,
     create_scim_group,
     delete_scim_group,
@@ -68,7 +63,6 @@ _P_SP = "sup.output.spinners.spinner"
 
 
 class TestListGroups:
-
     @patch(_P_DS)
     @patch(_P_PC)
     @patch(_P_AUTH)
@@ -123,9 +117,7 @@ class TestListGroups:
     @patch(_P_PC)
     @patch(_P_AUTH)
     @patch(_P_CTX)
-    def test_multiple_teams_prompt(
-        self, mock_ctx, mock_auth, mock_pc_cls, mock_ds, mock_prompt
-    ):
+    def test_multiple_teams_prompt(self, mock_ctx, mock_auth, mock_pc_cls, mock_ds, mock_prompt):
         cm, sp = _make_spinner_cm()
         mock_ds.return_value = cm
         client = MagicMock()
@@ -336,9 +328,7 @@ class TestListGroups:
     @patch(_P_PC)
     @patch(_P_AUTH)
     @patch(_P_CTX)
-    def test_multiple_teams_porcelain(
-        self, mock_ctx, mock_auth, mock_pc_cls, mock_ds, mock_prompt
-    ):
+    def test_multiple_teams_porcelain(self, mock_ctx, mock_auth, mock_pc_cls, mock_ds, mock_prompt):
         """Branch 75->82: multiple teams with porcelain skips prompt display."""
         cm, sp = _make_spinner_cm()
         mock_ds.return_value = cm
@@ -382,16 +372,13 @@ class TestListGroups:
 
 
 class TestSyncGroups:
-
     def test_config_not_found(self, tmp_path):
         result = runner.invoke(app, ["sync", str(tmp_path / "missing.yml")])
         assert result.exit_code != 0
         assert "Configuration file not found" in result.output
 
     def test_config_not_found_porcelain(self, tmp_path):
-        result = runner.invoke(
-            app, ["sync", str(tmp_path / "missing.yml"), "--porcelain"]
-        )
+        result = runner.invoke(app, ["sync", str(tmp_path / "missing.yml"), "--porcelain"])
         assert result.exit_code != 0
         assert "Configuration file not found" not in result.output
 
@@ -430,7 +417,9 @@ class TestSyncGroups:
     @patch(_P_PC)
     @patch(_P_AUTH)
     @patch(_P_CTX)
-    def test_no_teams_porcelain(self, mock_ctx, mock_auth, mock_pc_cls, mock_sp, mock_gag, tmp_path):
+    def test_no_teams_porcelain(
+        self, mock_ctx, mock_auth, mock_pc_cls, mock_sp, mock_gag, tmp_path
+    ):
         cfg = tmp_path / "config.yml"
         cfg.write_text(yaml.dump({"groups": [{"name": "G1", "members": []}]}))
         client = MagicMock()
@@ -498,7 +487,9 @@ class TestSyncGroups:
     @patch(_P_PC)
     @patch(_P_AUTH)
     @patch(_P_CTX)
-    def test_dry_run(self, mock_ctx, mock_auth, mock_pc_cls, mock_sp, mock_gag, mock_exec, tmp_path):
+    def test_dry_run(
+        self, mock_ctx, mock_auth, mock_pc_cls, mock_sp, mock_gag, mock_exec, tmp_path
+    ):
         cfg = tmp_path / "config.yml"
         cfg.write_text(yaml.dump({"groups": [{"name": "New", "members": []}]}))
         mock_pc_cls.return_value = MagicMock()
@@ -534,7 +525,16 @@ class TestSyncGroups:
     @patch(_P_AUTH)
     @patch(_P_CTX)
     def test_confirm_accept(
-        self, mock_ctx, mock_auth, mock_pc_cls, mock_sp, mock_gag, mock_exec, mock_confirm, mock_disp, tmp_path
+        self,
+        mock_ctx,
+        mock_auth,
+        mock_pc_cls,
+        mock_sp,
+        mock_gag,
+        mock_exec,
+        mock_confirm,
+        mock_disp,
+        tmp_path,
     ):
         """Branch 255->260: user confirms (not force, not porcelain, confirm=True)."""
         cm, sp = _make_spinner_cm()
@@ -588,9 +588,7 @@ class TestSyncGroups:
         mock_pc_cls.return_value = MagicMock()
         mock_exec.return_value = {"created": 1, "updated": 2, "deleted": 0, "errors": 0, "total": 3}
 
-        result = runner.invoke(
-            app, ["sync", str(cfg), "--team", "t1", "--force", "--porcelain"]
-        )
+        result = runner.invoke(app, ["sync", str(cfg), "--team", "t1", "--force", "--porcelain"])
         assert result.exit_code == 0
         assert "created:1" in result.output
         assert "updated:2" in result.output
@@ -620,7 +618,10 @@ class TestSyncGroups:
         assert "Failed to sync groups" not in result.output
 
     @patch("sup.commands.group.get_all_groups", return_value=[])
-    @patch("sup.commands.group.plan_group_sync", return_value={"create": [], "update": [], "delete": []})
+    @patch(
+        "sup.commands.group.plan_group_sync",
+        return_value={"create": [], "update": [], "delete": []},
+    )
     @patch(_P_SP)
     @patch(_P_PC)
     @patch(_P_AUTH)
@@ -641,7 +642,10 @@ class TestSyncGroups:
         assert result.exit_code == 0
 
     @patch("sup.commands.group.get_all_groups", return_value=[])
-    @patch("sup.commands.group.plan_group_sync", return_value={"create": [], "update": [], "delete": []})
+    @patch(
+        "sup.commands.group.plan_group_sync",
+        return_value={"create": [], "update": [], "delete": []},
+    )
     @patch(_P_SP)
     @patch(_P_PC)
     @patch(_P_AUTH)
@@ -658,9 +662,15 @@ class TestSyncGroups:
         assert result.exit_code == 0
         assert "All groups are already in sync" not in result.output
 
-    @patch("sup.commands.group.execute_group_sync", return_value={"created": 1, "updated": 0, "deleted": 0, "errors": 0, "total": 1})
+    @patch(
+        "sup.commands.group.execute_group_sync",
+        return_value={"created": 1, "updated": 0, "deleted": 0, "errors": 0, "total": 1},
+    )
     @patch("sup.commands.group.get_all_groups", return_value=[])
-    @patch("sup.commands.group.plan_group_sync", return_value={"create": [{"name": "G1", "members": []}], "update": [], "delete": []})
+    @patch(
+        "sup.commands.group.plan_group_sync",
+        return_value={"create": [{"name": "G1", "members": []}], "update": [], "delete": []},
+    )
     @patch(_P_SP)
     @patch(_P_PC)
     @patch(_P_AUTH)
@@ -675,22 +685,35 @@ class TestSyncGroups:
         cfg.write_text(yaml.dump({"groups": [{"name": "G1", "members": []}]}))
         mock_pc_cls.return_value = MagicMock()
 
-        result = runner.invoke(
-            app, ["sync", str(cfg), "--team", "t1", "--dry-run", "--porcelain"]
-        )
+        result = runner.invoke(app, ["sync", str(cfg), "--team", "t1", "--dry-run", "--porcelain"])
         assert result.exit_code == 0
         assert "Dry run complete" not in result.output
 
-    @patch("sup.commands.group.execute_group_sync", return_value={"created": 1, "updated": 0, "deleted": 0, "errors": 0, "total": 1})
+    @patch(
+        "sup.commands.group.execute_group_sync",
+        return_value={"created": 1, "updated": 0, "deleted": 0, "errors": 0, "total": 1},
+    )
     @patch("sup.commands.group.display_sync_results")
     @patch("sup.commands.group.get_all_groups", return_value=[])
-    @patch("sup.commands.group.plan_group_sync", return_value={"create": [{"name": "G1", "members": []}], "update": [], "delete": []})
+    @patch(
+        "sup.commands.group.plan_group_sync",
+        return_value={"create": [{"name": "G1", "members": []}], "update": [], "delete": []},
+    )
     @patch(_P_SP)
     @patch(_P_PC)
     @patch(_P_AUTH)
     @patch(_P_CTX)
     def test_force_porcelain_spinner_none(
-        self, mock_ctx, mock_auth, mock_pc_cls, mock_sp, mock_pgs, mock_gag, mock_dsr, mock_exec, tmp_path
+        self,
+        mock_ctx,
+        mock_auth,
+        mock_pc_cls,
+        mock_sp,
+        mock_pgs,
+        mock_gag,
+        mock_dsr,
+        mock_exec,
+        tmp_path,
     ):
         """Branches 263->260: porcelain with force, spinner returns None."""
         cm, _ = _make_spinner_cm()
@@ -700,21 +723,34 @@ class TestSyncGroups:
         cfg.write_text(yaml.dump({"groups": [{"name": "G1", "members": []}]}))
         mock_pc_cls.return_value = MagicMock()
 
-        result = runner.invoke(
-            app, ["sync", str(cfg), "--team", "t1", "--force", "--porcelain"]
-        )
+        result = runner.invoke(app, ["sync", str(cfg), "--team", "t1", "--force", "--porcelain"])
         assert result.exit_code == 0
 
-    @patch("sup.commands.group.execute_group_sync", return_value={"created": 1, "updated": 0, "deleted": 0, "errors": 0, "total": 1})
+    @patch(
+        "sup.commands.group.execute_group_sync",
+        return_value={"created": 1, "updated": 0, "deleted": 0, "errors": 0, "total": 1},
+    )
     @patch("sup.commands.group.display_sync_results")
     @patch("sup.commands.group.get_all_groups", return_value=[])
-    @patch("sup.commands.group.plan_group_sync", return_value={"create": [{"name": "G1", "members": []}], "update": [], "delete": []})
+    @patch(
+        "sup.commands.group.plan_group_sync",
+        return_value={"create": [{"name": "G1", "members": []}], "update": [], "delete": []},
+    )
     @patch(_P_SP)
     @patch(_P_PC)
     @patch(_P_AUTH)
     @patch(_P_CTX)
     def test_porcelain_skips_confirm(
-        self, mock_ctx, mock_auth, mock_pc_cls, mock_sp, mock_pgs, mock_gag, mock_dsr, mock_exec, tmp_path
+        self,
+        mock_ctx,
+        mock_auth,
+        mock_pc_cls,
+        mock_sp,
+        mock_pgs,
+        mock_gag,
+        mock_dsr,
+        mock_exec,
+        tmp_path,
     ):
         """Branch 255->260: porcelain (no force) skips confirm prompt."""
         cm, _ = _make_spinner_cm()
@@ -724,9 +760,7 @@ class TestSyncGroups:
         mock_pc_cls.return_value = MagicMock()
 
         # --porcelain without --force: 'not force and not porcelain' = True and False = False
-        result = runner.invoke(
-            app, ["sync", str(cfg), "--team", "t1", "--porcelain"]
-        )
+        result = runner.invoke(app, ["sync", str(cfg), "--team", "t1", "--porcelain"])
         assert result.exit_code == 0
         assert "created:1" in result.output
 
@@ -737,7 +771,6 @@ class TestSyncGroups:
 
 
 class TestCreateGroup:
-
     @patch("sup.commands.group.create_scim_group")
     @patch(_P_SP)
     @patch(_P_PC)
@@ -818,9 +851,7 @@ class TestCreateGroup:
         mock_sp.return_value = cm
         mock_pc_cls.return_value = MagicMock()
 
-        result = runner.invoke(
-            app, ["create", "MyGroup", "--team", "t1", "--member", "a@co.com"]
-        )
+        result = runner.invoke(app, ["create", "MyGroup", "--team", "t1", "--member", "a@co.com"])
         assert result.exit_code == 0
         assert "not yet implemented" in result.output
 
@@ -834,9 +865,7 @@ class TestCreateGroup:
         mock_sp.return_value = cm
         mock_pc_cls.return_value = MagicMock()
 
-        result = runner.invoke(
-            app, ["create", "MyGroup", "--team", "t1", "--porcelain"]
-        )
+        result = runner.invoke(app, ["create", "MyGroup", "--team", "t1", "--porcelain"])
         assert result.exit_code == 0
         assert "p1\tMyGroup" in result.output
 
@@ -899,9 +928,7 @@ class TestCreateGroup:
         cm, _ = _make_spinner_cm()
         mock_sp.return_value = cm
 
-        result = runner.invoke(
-            app, ["create", "MyGroup", "--team", "t1", "--porcelain"]
-        )
+        result = runner.invoke(app, ["create", "MyGroup", "--team", "t1", "--porcelain"])
         assert result.exit_code != 0
         assert "Failed to create group" not in result.output
 
@@ -912,7 +939,6 @@ class TestCreateGroup:
 
 
 class TestGetAllGroups:
-
     def test_single_page(self):
         client = MagicMock()
         client.get_group_membership.return_value = {
@@ -944,7 +970,6 @@ class TestGetAllGroups:
 
 
 class TestDisplayGroupsTable:
-
     @patch("sup.commands.group.console")
     def test_with_members_gt_3(self, mock_console):
         groups = [
@@ -962,7 +987,11 @@ class TestDisplayGroupsTable:
     @patch("sup.commands.group.console")
     def test_with_members_le_3(self, mock_console):
         groups = [
-            {"id": "g1", "displayName": "Small", "members": [{"display": "Alice", "value": "a@co.com"}]}
+            {
+                "id": "g1",
+                "displayName": "Small",
+                "members": [{"display": "Alice", "value": "a@co.com"}],
+            }
         ]
         display_groups_table(groups, "team1")
         mock_console.print.assert_called_once()
@@ -991,7 +1020,6 @@ class TestDisplayGroupsTable:
 
 
 class TestDisplayGroupsCsv:
-
     def test_basic(self, capsys):
         display_groups_csv(SAMPLE_GROUPS)
         out = capsys.readouterr().out
@@ -1005,7 +1033,6 @@ class TestDisplayGroupsCsv:
 
 
 class TestSaveGroupsToFile:
-
     def test_csv(self, tmp_path):
         fp = tmp_path / "out.csv"
         save_groups_to_file(SAMPLE_GROUPS, fp, "team1")
@@ -1027,7 +1054,6 @@ class TestSaveGroupsToFile:
 
 
 class TestPlanGroupSync:
-
     def test_create(self):
         desired = [{"name": "New", "members": []}]
         ops = plan_group_sync(desired, {})
@@ -1056,12 +1082,17 @@ class TestPlanGroupSync:
 
 
 class TestNeedsUpdate:
-
     def test_same_members(self):
-        assert needs_update({"members": [{"email": "a@co.com"}]}, {"members": [{"value": "a@co.com"}]}) is False
+        assert (
+            needs_update({"members": [{"email": "a@co.com"}]}, {"members": [{"value": "a@co.com"}]})
+            is False
+        )
 
     def test_different_members(self):
-        assert needs_update({"members": [{"email": "b@co.com"}]}, {"members": [{"value": "a@co.com"}]}) is True
+        assert (
+            needs_update({"members": [{"email": "b@co.com"}]}, {"members": [{"value": "a@co.com"}]})
+            is True
+        )
 
     def test_empty_both(self):
         assert needs_update({}, {}) is False
@@ -1073,10 +1104,13 @@ class TestNeedsUpdate:
 
 
 class TestDisplaySyncPlan:
-
     @patch("sup.commands.group.console")
     def test_create_ops(self, mock_console):
-        ops = {"create": [{"name": "New", "members": [{"email": "x@co.com"}]}], "update": [], "delete": []}
+        ops = {
+            "create": [{"name": "New", "members": [{"email": "x@co.com"}]}],
+            "update": [],
+            "delete": [],
+        }
         display_sync_plan(ops, dry_run=False)
         mock_console.print.assert_called_once()
         panel = mock_console.print.call_args[0][0]
@@ -1113,7 +1147,6 @@ class TestDisplaySyncPlan:
 
 
 class TestExecuteGroupSync:
-
     def test_create_success(self):
         client = MagicMock()
         ops = {"create": [{"name": "New", "members": []}], "update": [], "delete": []}
@@ -1133,7 +1166,14 @@ class TestExecuteGroupSync:
         client = MagicMock()
         ops = {
             "create": [],
-            "update": [{"id": "g1", "name": "Eng", "desired": {"members": [{"email": "a@co.com"}]}, "existing": {}}],
+            "update": [
+                {
+                    "id": "g1",
+                    "name": "Eng",
+                    "desired": {"members": [{"email": "a@co.com"}]},
+                    "existing": {},
+                }
+            ],
             "delete": [],
         }
         with patch("sup.commands.group.update_scim_group"):
@@ -1172,7 +1212,6 @@ class TestExecuteGroupSync:
 
 
 class TestDisplaySyncResults:
-
     @patch("sup.commands.group.console")
     def test_all_types(self, mock_console):
         display_sync_results({"created": 1, "updated": 2, "deleted": 1, "errors": 1, "total": 4})
@@ -1213,7 +1252,6 @@ class TestDisplaySyncResults:
 
 
 class TestCreateScimGroup:
-
     def test_success(self):
         client = MagicMock()
         url_mock = MagicMock()
@@ -1233,7 +1271,6 @@ class TestCreateScimGroup:
 
 
 class TestUpdateScimGroup:
-
     def test_success(self):
         client = MagicMock()
         url_mock = MagicMock()
@@ -1253,7 +1290,6 @@ class TestUpdateScimGroup:
 
 
 class TestDeleteScimGroup:
-
     def test_success(self):
         client = MagicMock()
         url_mock = MagicMock()

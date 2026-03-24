@@ -5,7 +5,6 @@ import json
 import zipfile
 from unittest.mock import MagicMock, patch
 
-import typer
 from typer.testing import CliRunner
 
 from sup.commands.dashboard import app, display_dashboard_details
@@ -21,6 +20,7 @@ PATCH_SPINNER = "sup.output.spinners.data_spinner"
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _make_spinner_mock():
     cm = MagicMock()
@@ -68,8 +68,8 @@ SAMPLE_DASHBOARDS = [
 # list_dashboards
 # ---------------------------------------------------------------------------
 
-class TestListDashboards:
 
+class TestListDashboards:
     @patch(PATCH_SPINNER)
     @patch(PATCH_CLIENT)
     @patch(PATCH_CTX)
@@ -178,8 +178,8 @@ class TestListDashboards:
 # dashboard_info
 # ---------------------------------------------------------------------------
 
-class TestDashboardInfo:
 
+class TestDashboardInfo:
     @patch(PATCH_SPINNER)
     @patch(PATCH_CLIENT)
     @patch(PATCH_CTX)
@@ -276,8 +276,8 @@ class TestDashboardInfo:
 # display_dashboard_details
 # ---------------------------------------------------------------------------
 
-class TestDisplayDashboardDetails:
 
+class TestDisplayDashboardDetails:
     @patch("sup.commands.dashboard.console")
     def test_basic_no_optional_fields(self, mock_console):
         dashboard = {"id": 1, "dashboard_title": "Test", "published": False, "slug": "test"}
@@ -457,10 +457,11 @@ class TestDisplayDashboardDetails:
 # pull_dashboards
 # ---------------------------------------------------------------------------
 
-class TestPullDashboards:
 
-    def _setup_pull_mocks(self, mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path,
-                          dashboards=None, zip_files=None):
+class TestPullDashboards:
+    def _setup_pull_mocks(
+        self, mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path, dashboards=None, zip_files=None
+    ):
         cm, sp = _make_spinner_mock()
         mock_spinner.return_value = cm
 
@@ -470,7 +471,9 @@ class TestPullDashboards:
 
         client = MagicMock()
         mock_client_cls.from_context.return_value = client
-        client.get_dashboards.return_value = dashboards if dashboards is not None else SAMPLE_DASHBOARDS
+        client.get_dashboards.return_value = (
+            dashboards if dashboards is not None else SAMPLE_DASHBOARDS
+        )
 
         if zip_files is None:
             zip_files = {
@@ -486,7 +489,10 @@ class TestPullDashboards:
     @patch(PATCH_CTX)
     def test_pull_creates_output_dir(self, mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path):
         ctx, client, sp = self._setup_pull_mocks(
-            mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path,
+            mock_ctx_cls,
+            mock_client_cls,
+            mock_spinner,
+            tmp_path,
         )
         assets = tmp_path / "assets"
         assert not assets.exists()
@@ -516,7 +522,10 @@ class TestPullDashboards:
     @patch(PATCH_CTX)
     def test_pull_id_filter(self, mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path):
         ctx, client, sp = self._setup_pull_mocks(
-            mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path,
+            mock_ctx_cls,
+            mock_client_cls,
+            mock_spinner,
+            tmp_path,
         )
 
         result = runner.invoke(app, ["pull", "--id=1"])
@@ -528,7 +537,10 @@ class TestPullDashboards:
     @patch(PATCH_CTX)
     def test_pull_ids_filter(self, mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path):
         ctx, client, sp = self._setup_pull_mocks(
-            mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path,
+            mock_ctx_cls,
+            mock_client_cls,
+            mock_spinner,
+            tmp_path,
         )
 
         result = runner.invoke(app, ["pull", "--ids=1,2"])
@@ -540,7 +552,10 @@ class TestPullDashboards:
     @patch(PATCH_CTX)
     def test_pull_mine_filter_success(self, mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path):
         ctx, client, sp = self._setup_pull_mocks(
-            mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path,
+            mock_ctx_cls,
+            mock_client_cls,
+            mock_spinner,
+            tmp_path,
         )
         client.client.get_me.return_value = {"id": 10}
 
@@ -551,9 +566,14 @@ class TestPullDashboards:
     @patch(PATCH_SPINNER)
     @patch(PATCH_CLIENT)
     @patch(PATCH_CTX)
-    def test_pull_mine_filter_get_me_failure(self, mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path):
+    def test_pull_mine_filter_get_me_failure(
+        self, mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path
+    ):
         ctx, client, sp = self._setup_pull_mocks(
-            mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path,
+            mock_ctx_cls,
+            mock_client_cls,
+            mock_spinner,
+            tmp_path,
         )
         client.client.get_me.side_effect = RuntimeError("unauthorized")
 
@@ -565,7 +585,10 @@ class TestPullDashboards:
     @patch(PATCH_CTX)
     def test_pull_limit(self, mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path):
         ctx, client, sp = self._setup_pull_mocks(
-            mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path,
+            mock_ctx_cls,
+            mock_client_cls,
+            mock_spinner,
+            tmp_path,
         )
 
         result = runner.invoke(app, ["pull", "--limit=1"])
@@ -575,9 +598,14 @@ class TestPullDashboards:
     @patch(PATCH_SPINNER)
     @patch(PATCH_CLIENT)
     @patch(PATCH_CTX)
-    def test_pull_no_dashboards_warning(self, mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path):
+    def test_pull_no_dashboards_warning(
+        self, mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path
+    ):
         ctx, client, sp = self._setup_pull_mocks(
-            mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path,
+            mock_ctx_cls,
+            mock_client_cls,
+            mock_spinner,
+            tmp_path,
             dashboards=[],
         )
 
@@ -589,7 +617,10 @@ class TestPullDashboards:
     @patch(PATCH_CTX)
     def test_pull_skip_dependencies(self, mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path):
         ctx, client, sp = self._setup_pull_mocks(
-            mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path,
+            mock_ctx_cls,
+            mock_client_cls,
+            mock_spinner,
+            tmp_path,
             zip_files={
                 "root/dashboards/Sales.yaml": "title: Sales",
                 "root/charts/Chart1.yaml": "name: Chart1",
@@ -602,7 +633,9 @@ class TestPullDashboards:
     @patch(PATCH_SPINNER)
     @patch(PATCH_CLIENT)
     @patch(PATCH_CTX)
-    def test_pull_file_exists_no_overwrite(self, mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path):
+    def test_pull_file_exists_no_overwrite(
+        self, mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path
+    ):
         assets = tmp_path / "assets"
         assets.mkdir(parents=True)
         dashboards_dir = assets / "dashboards"
@@ -610,7 +643,10 @@ class TestPullDashboards:
         (dashboards_dir / "Sales.yaml").write_text("old content")
 
         ctx, client, sp = self._setup_pull_mocks(
-            mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path,
+            mock_ctx_cls,
+            mock_client_cls,
+            mock_spinner,
+            tmp_path,
         )
         ctx.get_assets_folder.return_value = str(assets)
 
@@ -621,7 +657,9 @@ class TestPullDashboards:
     @patch(PATCH_SPINNER)
     @patch(PATCH_CLIENT)
     @patch(PATCH_CTX)
-    def test_pull_file_exists_overwrite(self, mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path):
+    def test_pull_file_exists_overwrite(
+        self, mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path
+    ):
         assets = tmp_path / "assets"
         assets.mkdir(parents=True)
         dashboards_dir = assets / "dashboards"
@@ -629,7 +667,10 @@ class TestPullDashboards:
         (dashboards_dir / "Sales.yaml").write_text("old content")
 
         ctx, client, sp = self._setup_pull_mocks(
-            mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path,
+            mock_ctx_cls,
+            mock_client_cls,
+            mock_spinner,
+            tmp_path,
         )
         ctx.get_assets_folder.return_value = str(assets)
 
@@ -645,7 +686,10 @@ class TestPullDashboards:
         assets.mkdir(parents=True)
 
         ctx, client, sp = self._setup_pull_mocks(
-            mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path,
+            mock_ctx_cls,
+            mock_client_cls,
+            mock_spinner,
+            tmp_path,
             zip_files={"root/dashboards/deep/nested/file.yaml": "content"},
         )
         ctx.get_assets_folder.return_value = str(assets)
@@ -659,7 +703,10 @@ class TestPullDashboards:
     @patch(PATCH_CTX)
     def test_pull_porcelain_output(self, mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path):
         ctx, client, sp = self._setup_pull_mocks(
-            mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path,
+            mock_ctx_cls,
+            mock_client_cls,
+            mock_spinner,
+            tmp_path,
         )
 
         result = runner.invoke(app, ["pull", "--porcelain"])
@@ -669,9 +716,14 @@ class TestPullDashboards:
     @patch(PATCH_SPINNER)
     @patch(PATCH_CLIENT)
     @patch(PATCH_CTX)
-    def test_pull_normal_output_with_deps(self, mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path):
+    def test_pull_normal_output_with_deps(
+        self, mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path
+    ):
         ctx, client, sp = self._setup_pull_mocks(
-            mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path,
+            mock_ctx_cls,
+            mock_client_cls,
+            mock_spinner,
+            tmp_path,
         )
 
         result = runner.invoke(app, ["pull"])
@@ -728,7 +780,9 @@ class TestPullDashboards:
     @patch(PATCH_SPINNER)
     @patch(PATCH_CLIENT)
     @patch(PATCH_CTX)
-    def test_pull_file_exists_no_overwrite_porcelain(self, mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path):
+    def test_pull_file_exists_no_overwrite_porcelain(
+        self, mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path
+    ):
         assets = tmp_path / "assets"
         assets.mkdir(parents=True)
         dashboards_dir = assets / "dashboards"

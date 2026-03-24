@@ -5,7 +5,6 @@ import json
 import zipfile
 from unittest.mock import MagicMock, patch
 
-import typer
 from typer.testing import CliRunner
 
 from sup.commands.dataset import (
@@ -24,6 +23,7 @@ PATCH_SPINNER = "sup.output.spinners.data_spinner"
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _make_spinner_mock():
     cm = MagicMock()
@@ -75,8 +75,8 @@ SAMPLE_DATASETS = [
 # list_datasets
 # ---------------------------------------------------------------------------
 
-class TestListDatasets:
 
+class TestListDatasets:
     @patch(PATCH_SPINNER)
     @patch(PATCH_CLIENT)
     @patch(PATCH_CTX)
@@ -180,8 +180,8 @@ class TestListDatasets:
 # dataset_info
 # ---------------------------------------------------------------------------
 
-class TestDatasetInfo:
 
+class TestDatasetInfo:
     @patch(PATCH_SPINNER)
     @patch(PATCH_CLIENT)
     @patch(PATCH_CTX)
@@ -260,8 +260,8 @@ class TestDatasetInfo:
 # display_datasets_table
 # ---------------------------------------------------------------------------
 
-class TestDisplayDatasetsTable:
 
+class TestDisplayDatasetsTable:
     @patch("sup.commands.dataset.console")
     def test_empty_datasets(self, mock_console):
         display_datasets_table([])
@@ -351,8 +351,8 @@ class TestDisplayDatasetsTable:
 # display_dataset_details
 # ---------------------------------------------------------------------------
 
-class TestDisplayDatasetDetails:
 
+class TestDisplayDatasetDetails:
     @patch("sup.commands.dataset.console")
     def test_basic(self, mock_console):
         dataset = {
@@ -398,8 +398,7 @@ class TestDisplayDatasetDetails:
     @patch("sup.commands.dataset.console")
     def test_with_columns_over_20(self, mock_console):
         cols = [
-            {"column_name": f"col_{i}", "type": "VARCHAR", "description": ""}
-            for i in range(25)
+            {"column_name": f"col_{i}", "type": "VARCHAR", "description": ""} for i in range(25)
         ]
         dataset = {
             "id": 1,
@@ -457,10 +456,11 @@ class TestDisplayDatasetDetails:
 # pull_datasets
 # ---------------------------------------------------------------------------
 
-class TestPullDatasets:
 
-    def _setup_pull_mocks(self, mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path,
-                          datasets=None, zip_files=None):
+class TestPullDatasets:
+    def _setup_pull_mocks(
+        self, mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path, datasets=None, zip_files=None
+    ):
         cm, sp = _make_spinner_mock()
         mock_spinner.return_value = cm
 
@@ -486,7 +486,10 @@ class TestPullDatasets:
     @patch(PATCH_CTX)
     def test_pull_creates_output_dir(self, mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path):
         ctx, client, sp = self._setup_pull_mocks(
-            mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path,
+            mock_ctx_cls,
+            mock_client_cls,
+            mock_spinner,
+            tmp_path,
         )
         assets = tmp_path / "assets"
         assert not assets.exists()
@@ -516,7 +519,10 @@ class TestPullDatasets:
     @patch(PATCH_CTX)
     def test_pull_id_filter(self, mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path):
         ctx, client, sp = self._setup_pull_mocks(
-            mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path,
+            mock_ctx_cls,
+            mock_client_cls,
+            mock_spinner,
+            tmp_path,
         )
 
         result = runner.invoke(app, ["pull", "--id=1"])
@@ -528,7 +534,10 @@ class TestPullDatasets:
     @patch(PATCH_CTX)
     def test_pull_ids_filter(self, mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path):
         ctx, client, sp = self._setup_pull_mocks(
-            mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path,
+            mock_ctx_cls,
+            mock_client_cls,
+            mock_spinner,
+            tmp_path,
         )
 
         result = runner.invoke(app, ["pull", "--ids=1,2"])
@@ -540,7 +549,10 @@ class TestPullDatasets:
     @patch(PATCH_CTX)
     def test_pull_mine_filter_success(self, mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path):
         ctx, client, sp = self._setup_pull_mocks(
-            mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path,
+            mock_ctx_cls,
+            mock_client_cls,
+            mock_spinner,
+            tmp_path,
         )
         client.client.get_me.return_value = {"id": 10}
 
@@ -551,9 +563,14 @@ class TestPullDatasets:
     @patch(PATCH_SPINNER)
     @patch(PATCH_CLIENT)
     @patch(PATCH_CTX)
-    def test_pull_mine_filter_get_me_failure(self, mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path):
+    def test_pull_mine_filter_get_me_failure(
+        self, mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path
+    ):
         ctx, client, sp = self._setup_pull_mocks(
-            mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path,
+            mock_ctx_cls,
+            mock_client_cls,
+            mock_spinner,
+            tmp_path,
         )
         client.client.get_me.side_effect = RuntimeError("unauthorized")
 
@@ -565,7 +582,10 @@ class TestPullDatasets:
     @patch(PATCH_CTX)
     def test_pull_limit(self, mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path):
         ctx, client, sp = self._setup_pull_mocks(
-            mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path,
+            mock_ctx_cls,
+            mock_client_cls,
+            mock_spinner,
+            tmp_path,
         )
 
         result = runner.invoke(app, ["pull", "--limit=1"])
@@ -577,7 +597,10 @@ class TestPullDatasets:
     @patch(PATCH_CTX)
     def test_pull_no_datasets_warning(self, mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path):
         ctx, client, sp = self._setup_pull_mocks(
-            mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path,
+            mock_ctx_cls,
+            mock_client_cls,
+            mock_spinner,
+            tmp_path,
             datasets=[],
         )
 
@@ -589,7 +612,10 @@ class TestPullDatasets:
     @patch(PATCH_CTX)
     def test_pull_skip_dependencies(self, mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path):
         ctx, client, sp = self._setup_pull_mocks(
-            mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path,
+            mock_ctx_cls,
+            mock_client_cls,
+            mock_spinner,
+            tmp_path,
             zip_files={
                 "root/datasets/sales.yaml": "table_name: sales",
                 "root/databases/main_db.yaml": "name: main_db",
@@ -602,7 +628,9 @@ class TestPullDatasets:
     @patch(PATCH_SPINNER)
     @patch(PATCH_CLIENT)
     @patch(PATCH_CTX)
-    def test_pull_file_exists_no_overwrite(self, mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path):
+    def test_pull_file_exists_no_overwrite(
+        self, mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path
+    ):
         assets = tmp_path / "assets"
         assets.mkdir(parents=True)
         datasets_dir = assets / "datasets"
@@ -610,7 +638,10 @@ class TestPullDatasets:
         (datasets_dir / "sales.yaml").write_text("old content")
 
         ctx, client, sp = self._setup_pull_mocks(
-            mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path,
+            mock_ctx_cls,
+            mock_client_cls,
+            mock_spinner,
+            tmp_path,
         )
         ctx.get_assets_folder.return_value = str(assets)
 
@@ -621,7 +652,9 @@ class TestPullDatasets:
     @patch(PATCH_SPINNER)
     @patch(PATCH_CLIENT)
     @patch(PATCH_CTX)
-    def test_pull_file_exists_overwrite(self, mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path):
+    def test_pull_file_exists_overwrite(
+        self, mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path
+    ):
         assets = tmp_path / "assets"
         assets.mkdir(parents=True)
         datasets_dir = assets / "datasets"
@@ -629,7 +662,10 @@ class TestPullDatasets:
         (datasets_dir / "sales.yaml").write_text("old content")
 
         ctx, client, sp = self._setup_pull_mocks(
-            mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path,
+            mock_ctx_cls,
+            mock_client_cls,
+            mock_spinner,
+            tmp_path,
         )
         ctx.get_assets_folder.return_value = str(assets)
 
@@ -645,7 +681,10 @@ class TestPullDatasets:
         assets.mkdir(parents=True)
 
         ctx, client, sp = self._setup_pull_mocks(
-            mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path,
+            mock_ctx_cls,
+            mock_client_cls,
+            mock_spinner,
+            tmp_path,
             zip_files={"root/datasets/deep/nested/file.yaml": "content"},
         )
         ctx.get_assets_folder.return_value = str(assets)
@@ -659,7 +698,10 @@ class TestPullDatasets:
     @patch(PATCH_CTX)
     def test_pull_porcelain_output(self, mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path):
         ctx, client, sp = self._setup_pull_mocks(
-            mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path,
+            mock_ctx_cls,
+            mock_client_cls,
+            mock_spinner,
+            tmp_path,
         )
 
         result = runner.invoke(app, ["pull", "--porcelain"])
@@ -669,9 +711,14 @@ class TestPullDatasets:
     @patch(PATCH_SPINNER)
     @patch(PATCH_CLIENT)
     @patch(PATCH_CTX)
-    def test_pull_normal_output_with_deps(self, mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path):
+    def test_pull_normal_output_with_deps(
+        self, mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path
+    ):
         ctx, client, sp = self._setup_pull_mocks(
-            mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path,
+            mock_ctx_cls,
+            mock_client_cls,
+            mock_spinner,
+            tmp_path,
         )
 
         result = runner.invoke(app, ["pull"])
@@ -728,7 +775,9 @@ class TestPullDatasets:
     @patch(PATCH_SPINNER)
     @patch(PATCH_CLIENT)
     @patch(PATCH_CTX)
-    def test_pull_file_exists_no_overwrite_porcelain(self, mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path):
+    def test_pull_file_exists_no_overwrite_porcelain(
+        self, mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path
+    ):
         assets = tmp_path / "assets"
         assets.mkdir(parents=True)
         datasets_dir = assets / "datasets"

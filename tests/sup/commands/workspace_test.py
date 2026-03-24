@@ -28,6 +28,7 @@ CONSOLE_PATH = "sup.commands.workspace.console"
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _make_ctx(**overrides):
     ctx = MagicMock()
     ctx.get_workspace_id.return_value = overrides.get("workspace_id", 123)
@@ -46,6 +47,7 @@ def _fake_spinner(*a, **kw):
 # ---------------------------------------------------------------------------
 # parse_workspace_identifier
 # ---------------------------------------------------------------------------
+
 
 class TestParseWorkspaceIdentifier:
     def test_integer_string(self):
@@ -87,6 +89,7 @@ class TestParseWorkspaceIdentifier:
 # safe_parse_workspace
 # ---------------------------------------------------------------------------
 
+
 class TestSafeParseWorkspace:
     def test_success(self):
         assert safe_parse_workspace("123", MagicMock()) == 123
@@ -105,6 +108,7 @@ class TestSafeParseWorkspace:
 # ---------------------------------------------------------------------------
 # list_workspaces
 # ---------------------------------------------------------------------------
+
 
 class TestListWorkspaces:
     def test_table_output(self):
@@ -229,6 +233,7 @@ class TestListWorkspaces:
 # use_workspace
 # ---------------------------------------------------------------------------
 
+
 class TestUseWorkspace:
     def test_workspace_found_no_persist(self):
         client = MagicMock()
@@ -244,7 +249,9 @@ class TestUseWorkspace:
             mock_cls.from_context.return_value = client
             result = runner.invoke(app, ["use", "42"])
             assert result.exit_code == 0
-            ctx.set_workspace_context.assert_called_once_with(42, hostname="ws.preset.io", persist=False)
+            ctx.set_workspace_context.assert_called_once_with(
+                42, hostname="ws.preset.io", persist=False
+            )
 
     def test_workspace_found_persist(self):
         client = MagicMock()
@@ -260,7 +267,9 @@ class TestUseWorkspace:
             mock_cls.from_context.return_value = client
             result = runner.invoke(app, ["use", "42", "--persist"])
             assert result.exit_code == 0
-            ctx.set_workspace_context.assert_called_once_with(42, hostname="ws.preset.io", persist=True)
+            ctx.set_workspace_context.assert_called_once_with(
+                42, hostname="ws.preset.io", persist=True
+            )
 
     def test_workspace_not_found(self):
         client = MagicMock()
@@ -292,6 +301,7 @@ class TestUseWorkspace:
 # ---------------------------------------------------------------------------
 # workspace_info
 # ---------------------------------------------------------------------------
+
 
 class TestWorkspaceInfo:
     def _ws(self, **kw):
@@ -457,6 +467,7 @@ class TestWorkspaceInfo:
 # display_workspace_details
 # ---------------------------------------------------------------------------
 
+
 class TestDisplayWorkspaceDetails:
     @staticmethod
     def _get_panel_content(mock_console):
@@ -469,8 +480,14 @@ class TestDisplayWorkspaceDetails:
         return ""
 
     def test_basic(self):
-        ws = {"id": 1, "title": "WS", "hostname": "h.preset.io", "status": "READY",
-              "team_name": "T", "region": "us-east-1"}
+        ws = {
+            "id": 1,
+            "title": "WS",
+            "hostname": "h.preset.io",
+            "status": "READY",
+            "team_name": "T",
+            "region": "us-east-1",
+        }
         with patch(CONSOLE_PATH) as mock_console:
             display_workspace_details(ws)
             content = self._get_panel_content(mock_console)
@@ -482,18 +499,32 @@ class TestDisplayWorkspaceDetails:
             assert "https://h.preset.io/" in content
 
     def test_with_description(self):
-        ws = {"id": 1, "title": "WS", "hostname": "h.preset.io", "status": "READY",
-              "team_name": "T", "region": "us-east-1", "descr": "A workspace"}
+        ws = {
+            "id": 1,
+            "title": "WS",
+            "hostname": "h.preset.io",
+            "status": "READY",
+            "team_name": "T",
+            "region": "us-east-1",
+            "descr": "A workspace",
+        }
         with patch(CONSOLE_PATH) as mock_console:
             display_workspace_details(ws)
             content = self._get_panel_content(mock_console)
             assert "Description: A workspace" in content
 
     def test_with_features(self):
-        ws = {"id": 1, "title": "WS", "hostname": "h.preset.io", "status": "READY",
-              "team_name": "T", "region": "us-east-1",
-              "ai_assist_activated": True, "allow_public_dashboards": True,
-              "enable_iframe_embedding": True}
+        ws = {
+            "id": 1,
+            "title": "WS",
+            "hostname": "h.preset.io",
+            "status": "READY",
+            "team_name": "T",
+            "region": "us-east-1",
+            "ai_assist_activated": True,
+            "allow_public_dashboards": True,
+            "enable_iframe_embedding": True,
+        }
         with patch(CONSOLE_PATH) as mock_console:
             display_workspace_details(ws)
             content = self._get_panel_content(mock_console)
@@ -502,18 +533,31 @@ class TestDisplayWorkspaceDetails:
             assert "iFrame Embedding" in content
 
     def test_no_hostname(self):
-        ws = {"id": 1, "title": "WS", "hostname": "", "status": "READY",
-              "team_name": "T", "region": "us-east-1"}
+        ws = {
+            "id": 1,
+            "title": "WS",
+            "hostname": "",
+            "status": "READY",
+            "team_name": "T",
+            "region": "us-east-1",
+        }
         with patch(CONSOLE_PATH) as mock_console:
             display_workspace_details(ws)
             content = self._get_panel_content(mock_console)
             assert "URL: N/A" in content
 
     def test_no_features(self):
-        ws = {"id": 1, "title": "WS", "hostname": "h.preset.io", "status": "READY",
-              "team_name": "T", "region": "us-east-1",
-              "ai_assist_activated": False, "allow_public_dashboards": False,
-              "enable_iframe_embedding": False}
+        ws = {
+            "id": 1,
+            "title": "WS",
+            "hostname": "h.preset.io",
+            "status": "READY",
+            "team_name": "T",
+            "region": "us-east-1",
+            "ai_assist_activated": False,
+            "allow_public_dashboards": False,
+            "enable_iframe_embedding": False,
+        }
         with patch(CONSOLE_PATH) as mock_console:
             display_workspace_details(ws)
             content = self._get_panel_content(mock_console)
@@ -523,6 +567,7 @@ class TestDisplayWorkspaceDetails:
 # ---------------------------------------------------------------------------
 # set_import_target
 # ---------------------------------------------------------------------------
+
 
 class TestSetImportTarget:
     def test_persist(self):
@@ -566,6 +611,7 @@ class TestSetImportTarget:
 # ---------------------------------------------------------------------------
 # show_workspace_context
 # ---------------------------------------------------------------------------
+
 
 class TestShowWorkspaceContext:
     @staticmethod
@@ -629,9 +675,9 @@ class TestShowWorkspaceContext:
             result = runner.invoke(app, ["show"])
             assert result.exit_code == 1
 
-
     def test_spinner_yields_none(self):
         """Cover the `if sp:` false branch when spinner is silent."""
+
         @contextmanager
         def _silent_spinner(*a, **kw):
             yield None

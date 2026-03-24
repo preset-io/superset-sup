@@ -25,6 +25,7 @@ RESET_CONSOLE = "sup.output.console.reset_console_cache"
 # format_config_help
 # ---------------------------------------------------------------------------
 
+
 def test_format_config_help_returns_nonempty_string():
     result = format_config_help()
     assert isinstance(result, str)
@@ -35,6 +36,7 @@ def test_format_config_help_returns_nonempty_string():
 # ---------------------------------------------------------------------------
 # show_config
 # ---------------------------------------------------------------------------
+
 
 def test_show_config_auth_configured():
     mock_ctx = MagicMock()
@@ -109,6 +111,7 @@ def test_show_config_exception():
 # ---------------------------------------------------------------------------
 # set_config — per-key branches
 # ---------------------------------------------------------------------------
+
 
 def _make_ctx():
     ctx = MagicMock()
@@ -294,6 +297,7 @@ def test_set_generic_exception():
 # auth_setup
 # ---------------------------------------------------------------------------
 
+
 def test_auth_existing_valid_decline_update():
     ctx = _make_ctx()
     ctx.get_preset_credentials.return_value = ("tok", "sec")
@@ -413,6 +417,7 @@ def test_auth_empty_secret():
 # init_project
 # ---------------------------------------------------------------------------
 
+
 def test_init_project():
     with patch(CONSOLE_PATH) as mock_console:
         result = runner.invoke(app, ["init"])
@@ -426,6 +431,7 @@ def test_init_project():
 # ---------------------------------------------------------------------------
 # show_env_vars
 # ---------------------------------------------------------------------------
+
 
 def test_show_env_vars():
     with (

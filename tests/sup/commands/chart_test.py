@@ -5,8 +5,6 @@ import json
 import zipfile
 from unittest.mock import MagicMock, patch
 
-import pandas as pd
-import pytest
 from rich.console import Console
 from typer.testing import CliRunner
 
@@ -28,6 +26,7 @@ def _render(rich_obj) -> str:
     Console(file=buf, width=300, no_color=True).print(rich_obj)
     return buf.getvalue()
 
+
 # Patch targets
 _CTX = "sup.config.settings.SupContext"
 _CLI = "sup.clients.superset.SupSupersetClient"
@@ -45,8 +44,7 @@ _PCLI = "sup.clients.preset.SupPresetClient"
 _NATIVE = "preset_cli.cli.superset.sync.native.command.native"
 
 
-def _ctx(workspace_id=1, hostname="ws.preset.io", assets_folder="./assets",
-         target_workspace_id=2):
+def _ctx(workspace_id=1, hostname="ws.preset.io", assets_folder="./assets", target_workspace_id=2):
     m = MagicMock()
     m.get_workspace_id.return_value = workspace_id
     m.get_workspace_hostname.return_value = hostname
@@ -84,11 +82,16 @@ def _zipbuf(files: dict) -> io.BytesIO:
 
 
 CHART = {
-    "id": 1, "slice_name": "Sales Chart", "viz_type": "bar",
-    "datasource_name_text": "sales_table", "datasource_name": "sales",
+    "id": 1,
+    "slice_name": "Sales Chart",
+    "viz_type": "bar",
+    "datasource_name_text": "sales_table",
+    "datasource_name": "sales",
     "datasource_id": 10,
     "dashboards": [{"id": 1, "dashboard_title": "Main Dashboard"}],
-    "description": "A chart", "params": "{}", "query_context": "{}",
+    "description": "A chart",
+    "params": "{}",
+    "query_context": "{}",
 }
 
 
@@ -96,8 +99,8 @@ CHART = {
 # list_charts
 # ===================================================================
 
-class TestListCharts:
 
+class TestListCharts:
     def _invoke(self, args, charts=None, mine=False, mine_fails=False, limit=None):
         filters = MagicMock()
         filters.page = None
@@ -110,13 +113,11 @@ class TestListCharts:
         if mine_fails:
             cl.client.get_me.side_effect = Exception("fail")
 
-        with patch(_PARSE, return_value=filters), \
-             patch(_DSP, return_value=cm), \
-             patch(_CLI, **{"from_context.return_value": cl}), \
-             patch(_CTX, return_value=_ctx()), \
-             patch("sup.filters.chart.apply_chart_filters",
-                   return_value=cl.get_charts()), \
-             patch(_CON):
+        with patch(_PARSE, return_value=filters), patch(_DSP, return_value=cm), patch(
+            _CLI, **{"from_context.return_value": cl}
+        ), patch(_CTX, return_value=_ctx()), patch(
+            "sup.filters.chart.apply_chart_filters", return_value=cl.get_charts()
+        ), patch(_CON):
             return runner.invoke(app, ["list"] + args)
 
     def test_porcelain(self):
@@ -143,13 +144,11 @@ class TestListCharts:
         assert self._invoke(["--limit", "1"], charts=[CHART, CHART], limit=1).exit_code == 0
 
     def test_error(self):
-        with patch(_CTX, side_effect=RuntimeError("x")), \
-             patch(_PARSE), patch(_DSP), patch(_CON):
+        with patch(_CTX, side_effect=RuntimeError("x")), patch(_PARSE), patch(_DSP), patch(_CON):
             assert runner.invoke(app, ["list"]).exit_code == 1
 
     def test_error_porcelain(self):
-        with patch(_CTX, side_effect=RuntimeError("x")), \
-             patch(_PARSE), patch(_DSP), patch(_CON):
+        with patch(_CTX, side_effect=RuntimeError("x")), patch(_PARSE), patch(_DSP), patch(_CON):
             assert runner.invoke(app, ["list", "--porcelain"]).exit_code == 1
 
     def test_no_limit_applied(self):
@@ -160,11 +159,11 @@ class TestListCharts:
         cl = _client(charts=[CHART])
 
         # Use real data_spinner (silent=True via --porcelain) so coverage tracks branches.
-        with patch(_PARSE, return_value=filters), \
-             patch(_CLI, **{"from_context.return_value": cl}), \
-             patch(_CTX, return_value=_ctx()), \
-             patch("sup.filters.chart.apply_chart_filters", return_value=[CHART]), \
-             patch(_CON), patch(_PORCELAIN):
+        with patch(_PARSE, return_value=filters), patch(
+            _CLI, **{"from_context.return_value": cl}
+        ), patch(_CTX, return_value=_ctx()), patch(
+            "sup.filters.chart.apply_chart_filters", return_value=[CHART]
+        ), patch(_CON), patch(_PORCELAIN):
             assert runner.invoke(app, ["list", "--porcelain"]).exit_code == 0
 
 
@@ -172,15 +171,14 @@ class TestListCharts:
 # chart_info
 # ===================================================================
 
-class TestChartInfo:
 
+class TestChartInfo:
     def _invoke(self, args, chart=None):
         cm, sp = _sp()
         cl = _client(chart=chart or CHART)
-        with patch(_CLI, **{"from_context.return_value": cl}), \
-             patch(_CTX, return_value=_ctx()), \
-             patch(_DSP, return_value=cm), \
-             patch(_CON):
+        with patch(_CLI, **{"from_context.return_value": cl}), patch(
+            _CTX, return_value=_ctx()
+        ), patch(_DSP, return_value=cm), patch(_CON):
             return runner.invoke(app, ["info"] + args)
 
     def test_porcelain(self):
@@ -211,16 +209,15 @@ class TestChartInfo:
 # chart_sql
 # ===================================================================
 
-class TestChartSql:
 
+class TestChartSql:
     def _invoke(self, args, query_result=None):
         cm, sp = _sp()
         data = query_result or {"result": [{"query": "SELECT 1"}]}
         cl = _client(chart=CHART, chart_data=data)
-        with patch(_CLI, **{"from_context.return_value": cl}), \
-             patch(_CTX, return_value=_ctx()), \
-             patch(_QSP, return_value=cm), \
-             patch(_CON):
+        with patch(_CLI, **{"from_context.return_value": cl}), patch(
+            _CTX, return_value=_ctx()
+        ), patch(_QSP, return_value=cm), patch(_CON):
             return runner.invoke(app, ["sql"] + args)
 
     def test_porcelain(self):
@@ -232,10 +229,9 @@ class TestChartSql:
         cm, sp = _sp()
         data = {"result": [{"query": "SELECT 1"}]}
         cl = _client(chart=CHART, chart_data=data)
-        with patch(_CLI, **{"from_context.return_value": cl}), \
-             patch(_CTX, return_value=_ctx()), \
-             patch(_QSP, return_value=cm), \
-             patch(_CON) as mc:
+        with patch(_CLI, **{"from_context.return_value": cl}), patch(
+            _CTX, return_value=_ctx()
+        ), patch(_QSP, return_value=cm), patch(_CON) as mc:
             r = runner.invoke(app, ["sql", "1", "--json"])
         assert r.exit_code == 0
         printed = str(mc.print.call_args_list)
@@ -260,11 +256,11 @@ class TestChartSql:
         # Must override chart_data so get_chart_data returns {}
         cl = _client(chart=CHART)
         cl.get_chart_data.return_value = {}
-        with patch(_CLI, **{"from_context.return_value": cl}), \
-             patch(_CTX, return_value=_ctx()), \
-             patch(_QSP, return_value=cm), \
-             patch(_CON), \
-             patch("sup.commands.chart.display_chart_sql_rich") as m:
+        with patch(_CLI, **{"from_context.return_value": cl}), patch(
+            _CTX, return_value=_ctx()
+        ), patch(_QSP, return_value=cm), patch(_CON), patch(
+            "sup.commands.chart.display_chart_sql_rich"
+        ) as m:
             runner.invoke(app, ["sql", "1"])
         m.assert_called_once_with(1, "Sales Chart", [])
 
@@ -281,17 +277,16 @@ class TestChartSql:
 # chart_data
 # ===================================================================
 
-class TestChartData:
 
+class TestChartData:
     def _invoke(self, args, data_result=None):
         cm, sp = _sp()
         default = {"result": [{"data": [{"col1": "a", "col2": 1}], "duration": 0.5}]}
         data = data_result if data_result is not None else default
         cl = _client(chart=CHART, chart_data=data)
-        with patch(_CLI, **{"from_context.return_value": cl}), \
-             patch(_CTX, return_value=_ctx()), \
-             patch(_DSP, return_value=cm), \
-             patch(_CON):
+        with patch(_CLI, **{"from_context.return_value": cl}), patch(
+            _CTX, return_value=_ctx()
+        ), patch(_DSP, return_value=cm), patch(_CON):
             return runner.invoke(app, ["data"] + args)
 
     def test_porcelain(self):
@@ -309,10 +304,9 @@ class TestChartData:
         cm, sp = _sp()
         default = {"result": [{"data": [{"col1": "a", "col2": 1}], "duration": 0.5}]}
         cl = _client(chart=CHART, chart_data=default)
-        with patch(_CLI, **{"from_context.return_value": cl}), \
-             patch(_CTX, return_value=_ctx()), \
-             patch(_DSP, return_value=cm), \
-             patch(_CON) as mc:
+        with patch(_CLI, **{"from_context.return_value": cl}), patch(
+            _CTX, return_value=_ctx()
+        ), patch(_DSP, return_value=cm), patch(_CON) as mc:
             r = runner.invoke(app, ["data", "1", "--csv"])
         assert r.exit_code == 0
         printed = str(mc.print.call_args_list)
@@ -358,8 +352,8 @@ class TestChartData:
 # display_chart_sql_rich
 # ===================================================================
 
-class TestDisplayChartSqlRich:
 
+class TestDisplayChartSqlRich:
     @patch(_CON)
     def test_empty(self, mc):
         display_chart_sql_rich(1, "T", [])
@@ -380,8 +374,8 @@ class TestDisplayChartSqlRich:
 # display_charts_table
 # ===================================================================
 
-class TestDisplayChartsTable:
 
+class TestDisplayChartsTable:
     @patch(_CON)
     def test_empty(self, mc):
         display_charts_table([])
@@ -419,12 +413,23 @@ class TestDisplayChartsTable:
         assert "fb" in rendered
 
         mc.reset_mock()
-        display_charts_table([{**CHART, "datasource_name_text": None, "datasource_name": None, "datasource_id": 42}])
+        display_charts_table(
+            [{**CHART, "datasource_name_text": None, "datasource_name": None, "datasource_id": 42}]
+        )
         rendered = _render(mc.print.call_args_list[0][0][0])
         assert "ID:42" in rendered
 
         mc.reset_mock()
-        display_charts_table([{**CHART, "datasource_name_text": None, "datasource_name": None, "datasource_id": None}])
+        display_charts_table(
+            [
+                {
+                    **CHART,
+                    "datasource_name_text": None,
+                    "datasource_name": None,
+                    "datasource_id": None,
+                }
+            ]
+        )
         rendered = _render(mc.print.call_args_list[0][0][0])
         assert "Unknown" in rendered
 
@@ -433,8 +438,8 @@ class TestDisplayChartsTable:
 # display_chart_details
 # ===================================================================
 
-class TestDisplayChartDetails:
 
+class TestDisplayChartDetails:
     @patch(_CON)
     def test_with_metadata(self, mc):
         display_chart_details(CHART, workspace_hostname="ws.preset.io")
@@ -478,8 +483,12 @@ class TestDisplayChartDetails:
 
     @patch(_CON)
     def test_query_context_lookup(self, mc):
-        c = {**CHART, "datasource_name_text": None, "datasource_name": None,
-             "query_context": json.dumps({"datasource": {"id": 5, "type": "table"}})}
+        c = {
+            **CHART,
+            "datasource_name_text": None,
+            "datasource_name": None,
+            "query_context": json.dumps({"datasource": {"id": 5, "type": "table"}}),
+        }
         cl = MagicMock()
         resp = MagicMock(status_code=200)
         resp.json.return_value = {"result": {"table_name": "orders", "schema": "pub"}}
@@ -491,8 +500,13 @@ class TestDisplayChartDetails:
 
     @patch(_CON)
     def test_params_lookup(self, mc):
-        c = {**CHART, "datasource_name_text": None, "datasource_name": None,
-             "query_context": "{}", "params": json.dumps({"datasource": "10__table"})}
+        c = {
+            **CHART,
+            "datasource_name_text": None,
+            "datasource_name": None,
+            "query_context": "{}",
+            "params": json.dumps({"datasource": "10__table"}),
+        }
         cl = MagicMock()
         resp = MagicMock(status_code=200)
         resp.json.return_value = {"result": {"table_name": "tbl", "schema": ""}}
@@ -504,8 +518,12 @@ class TestDisplayChartDetails:
 
     @patch(_CON)
     def test_no_table_name(self, mc):
-        c = {**CHART, "datasource_name_text": None, "datasource_name": None,
-             "query_context": json.dumps({"datasource": {"id": 5, "type": "t"}})}
+        c = {
+            **CHART,
+            "datasource_name_text": None,
+            "datasource_name": None,
+            "query_context": json.dumps({"datasource": {"id": 5, "type": "t"}}),
+        }
         cl = MagicMock()
         resp = MagicMock(status_code=200)
         resp.json.return_value = {"result": {"table_name": "", "schema": ""}}
@@ -517,8 +535,12 @@ class TestDisplayChartDetails:
 
     @patch(_CON)
     def test_404(self, mc):
-        c = {**CHART, "datasource_name_text": None, "datasource_name": None,
-             "query_context": json.dumps({"datasource": {"id": 5, "type": "t"}})}
+        c = {
+            **CHART,
+            "datasource_name_text": None,
+            "datasource_name": None,
+            "query_context": json.dumps({"datasource": {"id": 5, "type": "t"}}),
+        }
         cl = MagicMock()
         cl.client.session.get.return_value = MagicMock(status_code=404)
         cl.client.baseurl = "https://x"
@@ -528,8 +550,12 @@ class TestDisplayChartDetails:
 
     @patch(_CON)
     def test_fetch_exception(self, mc):
-        c = {**CHART, "datasource_name_text": None, "datasource_name": None,
-             "query_context": json.dumps({"datasource": {"id": 5, "type": "t"}})}
+        c = {
+            **CHART,
+            "datasource_name_text": None,
+            "datasource_name": None,
+            "query_context": json.dumps({"datasource": {"id": 5, "type": "t"}}),
+        }
         cl = MagicMock()
         cl.client.session.get.side_effect = Exception("err")
         cl.client.baseurl = "https://x"
@@ -546,9 +572,15 @@ class TestDisplayChartDetails:
 
     @patch(_CON)
     def test_bad_json(self, mc):
-        c = {**CHART, "datasource_name_text": None, "datasource_name": None,
-             "query_context": "bad", "params": "bad"}
-        cl = MagicMock(); cl.client.baseurl = "https://x"
+        c = {
+            **CHART,
+            "datasource_name_text": None,
+            "datasource_name": None,
+            "query_context": "bad",
+            "params": "bad",
+        }
+        cl = MagicMock()
+        cl.client.baseurl = "https://x"
         display_chart_details(c, client=cl)
         panel = mc.print.call_args_list[0][0][0]
         assert "Unknown" in str(panel.renderable)
@@ -556,10 +588,15 @@ class TestDisplayChartDetails:
     @patch(_CON)
     def test_datasource_info_not_dict(self, mc):
         """Branch 625->632: datasource_info truthy but not a dict."""
-        c = {**CHART, "datasource_name_text": None, "datasource_name": None,
-             "query_context": json.dumps({"datasource": "string_not_dict"}),
-             "params": "{}"}
-        cl = MagicMock(); cl.client.baseurl = "https://x"
+        c = {
+            **CHART,
+            "datasource_name_text": None,
+            "datasource_name": None,
+            "query_context": json.dumps({"datasource": "string_not_dict"}),
+            "params": "{}",
+        }
+        cl = MagicMock()
+        cl.client.baseurl = "https://x"
         cl.client.session.get.return_value = MagicMock(status_code=404)
         display_chart_details(c, client=cl)
         panel = mc.print.call_args_list[0][0][0]
@@ -569,9 +606,15 @@ class TestDisplayChartDetails:
     @patch(_CON)
     def test_params_already_dict(self, mc):
         """Branch 634->645: params is already a dict (not a string)."""
-        c = {**CHART, "datasource_name_text": None, "datasource_name": None,
-             "query_context": "{}", "params": {"datasource": "10__table"}}
-        cl = MagicMock(); cl.client.baseurl = "https://x"
+        c = {
+            **CHART,
+            "datasource_name_text": None,
+            "datasource_name": None,
+            "query_context": "{}",
+            "params": {"datasource": "10__table"},
+        }
+        cl = MagicMock()
+        cl.client.baseurl = "https://x"
         display_chart_details(c, client=cl)
         panel = mc.print.call_args_list[0][0][0]
         # params is dict, not str — the isinstance(params, str) branch is skipped, so no dataset_id
@@ -580,8 +623,12 @@ class TestDisplayChartDetails:
     @patch(_CON)
     def test_200_no_result_key(self, mc):
         """Branch 652->667: 200 response without 'result' key."""
-        c = {**CHART, "datasource_name_text": None, "datasource_name": None,
-             "query_context": json.dumps({"datasource": {"id": 5, "type": "t"}})}
+        c = {
+            **CHART,
+            "datasource_name_text": None,
+            "datasource_name": None,
+            "query_context": json.dumps({"datasource": {"id": 5, "type": "t"}}),
+        }
         cl = MagicMock()
         resp = MagicMock(status_code=200)
         resp.json.return_value = {"data": "no result key"}
@@ -594,8 +641,12 @@ class TestDisplayChartDetails:
 
     @patch(_CON)
     def test_query_context_dict(self, mc):
-        c = {**CHART, "datasource_name_text": None, "datasource_name": None,
-             "query_context": {"datasource": {"id": 5, "type": "t"}}}
+        c = {
+            **CHART,
+            "datasource_name_text": None,
+            "datasource_name": None,
+            "query_context": {"datasource": {"id": 5, "type": "t"}},
+        }
         cl = MagicMock()
         resp = MagicMock(status_code=200)
         resp.json.return_value = {"result": {"table_name": "t", "schema": "s"}}
@@ -607,9 +658,15 @@ class TestDisplayChartDetails:
 
     @patch(_CON)
     def test_params_no_separator(self, mc):
-        c = {**CHART, "datasource_name_text": None, "datasource_name": None,
-             "query_context": "{}", "params": json.dumps({"datasource": "nope"})}
-        cl = MagicMock(); cl.client.baseurl = "https://x"
+        c = {
+            **CHART,
+            "datasource_name_text": None,
+            "datasource_name": None,
+            "query_context": "{}",
+            "params": json.dumps({"datasource": "nope"}),
+        }
+        cl = MagicMock()
+        cl.client.baseurl = "https://x"
         display_chart_details(c, client=cl)
         panel = mc.print.call_args_list[0][0][0]
         # No "__" separator means no dataset_id extracted -> "Unknown"
@@ -626,8 +683,8 @@ class TestDisplayChartDetails:
 # display_chart_sql_compiled
 # ===================================================================
 
-class TestDisplayChartSqlCompiled:
 
+class TestDisplayChartSqlCompiled:
     @patch(_CON)
     def test_single(self, mc):
         cl = MagicMock()
@@ -673,8 +730,8 @@ class TestDisplayChartSqlCompiled:
 # display_chart_data_results
 # ===================================================================
 
-class TestDisplayChartDataResults:
 
+class TestDisplayChartDataResults:
     @patch(_DQR)
     @patch(_CON)
     def test_success(self, mc, md):
@@ -715,8 +772,8 @@ class TestDisplayChartDataResults:
 # pull_charts
 # ===================================================================
 
-class TestPullCharts:
 
+class TestPullCharts:
     DEFAULT_ZIP = {
         "bundle/charts/chart_1.yaml": "slice_name: Test\nviz_type: bar\n",
         "bundle/datasets/ds.yaml": "table_name: t\n",
@@ -727,15 +784,14 @@ class TestPullCharts:
         cm, sp = _sp()
         cl = _client(charts=charts if charts is not None else [{"id": 1, "slice_name": "C"}])
         cl.client.export_zip.return_value = _zipbuf(zip_files or self.DEFAULT_ZIP)
-        filters = MagicMock(); filters.search = None
+        filters = MagicMock()
+        filters.search = None
         # Make get_assets_folder return tmp_path by default unless overridden by CLI arg
         ctx = _ctx(assets_folder=str(tmp_path))
 
-        with patch(_CLI, **{"from_context.return_value": cl}), \
-             patch(_CTX, return_value=ctx), \
-             patch(_DSP, return_value=cm), \
-             patch(_PARSE, return_value=filters), \
-             patch(_CON):
+        with patch(_CLI, **{"from_context.return_value": cl}), patch(_CTX, return_value=ctx), patch(
+            _DSP, return_value=cm
+        ), patch(_PARSE, return_value=filters), patch(_CON):
             return runner.invoke(app, ["pull"] + (args_extra or []))
 
     def test_success(self, tmp_path):
@@ -747,28 +803,27 @@ class TestPullCharts:
         cm, sp = _sp()
         cl = _client(charts=[{"id": 1}])
         cl.client.export_zip.return_value = _zipbuf(self.DEFAULT_ZIP)
-        filters = MagicMock(); filters.search = None
+        filters = MagicMock()
+        filters.search = None
         ctx = _ctx(assets_folder=str(new))
-        with patch(_CLI, **{"from_context.return_value": cl}), \
-             patch(_CTX, return_value=ctx), \
-             patch(_DSP, return_value=cm), \
-             patch(_PARSE, return_value=filters), \
-             patch(_CON):
+        with patch(_CLI, **{"from_context.return_value": cl}), patch(_CTX, return_value=ctx), patch(
+            _DSP, return_value=cm
+        ), patch(_PARSE, return_value=filters), patch(_CON):
             r = runner.invoke(app, ["pull"])
         assert r.exit_code == 0
         assert new.exists()
 
     def test_not_dir(self, tmp_path):
-        f = tmp_path / "f.txt"; f.write_text("x")
+        f = tmp_path / "f.txt"
+        f.write_text("x")
         cm, sp = _sp()
         cl = _client()
-        filters = MagicMock(); filters.search = None
+        filters = MagicMock()
+        filters.search = None
         ctx = _ctx(assets_folder=str(f))
-        with patch(_CLI, **{"from_context.return_value": cl}), \
-             patch(_CTX, return_value=ctx), \
-             patch(_DSP, return_value=cm), \
-             patch(_PARSE, return_value=filters), \
-             patch(_CON):
+        with patch(_CLI, **{"from_context.return_value": cl}), patch(_CTX, return_value=ctx), patch(
+            _DSP, return_value=cm
+        ), patch(_PARSE, return_value=filters), patch(_CON):
             r = runner.invoke(app, ["pull"])
         assert r.exit_code == 1
 
@@ -779,11 +834,15 @@ class TestPullCharts:
         assert self._invoke(tmp_path, ["--skip-dependencies"]).exit_code == 0
 
     def test_exists_no_overwrite(self, tmp_path):
-        d = tmp_path / "charts"; d.mkdir(); (d / "chart_1.yaml").write_text("old")
+        d = tmp_path / "charts"
+        d.mkdir()
+        (d / "chart_1.yaml").write_text("old")
         assert self._invoke(tmp_path).exit_code == 0
 
     def test_exists_overwrite(self, tmp_path):
-        d = tmp_path / "charts"; d.mkdir(); (d / "chart_1.yaml").write_text("old")
+        d = tmp_path / "charts"
+        d.mkdir()
+        (d / "chart_1.yaml").write_text("old")
         assert self._invoke(tmp_path, ["--overwrite"]).exit_code == 0
 
     def test_disable_jinja(self, tmp_path):
@@ -809,7 +868,9 @@ class TestPullCharts:
 
     def test_porcelain_file_exists_no_overwrite(self, tmp_path):
         """Branch 1054->1059: porcelain with file exists and no overwrite."""
-        d = tmp_path / "charts"; d.mkdir(); (d / "chart_1.yaml").write_text("old")
+        d = tmp_path / "charts"
+        d.mkdir()
+        (d / "chart_1.yaml").write_text("old")
         assert self._invoke(tmp_path, ["--porcelain"]).exit_code == 0
 
     def test_spinner_none(self, tmp_path):
@@ -819,13 +880,12 @@ class TestPullCharts:
         cm.__exit__ = MagicMock(return_value=False)
         cl = _client(charts=[{"id": 1}])
         cl.client.export_zip.return_value = _zipbuf(self.DEFAULT_ZIP)
-        filters = MagicMock(); filters.search = None
+        filters = MagicMock()
+        filters.search = None
         ctx = _ctx(assets_folder=str(tmp_path))
-        with patch(_CLI, **{"from_context.return_value": cl}), \
-             patch(_CTX, return_value=ctx), \
-             patch(_DSP, return_value=cm), \
-             patch(_PARSE, return_value=filters), \
-             patch(_CON):
+        with patch(_CLI, **{"from_context.return_value": cl}), patch(_CTX, return_value=ctx), patch(
+            _DSP, return_value=cm
+        ), patch(_PARSE, return_value=filters), patch(_CON):
             r = runner.invoke(app, ["pull"])
         assert r.exit_code == 0
 
@@ -842,13 +902,12 @@ class TestPullCharts:
         cm, sp = _sp()
         cl = _client(charts=[{"id": 1}])
         cl.client.export_zip.side_effect = RuntimeError("export fail")
-        filters = MagicMock(); filters.search = None
+        filters = MagicMock()
+        filters.search = None
         ctx = _ctx(assets_folder=str(tmp_path))
-        with patch(_CLI, **{"from_context.return_value": cl}), \
-             patch(_CTX, return_value=ctx), \
-             patch(_DSP, return_value=cm), \
-             patch(_PARSE, return_value=filters), \
-             patch(_CON):
+        with patch(_CLI, **{"from_context.return_value": cl}), patch(_CTX, return_value=ctx), patch(
+            _DSP, return_value=cm
+        ), patch(_PARSE, return_value=filters), patch(_CON):
             r = runner.invoke(app, ["pull", "--porcelain"])
         assert r.exit_code == 1
 
@@ -857,24 +916,34 @@ class TestPullCharts:
 # push_charts
 # ===================================================================
 
-class TestPushCharts:
 
-    def _invoke(self, tmp_path, args_extra=None, ctx_mock=None, workspaces=None,
-                confirm=True, native_effect=None):
+class TestPushCharts:
+    def _invoke(
+        self,
+        tmp_path,
+        args_extra=None,
+        ctx_mock=None,
+        workspaces=None,
+        confirm=True,
+        native_effect=None,
+    ):
         ct = ctx_mock or _ctx(assets_folder=str(tmp_path))
-        ws = workspaces if workspaces is not None else [
-            {"id": 2, "hostname": "target.preset.io"},
-            {"id": 1, "hostname": "source.preset.io"},
-        ]
+        ws = (
+            workspaces
+            if workspaces is not None
+            else [
+                {"id": 2, "hostname": "target.preset.io"},
+                {"id": 1, "hostname": "source.preset.io"},
+            ]
+        )
         pcl = MagicMock()
         pcl.get_all_workspaces.return_value = ws
 
-        with patch(_CTX, return_value=ct), \
-             patch(_NATIVE) as mn, \
-             patch(_PAUTH, **{"from_sup_config.return_value": MagicMock()}), \
-             patch(_PCLI, **{"from_context.return_value": pcl}), \
-             patch("typer.confirm", return_value=confirm), \
-             patch(_CON):
+        with patch(_CTX, return_value=ct), patch(_NATIVE) as mn, patch(
+            _PAUTH, **{"from_sup_config.return_value": MagicMock()}
+        ), patch(_PCLI, **{"from_context.return_value": pcl}), patch(
+            "typer.confirm", return_value=confirm
+        ), patch(_CON):
             if native_effect:
                 mn.side_effect = native_effect
             return runner.invoke(app, ["push"] + (args_extra or []))
@@ -887,7 +956,8 @@ class TestPushCharts:
         assert self._invoke(tmp_path, ["--force"], ctx_mock=ct).exit_code == 1
 
     def test_not_dir(self, tmp_path):
-        f = tmp_path / "f.txt"; f.write_text("x")
+        f = tmp_path / "f.txt"
+        f.write_text("x")
         ct = _ctx(assets_folder=str(f))
         assert self._invoke(tmp_path, ["--force"], ctx_mock=ct).exit_code == 1
 
@@ -908,24 +978,29 @@ class TestPushCharts:
 
     def test_same_workspace(self, tmp_path):
         ct = _ctx(workspace_id=1, target_workspace_id=1, assets_folder=str(tmp_path))
-        assert self._invoke(tmp_path, ctx_mock=ct, confirm=True,
-                            workspaces=[{"id": 1, "hostname": "s.io"}]).exit_code == 0
+        assert (
+            self._invoke(
+                tmp_path, ctx_mock=ct, confirm=True, workspaces=[{"id": 1, "hostname": "s.io"}]
+            ).exit_code
+            == 0
+        )
 
     def test_target_not_found(self, tmp_path):
         assert self._invoke(tmp_path, ["--force"], workspaces=[]).exit_code == 1
 
     def test_no_hostname(self, tmp_path):
-        assert self._invoke(tmp_path, ["--force"],
-                            workspaces=[{"id": 2, "hostname": None}]).exit_code == 1
+        assert (
+            self._invoke(tmp_path, ["--force"], workspaces=[{"id": 2, "hostname": None}]).exit_code
+            == 1
+        )
 
     def test_exception(self, tmp_path):
-        assert self._invoke(tmp_path, ["--force"],
-                            native_effect=RuntimeError("k")).exit_code == 1
+        assert self._invoke(tmp_path, ["--force"], native_effect=RuntimeError("k")).exit_code == 1
 
     def test_typer_exit(self, tmp_path):
         import typer as _t
-        assert self._invoke(tmp_path, ["--force"],
-                            native_effect=_t.Exit(1)).exit_code == 1
+
+        assert self._invoke(tmp_path, ["--force"], native_effect=_t.Exit(1)).exit_code == 1
 
     def test_porcelain_force(self, tmp_path):
         assert self._invoke(tmp_path, ["--porcelain", "--force"]).exit_code == 0
@@ -941,7 +1016,11 @@ class TestPushCharts:
 
     def test_porcelain_native_error(self, tmp_path):
         """Branch 1348->1353: porcelain with native() exception."""
-        assert self._invoke(
-            tmp_path, ["--porcelain", "--force"],
-            native_effect=RuntimeError("import failed"),
-        ).exit_code == 1
+        assert (
+            self._invoke(
+                tmp_path,
+                ["--porcelain", "--force"],
+                native_effect=RuntimeError("import failed"),
+            ).exit_code
+            == 1
+        )

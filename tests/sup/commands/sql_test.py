@@ -47,6 +47,7 @@ def _make_spinner_mock(sp_value=None):
 # execute_sql_query tests
 # ---------------------------------------------------------------------------
 
+
 class TestExecuteSqlQuery:
     """Tests for the execute_sql_query function."""
 
@@ -73,8 +74,13 @@ class TestExecuteSqlQuery:
     @patch("sup.clients.superset.SupSupersetClient")
     @patch("sup.config.settings.SupContext")
     def test_successful_query_table_output(
-        self, mock_ctx_cls, mock_client_cls, mock_spinner_fn, mock_timer_cls,
-        mock_result_cls, mock_display,
+        self,
+        mock_ctx_cls,
+        mock_client_cls,
+        mock_spinner_fn,
+        mock_timer_cls,
+        mock_result_cls,
+        mock_display,
     ):
         """Successful query with default table output."""
         mock_ctx_cls.return_value = _make_ctx_mock()
@@ -95,8 +101,13 @@ class TestExecuteSqlQuery:
     @patch("sup.clients.superset.SupSupersetClient")
     @patch("sup.config.settings.SupContext")
     def test_successful_query_json_output(
-        self, mock_ctx_cls, mock_client_cls, mock_spinner_fn, mock_timer_cls,
-        mock_result_cls, mock_display,
+        self,
+        mock_ctx_cls,
+        mock_client_cls,
+        mock_spinner_fn,
+        mock_timer_cls,
+        mock_result_cls,
+        mock_display,
     ):
         """Successful query with JSON output."""
         mock_ctx_cls.return_value = _make_ctx_mock()
@@ -116,8 +127,13 @@ class TestExecuteSqlQuery:
     @patch("sup.clients.superset.SupSupersetClient")
     @patch("sup.config.settings.SupContext")
     def test_successful_query_csv_output(
-        self, mock_ctx_cls, mock_client_cls, mock_spinner_fn, mock_timer_cls,
-        mock_result_cls, mock_display,
+        self,
+        mock_ctx_cls,
+        mock_client_cls,
+        mock_spinner_fn,
+        mock_timer_cls,
+        mock_result_cls,
+        mock_display,
     ):
         """Successful query with CSV output."""
         mock_ctx_cls.return_value = _make_ctx_mock()
@@ -137,8 +153,13 @@ class TestExecuteSqlQuery:
     @patch("sup.clients.superset.SupSupersetClient")
     @patch("sup.config.settings.SupContext")
     def test_successful_query_yaml_output(
-        self, mock_ctx_cls, mock_client_cls, mock_spinner_fn, mock_timer_cls,
-        mock_result_cls, mock_display,
+        self,
+        mock_ctx_cls,
+        mock_client_cls,
+        mock_spinner_fn,
+        mock_timer_cls,
+        mock_result_cls,
+        mock_display,
     ):
         """Successful query with YAML output."""
         mock_ctx_cls.return_value = _make_ctx_mock()
@@ -158,8 +179,13 @@ class TestExecuteSqlQuery:
     @patch("sup.clients.superset.SupSupersetClient")
     @patch("sup.config.settings.SupContext")
     def test_spinner_updated_when_not_none(
-        self, mock_ctx_cls, mock_client_cls, mock_spinner_fn, mock_timer_cls,
-        mock_result_cls, mock_display,
+        self,
+        mock_ctx_cls,
+        mock_client_cls,
+        mock_spinner_fn,
+        mock_timer_cls,
+        mock_result_cls,
+        mock_display,
     ):
         """Spinner text is updated with execution time when sp is not None."""
         mock_ctx_cls.return_value = _make_ctx_mock()
@@ -179,8 +205,13 @@ class TestExecuteSqlQuery:
     @patch("sup.clients.superset.SupSupersetClient")
     @patch("sup.config.settings.SupContext")
     def test_spinner_none_in_porcelain_mode(
-        self, mock_ctx_cls, mock_client_cls, mock_spinner_fn, mock_timer_cls,
-        mock_result_cls, mock_display,
+        self,
+        mock_ctx_cls,
+        mock_client_cls,
+        mock_spinner_fn,
+        mock_timer_cls,
+        mock_result_cls,
+        mock_display,
     ):
         """When spinner returns None (porcelain), no text update attempted."""
         mock_ctx_cls.return_value = _make_ctx_mock()
@@ -200,6 +231,7 @@ class TestExecuteSqlQuery:
 # ---------------------------------------------------------------------------
 # sql_command tests
 # ---------------------------------------------------------------------------
+
 
 class TestSqlCommand:
     """Tests for the sql_command function."""
@@ -259,6 +291,7 @@ class TestSqlCommand:
 # ---------------------------------------------------------------------------
 # sql_main tests
 # ---------------------------------------------------------------------------
+
 
 class TestSqlMain:
     """Tests for sql_main callback invoked through the Typer app."""

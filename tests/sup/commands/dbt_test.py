@@ -44,16 +44,13 @@ def test_format_dbt_help():
 
 
 class TestSyncDbtCore:
-
     def test_manifest_not_found(self, tmp_path):
         result = runner.invoke(app, ["core", str(tmp_path / "missing.json")])
         assert result.exit_code != 0
         assert "Manifest file not found" in result.output
 
     def test_manifest_not_found_porcelain(self, tmp_path):
-        result = runner.invoke(
-            app, ["core", str(tmp_path / "missing.json"), "--porcelain"]
-        )
+        result = runner.invoke(app, ["core", str(tmp_path / "missing.json"), "--porcelain"])
         assert result.exit_code != 0
         assert "Manifest file not found" not in result.output
 
@@ -63,11 +60,15 @@ class TestSyncDbtCore:
         result = runner.invoke(
             app,
             [
-                "core", str(manifest),
-                "--select", "tag:mart",
-                "--exclude", "tag:staging",
+                "core",
+                str(manifest),
+                "--select",
+                "tag:mart",
+                "--exclude",
+                "tag:staging",
                 "--import-db",
-                "--exposures", "/tmp/exposures.yml",
+                "--exposures",
+                "/tmp/exposures.yml",
                 "--dry-run",
             ],
         )
@@ -89,9 +90,7 @@ class TestSyncDbtCore:
     def test_dry_run_porcelain(self, tmp_path):
         manifest = tmp_path / "manifest.json"
         manifest.write_text("{}")
-        result = runner.invoke(
-            app, ["core", str(manifest), "--dry-run", "--porcelain"]
-        )
+        result = runner.invoke(app, ["core", str(manifest), "--dry-run", "--porcelain"])
         assert result.exit_code == 0
         assert "DRY RUN" not in result.output
 
@@ -101,14 +100,10 @@ class TestSyncDbtCore:
 
         click_patch, mock_runner_inst = _mock_click_runner(0, "sync output")
 
-        with patch(_P_CTX) as mock_ctx_cls, \
-             patch(_P_CLIENT) as mock_client_cls, \
-             click_patch:
+        with patch(_P_CTX) as mock_ctx_cls, patch(_P_CLIENT) as mock_client_cls, click_patch:
             mock_ctx_cls.return_value = MagicMock()
             mock_client_cls.from_context.return_value = MagicMock()
-            result = runner.invoke(
-                app, ["core", str(manifest), "--workspace-id", "42"]
-            )
+            result = runner.invoke(app, ["core", str(manifest), "--workspace-id", "42"])
 
         assert result.exit_code == 0
         assert "Using workspace: 42" in result.output
@@ -119,9 +114,7 @@ class TestSyncDbtCore:
 
         click_patch, mock_runner_inst = _mock_click_runner(0, "")
 
-        with patch(_P_CTX) as mock_ctx_cls, \
-             patch(_P_CLIENT) as mock_client_cls, \
-             click_patch:
+        with patch(_P_CTX) as mock_ctx_cls, patch(_P_CLIENT) as mock_client_cls, click_patch:
             mock_ctx_cls.return_value = MagicMock()
             mock_client_cls.from_context.return_value = MagicMock()
             result = runner.invoke(app, ["core", str(manifest)])
@@ -134,23 +127,30 @@ class TestSyncDbtCore:
 
         click_patch, mock_runner_inst = _mock_click_runner(0, "")
 
-        with patch(_P_CTX), \
-             patch(_P_CLIENT), \
-             click_patch:
+        with patch(_P_CTX), patch(_P_CLIENT), click_patch:
             runner.invoke(
                 app,
                 [
-                    "core", str(manifest),
-                    "--project", "myproj",
-                    "--target", "dev",
-                    "--profiles", "/profiles.yml",
-                    "--exposures", "/exposures.yml",
+                    "core",
+                    str(manifest),
+                    "--project",
+                    "myproj",
+                    "--target",
+                    "dev",
+                    "--profiles",
+                    "/profiles.yml",
+                    "--exposures",
+                    "/exposures.yml",
                     "--import-db",
                     "--disallow-edits",
-                    "--external-url-prefix", "http://example.com",
-                    "--select", "tag:a",
-                    "--select", "tag:b",
-                    "--exclude", "tag:c",
+                    "--external-url-prefix",
+                    "http://example.com",
+                    "--select",
+                    "tag:a",
+                    "--select",
+                    "tag:b",
+                    "--exclude",
+                    "tag:c",
                     "--exposures-only",
                     "--preserve-metadata",
                     "--merge-metadata",
@@ -273,7 +273,6 @@ class TestSyncDbtCore:
 
 
 class TestSyncDbtCloud:
-
     @patch(_P_CTX)
     def test_no_token_not_porcelain(self, mock_ctx_cls):
         mock_ctx = MagicMock()
@@ -351,10 +350,14 @@ class TestSyncDbtCloud:
         result = runner.invoke(
             app,
             [
-                "cloud", "--dry-run",
-                "--select", "tag:a",
-                "--exclude", "tag:b",
-                "--exposures", "/exp.yml",
+                "cloud",
+                "--dry-run",
+                "--select",
+                "tag:a",
+                "--exclude",
+                "tag:b",
+                "--exposures",
+                "/exp.yml",
             ],
         )
         assert "Syncing dbt Cloud" in result.output
@@ -382,9 +385,7 @@ class TestSyncDbtCloud:
     def test_success_with_workspace_id(self):
         click_patch, _ = _mock_click_runner(0, "done")
 
-        with patch(_P_CTX) as mock_ctx_cls, \
-             patch(_P_CLIENT) as mock_client_cls, \
-             click_patch:
+        with patch(_P_CTX) as mock_ctx_cls, patch(_P_CLIENT) as mock_client_cls, click_patch:
             mock_ctx = MagicMock()
             mock_ctx.config.dbt_cloud_api_token = "tok"
             mock_ctx.config.dbt_cloud_account_id = None
@@ -400,9 +401,7 @@ class TestSyncDbtCloud:
     def test_success_without_workspace_id(self):
         click_patch, _ = _mock_click_runner(0, "")
 
-        with patch(_P_CTX) as mock_ctx_cls, \
-             patch(_P_CLIENT) as mock_client_cls, \
-             click_patch:
+        with patch(_P_CTX) as mock_ctx_cls, patch(_P_CLIENT) as mock_client_cls, click_patch:
             mock_ctx = MagicMock()
             mock_ctx.config.dbt_cloud_api_token = "tok"
             mock_ctx.config.dbt_cloud_account_id = None
@@ -417,9 +416,7 @@ class TestSyncDbtCloud:
     def test_all_option_flags(self):
         click_patch, mock_runner_inst = _mock_click_runner(0, "")
 
-        with patch(_P_CTX) as mock_ctx_cls, \
-             patch(_P_CLIENT), \
-             click_patch:
+        with patch(_P_CTX) as mock_ctx_cls, patch(_P_CLIENT), click_patch:
             mock_ctx = MagicMock()
             mock_ctx.config.dbt_cloud_api_token = "tok"
             mock_ctx.config.dbt_cloud_account_id = None
@@ -430,19 +427,30 @@ class TestSyncDbtCloud:
             runner.invoke(
                 app,
                 [
-                    "cloud", "mytoken", "111", "222", "333",
-                    "--exposures", "/exp.yml",
+                    "cloud",
+                    "mytoken",
+                    "111",
+                    "222",
+                    "333",
+                    "--exposures",
+                    "/exp.yml",
                     "--disallow-edits",
-                    "--external-url-prefix", "http://x.com",
-                    "--select", "a",
-                    "--exclude", "b",
+                    "--external-url-prefix",
+                    "http://x.com",
+                    "--select",
+                    "a",
+                    "--exclude",
+                    "b",
                     "--exposures-only",
                     "--preserve-metadata",
                     "--merge-metadata",
-                    "--access-url", "http://cloud.example.com",
+                    "--access-url",
+                    "http://cloud.example.com",
                     "--raise-failures",
-                    "--database-id", "5",
-                    "--database-name", "mydb",
+                    "--database-id",
+                    "5",
+                    "--database-name",
+                    "mydb",
                 ],
             )
 
@@ -466,9 +474,7 @@ class TestSyncDbtCloud:
     def test_runner_fail_not_porcelain(self):
         click_patch, _ = _mock_click_runner(1, "cloud error")
 
-        with patch(_P_CTX) as mock_ctx_cls, \
-             patch(_P_CLIENT), \
-             click_patch:
+        with patch(_P_CTX) as mock_ctx_cls, patch(_P_CLIENT), click_patch:
             mock_ctx = MagicMock()
             mock_ctx.config.dbt_cloud_api_token = "tok"
             mock_ctx.config.dbt_cloud_account_id = None
@@ -483,9 +489,7 @@ class TestSyncDbtCloud:
     def test_runner_fail_porcelain(self):
         click_patch, _ = _mock_click_runner(1, "err")
 
-        with patch(_P_CTX) as mock_ctx_cls, \
-             patch(_P_CLIENT), \
-             click_patch:
+        with patch(_P_CTX) as mock_ctx_cls, patch(_P_CLIENT), click_patch:
             mock_ctx = MagicMock()
             mock_ctx.config.dbt_cloud_api_token = "tok"
             mock_ctx.config.dbt_cloud_account_id = None
@@ -500,9 +504,7 @@ class TestSyncDbtCloud:
     def test_success_with_output(self):
         click_patch, _ = _mock_click_runner(0, "Synced 5 models")
 
-        with patch(_P_CTX) as mock_ctx_cls, \
-             patch(_P_CLIENT), \
-             click_patch:
+        with patch(_P_CTX) as mock_ctx_cls, patch(_P_CLIENT), click_patch:
             mock_ctx = MagicMock()
             mock_ctx.config.dbt_cloud_api_token = "tok"
             mock_ctx.config.dbt_cloud_account_id = None
@@ -518,9 +520,7 @@ class TestSyncDbtCloud:
         """Branch: porcelain success path (468->exit)."""
         click_patch, _ = _mock_click_runner(0, "")
 
-        with patch(_P_CTX) as mock_ctx_cls, \
-             patch(_P_CLIENT), \
-             click_patch:
+        with patch(_P_CTX) as mock_ctx_cls, patch(_P_CLIENT), click_patch:
             mock_ctx = MagicMock()
             mock_ctx.config.dbt_cloud_api_token = "tok"
             mock_ctx.config.dbt_cloud_account_id = None
@@ -536,9 +536,7 @@ class TestSyncDbtCloud:
         """Branch: workspace_id + porcelain (408->410)."""
         click_patch, _ = _mock_click_runner(0, "")
 
-        with patch(_P_CTX) as mock_ctx_cls, \
-             patch(_P_CLIENT), \
-             click_patch:
+        with patch(_P_CTX) as mock_ctx_cls, patch(_P_CLIENT), click_patch:
             mock_ctx = MagicMock()
             mock_ctx.config.dbt_cloud_api_token = "tok"
             mock_ctx.config.dbt_cloud_account_id = None
@@ -546,16 +544,14 @@ class TestSyncDbtCloud:
             mock_ctx.config.dbt_cloud_job_id = None
             mock_ctx_cls.return_value = mock_ctx
 
-            result = runner.invoke(
-                app, ["cloud", "--workspace-id", "99", "--porcelain"]
-            )
+            result = runner.invoke(app, ["cloud", "--workspace-id", "99", "--porcelain"])
         assert result.exit_code == 0
         assert "Using workspace" not in result.output
 
     def test_exception_not_porcelain(self):
-        with patch(_P_CTX) as mock_ctx_cls, \
-             patch(_P_CLIENT) as mock_client_cls, \
-             patch("sup.commands.dbt.console") as mock_console:
+        with patch(_P_CTX) as mock_ctx_cls, patch(_P_CLIENT) as mock_client_cls, patch(
+            "sup.commands.dbt.console"
+        ) as mock_console:
             mock_ctx = MagicMock()
             mock_ctx.config.dbt_cloud_api_token = "tok"
             mock_ctx.config.dbt_cloud_account_id = None
@@ -574,8 +570,7 @@ class TestSyncDbtCloud:
         assert any("Sync failed" in c for c in calls)
 
     def test_exception_porcelain(self):
-        with patch(_P_CTX) as mock_ctx_cls, \
-             patch(_P_CLIENT) as mock_client_cls:
+        with patch(_P_CTX) as mock_ctx_cls, patch(_P_CLIENT) as mock_client_cls:
             mock_ctx = MagicMock()
             mock_ctx.config.dbt_cloud_api_token = "tok"
             mock_ctx.config.dbt_cloud_account_id = None
@@ -595,7 +590,6 @@ class TestSyncDbtCloud:
 
 
 class TestListModels:
-
     def test_manifest_not_found(self, tmp_path):
         result = runner.invoke(app, ["list-models", str(tmp_path / "nope.json")])
         assert result.exit_code != 0
@@ -689,8 +683,15 @@ class TestListModels:
             json.dumps(
                 {
                     "nodes": {
-                        "test.proj.test1": {"resource_type": "test", "unique_id": "test.proj.test1"},
-                        "model.proj.m1": {"resource_type": "model", "unique_id": "model.proj.m1", "name": "m1"},
+                        "test.proj.test1": {
+                            "resource_type": "test",
+                            "unique_id": "test.proj.test1",
+                        },
+                        "model.proj.m1": {
+                            "resource_type": "model",
+                            "unique_id": "model.proj.m1",
+                            "name": "m1",
+                        },
                     },
                     "child_map": {},
                 }
@@ -699,7 +700,11 @@ class TestListModels:
 
         mock_schema = MagicMock()
         mock_schema.load.return_value = {
-            "name": "m1", "schema": "public", "database": "db", "tags": [], "config": {"materialized": "view"},
+            "name": "m1",
+            "schema": "public",
+            "database": "db",
+            "tags": [],
+            "config": {"materialized": "view"},
         }
         mock_schema_cls.return_value = mock_schema
         mock_apply.return_value = [mock_schema.load.return_value]

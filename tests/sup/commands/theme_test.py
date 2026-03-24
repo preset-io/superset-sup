@@ -1,6 +1,6 @@
 """Tests for sup.commands.theme module."""
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 from typer.testing import CliRunner
 

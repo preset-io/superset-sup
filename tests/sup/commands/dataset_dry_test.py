@@ -47,10 +47,20 @@ def _make_spinner_cm(sp_obj=None):
 
 def _filters(**overrides):
     defaults = dict(
-        id=None, ids=None, name=None, search=None, mine=False,
-        team_id=None, created_after=None, modified_after=None,
-        limit=None, offset=None, page=None, page_size=None,
-        order=None, desc=False,
+        id=None,
+        ids=None,
+        name=None,
+        search=None,
+        mine=False,
+        team_id=None,
+        created_after=None,
+        modified_after=None,
+        limit=None,
+        offset=None,
+        page=None,
+        page_size=None,
+        order=None,
+        desc=False,
     )
     defaults.update(overrides)
     return UniversalFilters(**defaults)
@@ -64,16 +74,19 @@ def _output(**overrides):
 
 def _get_list_datasets():
     from sup.commands.dataset_dry import list_datasets
+
     return list_datasets.__wrapped__.__wrapped__
 
 
 def _get_dataset_info():
     from sup.commands.dataset_dry import dataset_info
+
     return dataset_info.__wrapped__
 
 
 def _get_export_dataset():
     from sup.commands.dataset_dry import export_dataset
+
     return export_dataset.__wrapped__.__wrapped__
 
 
@@ -106,7 +119,9 @@ def test_list_default(mock_ctx_cls, mock_client_cls, mock_data_spinner, mock_app
 @patch(SPINNER)
 @patch(CLIENT)
 @patch(CTX)
-def test_list_filtered_spinner(mock_ctx_cls, mock_client_cls, mock_data_spinner, mock_apply, mock_display):
+def test_list_filtered_spinner(
+    mock_ctx_cls, mock_client_cls, mock_data_spinner, mock_apply, mock_display
+):
     cm, sp = _make_spinner_cm()
     mock_data_spinner.return_value = cm
     mock_ctx_cls.return_value = MagicMock()
@@ -179,7 +194,9 @@ def test_list_yaml(mock_ctx_cls, mock_client_cls, mock_data_spinner, mock_apply,
 @patch(SPINNER)
 @patch(CLIENT)
 @patch(CTX)
-def test_list_workspace_id(mock_ctx_cls, mock_client_cls, mock_data_spinner, mock_apply, mock_display):
+def test_list_workspace_id(
+    mock_ctx_cls, mock_client_cls, mock_data_spinner, mock_apply, mock_display
+):
     cm, _ = _make_spinner_cm()
     mock_data_spinner.return_value = cm
     ctx = MagicMock()
@@ -198,7 +215,9 @@ def test_list_workspace_id(mock_ctx_cls, mock_client_cls, mock_data_spinner, moc
 @patch(SPINNER)
 @patch(CLIENT)
 @patch(CTX)
-def test_list_dataset_specific_filters(mock_ctx_cls, mock_client_cls, mock_data_spinner, mock_apply, mock_display):
+def test_list_dataset_specific_filters(
+    mock_ctx_cls, mock_client_cls, mock_data_spinner, mock_apply, mock_display
+):
     cm, _ = _make_spinner_cm()
     mock_data_spinner.return_value = cm
     mock_ctx_cls.return_value = MagicMock()
@@ -208,8 +227,11 @@ def test_list_dataset_specific_filters(mock_ctx_cls, mock_client_cls, mock_data_
     mock_apply.return_value = [SAMPLE_DATASETS[0]]
 
     _get_list_datasets()(
-        filters=_filters(), output=_output(),
-        database_id=10, schema="analytics", table_type="view",
+        filters=_filters(),
+        output=_output(),
+        database_id=10,
+        schema="analytics",
+        table_type="view",
     )
     df = mock_apply.call_args[0][1]
     assert df.database_id == 10
@@ -222,7 +244,9 @@ def test_list_dataset_specific_filters(mock_ctx_cls, mock_client_cls, mock_data_
 @patch(SPINNER)
 @patch(CLIENT)
 @patch(CTX)
-def test_list_universal_filters(mock_ctx_cls, mock_client_cls, mock_data_spinner, mock_apply, mock_display):
+def test_list_universal_filters(
+    mock_ctx_cls, mock_client_cls, mock_data_spinner, mock_apply, mock_display
+):
     cm, _ = _make_spinner_cm()
     mock_data_spinner.return_value = cm
     mock_ctx_cls.return_value = MagicMock()
@@ -247,7 +271,9 @@ def test_list_universal_filters(mock_ctx_cls, mock_client_cls, mock_data_spinner
 @patch(SPINNER)
 @patch(CLIENT)
 @patch(CTX)
-def test_list_page_filter(mock_ctx_cls, mock_client_cls, mock_data_spinner, mock_apply, mock_display):
+def test_list_page_filter(
+    mock_ctx_cls, mock_client_cls, mock_data_spinner, mock_apply, mock_display
+):
     cm, _ = _make_spinner_cm()
     mock_data_spinner.return_value = cm
     mock_ctx_cls.return_value = MagicMock()
@@ -265,7 +291,9 @@ def test_list_page_filter(mock_ctx_cls, mock_client_cls, mock_data_spinner, mock
 @patch(SPINNER)
 @patch(CLIENT)
 @patch(CTX)
-def test_list_no_page_defaults_zero(mock_ctx_cls, mock_client_cls, mock_data_spinner, mock_apply, mock_display):
+def test_list_no_page_defaults_zero(
+    mock_ctx_cls, mock_client_cls, mock_data_spinner, mock_apply, mock_display
+):
     cm, _ = _make_spinner_cm()
     mock_data_spinner.return_value = cm
     mock_ctx_cls.return_value = MagicMock()
@@ -283,7 +311,9 @@ def test_list_no_page_defaults_zero(mock_ctx_cls, mock_client_cls, mock_data_spi
 @patch(SPINNER)
 @patch(CLIENT)
 @patch(CTX)
-def test_list_table_display_func(mock_ctx_cls, mock_client_cls, mock_data_spinner, mock_apply, mock_display):
+def test_list_table_display_func(
+    mock_ctx_cls, mock_client_cls, mock_data_spinner, mock_apply, mock_display
+):
     cm, _ = _make_spinner_cm()
     mock_data_spinner.return_value = cm
     ctx = MagicMock()
@@ -306,7 +336,9 @@ def test_list_table_display_func(mock_ctx_cls, mock_client_cls, mock_data_spinne
 @patch(SPINNER)
 @patch(CLIENT)
 @patch(CTX)
-def test_list_spinner_silent_none(mock_ctx_cls, mock_client_cls, mock_data_spinner, mock_apply, mock_display):
+def test_list_spinner_silent_none(
+    mock_ctx_cls, mock_client_cls, mock_data_spinner, mock_apply, mock_display
+):
     cm = MagicMock()
     cm.__enter__ = MagicMock(return_value=None)
     cm.__exit__ = MagicMock(return_value=False)
@@ -391,8 +423,9 @@ def test_info_workspace_id(mock_ctx_cls, mock_client_cls):
     client.get_dataset.return_value = {"id": 1, "table_name": "t", "database_name": "d"}
     mock_client_cls.from_context.return_value = client
 
-    with patch("sup.commands.dataset.display_dataset_details"), \
-         patch("sup.commands.dataset_dry.console"):
+    with patch("sup.commands.dataset.display_dataset_details"), patch(
+        "sup.commands.dataset_dry.console"
+    ):
         _get_dataset_info()(dataset_id=1, output=_output(workspace_id=88))
     mock_client_cls.from_context.assert_called_once_with(ctx, 88)
 
@@ -403,7 +436,9 @@ def test_info_error_no_porcelain(mock_ctx_cls):
     with patch("sup.commands.dataset_dry.console") as mock_console:
         with pytest.raises(click.exceptions.Exit):
             _get_dataset_info()(dataset_id=999, output=_output())
-        assert any("Failed to get dataset info" in str(c) for c in mock_console.print.call_args_list)
+        assert any(
+            "Failed to get dataset info" in str(c) for c in mock_console.print.call_args_list
+        )
 
 
 @patch(CTX)
@@ -423,8 +458,9 @@ def test_info_loading_message(mock_ctx_cls, mock_client_cls):
     client.get_dataset.return_value = {"id": 1, "table_name": "t", "database_name": "d"}
     mock_client_cls.from_context.return_value = client
 
-    with patch("sup.commands.dataset.display_dataset_details"), \
-         patch("sup.commands.dataset_dry.console") as mock_console:
+    with patch("sup.commands.dataset.display_dataset_details"), patch(
+        "sup.commands.dataset_dry.console"
+    ) as mock_console:
         _get_dataset_info()(dataset_id=1, output=_output())
     assert any("Loading dataset 1" in str(c) for c in mock_console.print.call_args_list)
 
@@ -441,7 +477,10 @@ def test_export_not_yet_implemented():
 def test_export_with_options():
     with patch("sup.commands.dataset_dry.console") as mock_console:
         _get_export_dataset()(
-            filters=_filters(), output=_output(),
-            folder="/tmp/out", overwrite=True, dry_run=True,
+            filters=_filters(),
+            output=_output(),
+            folder="/tmp/out",
+            overwrite=True,
+            dry_run=True,
         )
     assert any("not yet implemented" in str(c) for c in mock_console.print.call_args_list)

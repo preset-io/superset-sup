@@ -945,7 +945,8 @@ class TestGetAllGroups:
 
 class TestDisplayGroupsTable:
 
-    def test_with_members_gt_3(self):
+    @patch("sup.commands.group.console")
+    def test_with_members_gt_3(self, mock_console):
         groups = [
             {
                 "id": "g1",
@@ -954,19 +955,34 @@ class TestDisplayGroupsTable:
             }
         ]
         display_groups_table(groups, "team1")
+        mock_console.print.assert_called_once()
+        table = mock_console.print.call_args[0][0]
+        assert table.row_count == 1
 
-    def test_with_members_le_3(self):
+    @patch("sup.commands.group.console")
+    def test_with_members_le_3(self, mock_console):
         groups = [
             {"id": "g1", "displayName": "Small", "members": [{"display": "Alice", "value": "a@co.com"}]}
         ]
         display_groups_table(groups, "team1")
+        mock_console.print.assert_called_once()
+        table = mock_console.print.call_args[0][0]
+        assert table.row_count == 1
 
-    def test_no_members(self):
+    @patch("sup.commands.group.console")
+    def test_no_members(self, mock_console):
         groups = [{"id": "g1", "displayName": "Empty", "members": []}]
         display_groups_table(groups, "team1")
+        mock_console.print.assert_called_once()
+        table = mock_console.print.call_args[0][0]
+        assert table.row_count == 1
 
-    def test_empty_groups(self):
+    @patch("sup.commands.group.console")
+    def test_empty_groups(self, mock_console):
         display_groups_table([], "team1")
+        mock_console.print.assert_called_once()
+        table = mock_console.print.call_args[0][0]
+        assert table.row_count == 0
 
 
 # ---------------------------------------------------------------------------
@@ -1058,21 +1074,37 @@ class TestNeedsUpdate:
 
 class TestDisplaySyncPlan:
 
-    def test_create_ops(self):
+    @patch("sup.commands.group.console")
+    def test_create_ops(self, mock_console):
         ops = {"create": [{"name": "New", "members": [{"email": "x@co.com"}]}], "update": [], "delete": []}
         display_sync_plan(ops, dry_run=False)
+        mock_console.print.assert_called_once()
+        panel = mock_console.print.call_args[0][0]
+        assert panel.title == "Sync Plan"
 
-    def test_update_ops(self):
+    @patch("sup.commands.group.console")
+    def test_update_ops(self, mock_console):
         ops = {"create": [], "update": [{"name": "Eng"}], "delete": []}
         display_sync_plan(ops, dry_run=True)
+        mock_console.print.assert_called_once()
+        panel = mock_console.print.call_args[0][0]
+        assert panel.title == "Sync Plan (DRY RUN)"
 
-    def test_delete_ops(self):
+    @patch("sup.commands.group.console")
+    def test_delete_ops(self, mock_console):
         ops = {"create": [], "update": [], "delete": [{"name": "Old"}]}
         display_sync_plan(ops, dry_run=False)
+        mock_console.print.assert_called_once()
+        panel = mock_console.print.call_args[0][0]
+        assert panel.title == "Sync Plan"
 
-    def test_empty_ops(self):
+    @patch("sup.commands.group.console")
+    def test_empty_ops(self, mock_console):
         ops = {"create": [], "update": [], "delete": []}
         display_sync_plan(ops, dry_run=False)
+        mock_console.print.assert_called_once()
+        panel = mock_console.print.call_args[0][0]
+        assert "No changes required" in str(panel.renderable)
 
 
 # ---------------------------------------------------------------------------
@@ -1141,14 +1173,38 @@ class TestExecuteGroupSync:
 
 class TestDisplaySyncResults:
 
-    def test_all_types(self):
+    @patch("sup.commands.group.console")
+    def test_all_types(self, mock_console):
         display_sync_results({"created": 1, "updated": 2, "deleted": 1, "errors": 1, "total": 4})
+        mock_console.print.assert_called_once()
+        panel = mock_console.print.call_args[0][0]
+        assert panel.title == "Sync Results"
+        content = str(panel.renderable)
+        assert "Created: 1" in content
+        assert "Updated: 2" in content
+        assert "Deleted: 1" in content
+        assert "Errors: 1" in content
+        assert panel.border_style == "yellow"
 
-    def test_no_errors(self):
+    @patch("sup.commands.group.console")
+    def test_no_errors(self, mock_console):
         display_sync_results({"created": 1, "updated": 0, "deleted": 0, "errors": 0, "total": 1})
+        mock_console.print.assert_called_once()
+        panel = mock_console.print.call_args[0][0]
+        content = str(panel.renderable)
+        assert "Created: 1" in content
+        assert "Errors" not in content
+        assert panel.border_style == "green"
 
-    def test_only_errors(self):
+    @patch("sup.commands.group.console")
+    def test_only_errors(self, mock_console):
         display_sync_results({"created": 0, "updated": 0, "deleted": 0, "errors": 2, "total": 0})
+        mock_console.print.assert_called_once()
+        panel = mock_console.print.call_args[0][0]
+        content = str(panel.renderable)
+        assert "Errors: 2" in content
+        assert "Created" not in content
+        assert panel.border_style == "yellow"
 
 
 # ---------------------------------------------------------------------------

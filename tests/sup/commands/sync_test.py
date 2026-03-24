@@ -405,31 +405,45 @@ class TestValidateSync:
 # ---------------------------------------------------------------------------
 
 class TestDisplaySyncSummary:
-    def test_pull_only(self, capsys):
+    @patch("sup.commands.sync.console")
+    def test_pull_only(self, mock_console):
         cfg = _make_sync_config()
         targets = [_make_target(name="prod")]
         display_sync_summary(cfg, targets, pull_only=True, push_only=False,
                              dry_run=False, sync_path=Path("/tmp/s"))
+        calls = [str(c) for c in mock_console.print.call_args_list]
+        assert any("Pull Only" in c for c in calls)
+        assert any("prod" in c for c in calls)
 
-    def test_push_only(self, capsys):
+    @patch("sup.commands.sync.console")
+    def test_push_only(self, mock_console):
         cfg = _make_sync_config()
         targets = [_make_target()]
         display_sync_summary(cfg, targets, pull_only=False, push_only=True,
                              dry_run=False, sync_path=Path("/tmp/s"))
+        calls = [str(c) for c in mock_console.print.call_args_list]
+        assert any("Push Only" in c for c in calls)
 
-    def test_full_sync(self, capsys):
+    @patch("sup.commands.sync.console")
+    def test_full_sync(self, mock_console):
         cfg = _make_sync_config()
         targets = [_make_target()]
         display_sync_summary(cfg, targets, pull_only=False, push_only=False,
                              dry_run=False, sync_path=Path("/tmp/s"))
+        calls = [str(c) for c in mock_console.print.call_args_list]
+        assert any("Full Sync" in c for c in calls)
 
-    def test_dry_run_appends(self, capsys):
+    @patch("sup.commands.sync.console")
+    def test_dry_run_appends(self, mock_console):
         cfg = _make_sync_config()
         targets = [_make_target()]
         display_sync_summary(cfg, targets, pull_only=True, push_only=False,
                              dry_run=True, sync_path=Path("/tmp/s"))
+        calls = [str(c) for c in mock_console.print.call_args_list]
+        assert any("Dry Run" in c for c in calls)
 
-    def test_ids_selection(self, capsys):
+    @patch("sup.commands.sync.console")
+    def test_ids_selection(self, mock_console):
         assets = MagicMock()
         assets.charts = _make_asset_selection(selection="ids", ids=[1, 2, 3])
         assets.dashboards = None
@@ -438,13 +452,19 @@ class TestDisplaySyncSummary:
         cfg = _make_sync_config(assets=assets)
         targets = [_make_target(name="staging")]
         display_sync_summary(cfg, targets, False, False, False, Path("/tmp/s"))
+        calls = [str(c) for c in mock_console.print.call_args_list]
+        assert any("3 items" in c for c in calls)
 
-    def test_target_without_name(self, capsys):
+    @patch("sup.commands.sync.console")
+    def test_target_without_name(self, mock_console):
         cfg = _make_sync_config()
         targets = [_make_target(name=None)]
         display_sync_summary(cfg, targets, False, False, False, Path("/tmp/s"))
+        calls = [str(c) for c in mock_console.print.call_args_list]
+        assert any("456" in c for c in calls)
 
-    def test_no_assets(self, capsys):
+    @patch("sup.commands.sync.console")
+    def test_no_assets(self, mock_console):
         """All asset configs are None."""
         assets = MagicMock()
         assets.charts = None
@@ -453,6 +473,8 @@ class TestDisplaySyncSummary:
         assets.databases = None
         cfg = _make_sync_config(assets=assets)
         display_sync_summary(cfg, [], False, False, False, Path("/tmp/s"))
+        calls = [str(c) for c in mock_console.print.call_args_list]
+        assert any("123" in c for c in calls)  # source workspace id still printed
 
 
 # ---------------------------------------------------------------------------
@@ -460,7 +482,8 @@ class TestDisplaySyncSummary:
 # ---------------------------------------------------------------------------
 
 class TestExecutePull:
-    def test_dry_run_ids(self):
+    @patch("sup.commands.sync.console")
+    def test_dry_run_ids(self, mock_console):
         assets = MagicMock()
         assets.charts = _make_asset_selection(selection="ids", ids=[1, 2])
         assets.dashboards = None
@@ -469,8 +492,12 @@ class TestExecutePull:
         cfg = _make_sync_config(assets=assets)
 
         execute_pull(cfg, Path("/tmp/s"), dry_run=True, porcelain=False)
+        calls = [str(c) for c in mock_console.print.call_args_list]
+        assert any("DRY RUN" in c for c in calls)
+        assert any("2 items" in c for c in calls)
 
-    def test_dry_run_all(self):
+    @patch("sup.commands.sync.console")
+    def test_dry_run_all(self, mock_console):
         assets = MagicMock()
         assets.charts = _make_asset_selection(selection="all")
         assets.dashboards = None
@@ -479,8 +506,12 @@ class TestExecutePull:
         cfg = _make_sync_config(assets=assets)
 
         execute_pull(cfg, Path("/tmp/s"), dry_run=True, porcelain=False)
+        calls = [str(c) for c in mock_console.print.call_args_list]
+        assert any("DRY RUN" in c for c in calls)
+        assert any("charts" in c for c in calls)
 
-    def test_dry_run_porcelain(self):
+    @patch("sup.commands.sync.console")
+    def test_dry_run_porcelain(self, mock_console):
         assets = MagicMock()
         assets.charts = _make_asset_selection(selection="all")
         assets.dashboards = None
@@ -489,6 +520,8 @@ class TestExecutePull:
         cfg = _make_sync_config(assets=assets)
 
         execute_pull(cfg, Path("/tmp/s"), dry_run=True, porcelain=True)
+        # porcelain dry_run should not print anything
+        mock_console.print.assert_not_called()
 
     @patch("sup.config.settings.SupContext")
     @patch("sup.clients.superset.SupSupersetClient")
@@ -680,7 +713,8 @@ class TestExecutePull:
         execute_pull(cfg, tmp_path, dry_run=False, porcelain=True)
         mock_export.assert_not_called()
 
-    def test_dry_run_none_asset_config(self):
+    @patch("sup.commands.sync.console")
+    def test_dry_run_none_asset_config(self, mock_console):
         """Asset config is None in dry_run path."""
         assets = MagicMock()
         assets.charts = None
@@ -690,6 +724,8 @@ class TestExecutePull:
         cfg = _make_sync_config(assets=assets)
 
         execute_pull(cfg, Path("/tmp/s"), dry_run=True, porcelain=False)
+        calls = [str(c) for c in mock_console.print.call_args_list]
+        assert any("DRY RUN" in c for c in calls)
 
 
 # ---------------------------------------------------------------------------
@@ -697,23 +733,33 @@ class TestExecutePull:
 # ---------------------------------------------------------------------------
 
 class TestExecutePush:
-    def test_dry_run(self):
+    @patch("sup.commands.sync.console")
+    def test_dry_run(self, mock_console):
         cfg = _make_sync_config()
         target = _make_target(name="prod", jinja_context={"env": "prod"})
 
         execute_push(cfg, [target], Path("/tmp/s"), dry_run=True, porcelain=False)
+        calls = [str(c) for c in mock_console.print.call_args_list]
+        assert any("DRY RUN" in c for c in calls)
+        assert any("prod" in c for c in calls)
 
-    def test_dry_run_porcelain(self):
+    @patch("sup.commands.sync.console")
+    def test_dry_run_porcelain(self, mock_console):
         cfg = _make_sync_config()
         target = _make_target(jinja_context={"env": "staging"})
 
         execute_push(cfg, [target], Path("/tmp/s"), dry_run=True, porcelain=True)
+        # porcelain dry_run should not print anything
+        mock_console.print.assert_not_called()
 
-    def test_dry_run_no_name(self):
+    @patch("sup.commands.sync.console")
+    def test_dry_run_no_name(self, mock_console):
         cfg = _make_sync_config()
         target = _make_target(name=None)
 
         execute_push(cfg, [target], Path("/tmp/s"), dry_run=True, porcelain=False)
+        calls = [str(c) for c in mock_console.print.call_args_list]
+        assert any("DRY RUN" in c for c in calls)
 
     @patch("preset_cli.cli.superset.sync.native.command.raise_helper")
     @patch("preset_cli.cli.superset.sync.native.command.load_user_modules")

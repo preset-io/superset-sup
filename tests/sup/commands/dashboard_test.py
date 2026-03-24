@@ -98,11 +98,16 @@ class TestListDashboards:
 
         result = runner.invoke(app, ["list", "--json"])
         assert result.exit_code == 0
+        parsed = json.loads(result.output)
+        assert len(parsed) == 2
+        assert parsed[0]["dashboard_title"] == "Sales"
 
     @patch(PATCH_SPINNER)
     @patch(PATCH_CLIENT)
     @patch(PATCH_CTX)
     def test_yaml_output(self, mock_ctx_cls, mock_client_cls, mock_spinner):
+        import yaml
+
         cm, sp = _make_spinner_mock()
         mock_spinner.return_value = cm
         mock_ctx_cls.return_value = MagicMock()
@@ -112,6 +117,9 @@ class TestListDashboards:
 
         result = runner.invoke(app, ["list", "--yaml"])
         assert result.exit_code == 0
+        parsed = yaml.safe_load(result.output)
+        assert len(parsed) == 2
+        assert parsed[0]["dashboard_title"] == "Sales"
 
     @patch("sup.commands.dashboard.display_dashboards_table")
     @patch(PATCH_SPINNER)
@@ -204,11 +212,16 @@ class TestDashboardInfo:
 
         result = runner.invoke(app, ["info", "1", "--json"])
         assert result.exit_code == 0
+        parsed = json.loads(result.output)
+        assert parsed["id"] == 1
+        assert parsed["dashboard_title"] == "Sales"
 
     @patch(PATCH_SPINNER)
     @patch(PATCH_CLIENT)
     @patch(PATCH_CTX)
     def test_yaml_output(self, mock_ctx_cls, mock_client_cls, mock_spinner):
+        import yaml
+
         cm, sp = _make_spinner_mock()
         mock_spinner.return_value = cm
         mock_ctx_cls.return_value = MagicMock()
@@ -218,6 +231,8 @@ class TestDashboardInfo:
 
         result = runner.invoke(app, ["info", "1", "--yaml"])
         assert result.exit_code == 0
+        parsed = yaml.safe_load(result.output)
+        assert parsed["dashboard_title"] == "Sales"
 
     @patch("sup.commands.dashboard.display_dashboard_details")
     @patch(PATCH_SPINNER)
@@ -267,7 +282,9 @@ class TestDisplayDashboardDetails:
     def test_basic_no_optional_fields(self, mock_console):
         dashboard = {"id": 1, "dashboard_title": "Test", "published": False, "slug": "test"}
         display_dashboard_details(dashboard)
-        assert mock_console.print.called
+        panel = mock_console.print.call_args_list[0][0][0]
+        assert "Test" in str(panel.title)
+        assert "Draft" in str(panel.renderable)
 
     @patch("sup.commands.dashboard.console")
     def test_with_description_and_dates(self, mock_console):
@@ -384,6 +401,10 @@ class TestDisplayDashboardDetails:
             "position_json": "{}",
         }
         display_dashboard_details(dashboard)
+        # Only the Panel should be printed (no chart section)
+        assert mock_console.print.call_count == 1
+        panel = mock_console.print.call_args_list[0][0][0]
+        assert "Test" in str(panel.title)
 
     @patch("sup.commands.dashboard.console")
     def test_chart_without_override_name(self, mock_console):
@@ -404,6 +425,10 @@ class TestDisplayDashboardDetails:
             "position_json": json.dumps(position),
         }
         display_dashboard_details(dashboard)
+        # Should have Panel + chart header + chart table + hint = multiple prints
+        assert mock_console.print.call_count > 1
+        all_text = " ".join(str(c) for c in mock_console.print.call_args_list)
+        assert "Charts" in all_text
 
     @patch("sup.commands.dashboard.console")
     def test_chart_data_no_id(self, mock_console):
@@ -423,6 +448,9 @@ class TestDisplayDashboardDetails:
             "position_json": json.dumps(position),
         }
         display_dashboard_details(dashboard)
+        # Charts header should still appear (1 chart extracted), even though sorted_charts is empty
+        all_text = " ".join(str(c) for c in mock_console.print.call_args_list)
+        assert "Charts" in all_text
 
 
 # ---------------------------------------------------------------------------

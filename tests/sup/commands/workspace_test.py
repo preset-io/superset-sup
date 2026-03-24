@@ -458,39 +458,66 @@ class TestWorkspaceInfo:
 # ---------------------------------------------------------------------------
 
 class TestDisplayWorkspaceDetails:
+    @staticmethod
+    def _get_panel_content(mock_console):
+        """Extract the Panel content string from console.print calls."""
+        for call in mock_console.print.call_args_list:
+            args = call[0]
+            if args and hasattr(args[0], "renderable"):
+                # Rich Panel object
+                return str(args[0].renderable)
+        return ""
+
     def test_basic(self):
         ws = {"id": 1, "title": "WS", "hostname": "h.preset.io", "status": "READY",
               "team_name": "T", "region": "us-east-1"}
-        with patch(CONSOLE_PATH):
+        with patch(CONSOLE_PATH) as mock_console:
             display_workspace_details(ws)
+            content = self._get_panel_content(mock_console)
+            assert "ID: 1" in content
+            assert "Title: WS" in content
+            assert "Team: T" in content
+            assert "Status: READY" in content
+            assert "Region: us-east-1" in content
+            assert "https://h.preset.io/" in content
 
     def test_with_description(self):
         ws = {"id": 1, "title": "WS", "hostname": "h.preset.io", "status": "READY",
               "team_name": "T", "region": "us-east-1", "descr": "A workspace"}
-        with patch(CONSOLE_PATH):
+        with patch(CONSOLE_PATH) as mock_console:
             display_workspace_details(ws)
+            content = self._get_panel_content(mock_console)
+            assert "Description: A workspace" in content
 
     def test_with_features(self):
         ws = {"id": 1, "title": "WS", "hostname": "h.preset.io", "status": "READY",
               "team_name": "T", "region": "us-east-1",
               "ai_assist_activated": True, "allow_public_dashboards": True,
               "enable_iframe_embedding": True}
-        with patch(CONSOLE_PATH):
+        with patch(CONSOLE_PATH) as mock_console:
             display_workspace_details(ws)
+            content = self._get_panel_content(mock_console)
+            assert "AI Assist" in content
+            assert "Public Dashboards" in content
+            assert "iFrame Embedding" in content
 
     def test_no_hostname(self):
         ws = {"id": 1, "title": "WS", "hostname": "", "status": "READY",
               "team_name": "T", "region": "us-east-1"}
-        with patch(CONSOLE_PATH):
+        with patch(CONSOLE_PATH) as mock_console:
             display_workspace_details(ws)
+            content = self._get_panel_content(mock_console)
+            assert "URL: N/A" in content
 
     def test_no_features(self):
         ws = {"id": 1, "title": "WS", "hostname": "h.preset.io", "status": "READY",
               "team_name": "T", "region": "us-east-1",
               "ai_assist_activated": False, "allow_public_dashboards": False,
               "enable_iframe_embedding": False}
-        with patch(CONSOLE_PATH):
+        with patch(CONSOLE_PATH) as mock_console:
             display_workspace_details(ws)
+            content = self._get_panel_content(mock_console)
+            assert "Features" not in content
 
 
 # ---------------------------------------------------------------------------
@@ -541,41 +568,58 @@ class TestSetImportTarget:
 # ---------------------------------------------------------------------------
 
 class TestShowWorkspaceContext:
+    @staticmethod
+    def _prints(mock_console):
+        return " ".join(str(c) for c in mock_console.print.call_args_list)
+
     def test_source_configured_no_target(self):
         ctx = _make_ctx(workspace_id=123, target_workspace_id=None)
         with (
-            patch(CONSOLE_PATH),
+            patch(CONSOLE_PATH) as mock_console,
             patch(CTX_PATH, return_value=ctx),
         ):
             result = runner.invoke(app, ["show"])
             assert result.exit_code == 0
+            prints = self._prints(mock_console)
+            assert "123" in prints
+            assert "Source" in prints
+            assert "Same as source" in prints
 
     def test_source_not_configured(self):
         ctx = _make_ctx(workspace_id=None, target_workspace_id=None)
         with (
-            patch(CONSOLE_PATH),
+            patch(CONSOLE_PATH) as mock_console,
             patch(CTX_PATH, return_value=ctx),
         ):
             result = runner.invoke(app, ["show"])
             assert result.exit_code == 0
+            prints = self._prints(mock_console)
+            assert "Not configured" in prints
 
     def test_target_different_from_source(self):
         ctx = _make_ctx(workspace_id=123, target_workspace_id=456)
         with (
-            patch(CONSOLE_PATH),
+            patch(CONSOLE_PATH) as mock_console,
             patch(CTX_PATH, return_value=ctx),
         ):
             result = runner.invoke(app, ["show"])
             assert result.exit_code == 0
+            prints = self._prints(mock_console)
+            assert "123" in prints
+            assert "456" in prints
+            assert "cross" in prints
 
     def test_target_same_as_source(self):
         ctx = _make_ctx(workspace_id=123, target_workspace_id=123)
         with (
-            patch(CONSOLE_PATH),
+            patch(CONSOLE_PATH) as mock_console,
             patch(CTX_PATH, return_value=ctx),
         ):
             result = runner.invoke(app, ["show"])
             assert result.exit_code == 0
+            prints = self._prints(mock_console)
+            assert "123" in prints
+            assert "same as source" in prints
 
     def test_error(self):
         with (

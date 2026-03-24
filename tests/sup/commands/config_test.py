@@ -49,13 +49,26 @@ def test_show_config_auth_configured():
     mock_ctx.global_config.monochrome = False
 
     with (
-        patch(CONSOLE_PATH),
+        patch(CONSOLE_PATH) as mock_console,
         patch(CTX_PATH, return_value=mock_ctx),
         patch(PATHS_GLOBAL, return_value="/g"),
         patch(PATHS_PROJECT, return_value="/p"),
     ):
         result = runner.invoke(app, ["show"])
         assert result.exit_code == 0
+        # Extract Panel renderable content + plain prints
+        all_text = []
+        for call in mock_console.print.call_args_list:
+            args = call[0]
+            for arg in args:
+                if hasattr(arg, "renderable"):
+                    all_text.append(str(arg.renderable))
+                else:
+                    all_text.append(str(arg))
+        combined = " ".join(all_text)
+        assert "Configured" in combined
+        assert "workspace-id" in combined
+        assert "output-format" in combined
 
 
 def test_show_config_auth_not_configured():
@@ -405,6 +418,9 @@ def test_init_project():
         result = runner.invoke(app, ["init"])
         assert result.exit_code == 0
         assert mock_console.print.call_count >= 2
+        prints = " ".join(str(c) for c in mock_console.print.call_args_list)
+        assert "Initializing" in prints
+        assert "initialized" in prints.lower() or "Project" in prints
 
 
 # ---------------------------------------------------------------------------
@@ -420,3 +436,7 @@ def test_show_env_vars():
         result = runner.invoke(app, ["env"])
         assert result.exit_code == 0
         assert mock_console.print.call_count > 0
+        prints = " ".join(str(c) for c in mock_console.print.call_args_list)
+        assert "SUP_PRESET_API_TOKEN" in prints
+        assert "SUP_WORKSPACE_ID" in prints
+        assert "SUP_OUTPUT_FORMAT" in prints

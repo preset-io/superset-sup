@@ -7,6 +7,7 @@ from unittest.mock import MagicMock, patch
 
 import pandas as pd
 import pytest
+from rich.console import Console
 from typer.testing import CliRunner
 
 from sup.commands.chart import (
@@ -19,6 +20,13 @@ from sup.commands.chart import (
 )
 
 runner = CliRunner()
+
+
+def _render(rich_obj) -> str:
+    """Render a Rich object to plain text for assertion checks."""
+    buf = io.StringIO()
+    Console(file=buf, width=300, no_color=True).print(rich_obj)
+    return buf.getvalue()
 
 # Patch targets
 _CTX = "sup.config.settings.SupContext"
@@ -221,9 +229,18 @@ class TestChartSql:
         assert "SELECT 1" in r.output
 
     def test_json(self):
-        r = self._invoke(["1", "--json"])
+        cm, sp = _sp()
+        data = {"result": [{"query": "SELECT 1"}]}
+        cl = _client(chart=CHART, chart_data=data)
+        with patch(_CLI, **{"from_context.return_value": cl}), \
+             patch(_CTX, return_value=_ctx()), \
+             patch(_QSP, return_value=cm), \
+             patch(_CON) as mc:
+            r = runner.invoke(app, ["sql", "1", "--json"])
         assert r.exit_code == 0
-        assert r.exit_code == 0
+        printed = str(mc.print.call_args_list)
+        assert "sql_queries" in printed
+        assert "SELECT 1" in printed
 
     def test_yaml(self):
         assert self._invoke(["1", "--yaml"]).exit_code == 0
@@ -289,9 +306,18 @@ class TestChartData:
         assert self._invoke(["1", "--yaml"]).exit_code == 0
 
     def test_csv(self):
-        r = self._invoke(["1", "--csv"])
+        cm, sp = _sp()
+        default = {"result": [{"data": [{"col1": "a", "col2": 1}], "duration": 0.5}]}
+        cl = _client(chart=CHART, chart_data=default)
+        with patch(_CLI, **{"from_context.return_value": cl}), \
+             patch(_CTX, return_value=_ctx()), \
+             patch(_DSP, return_value=cm), \
+             patch(_CON) as mc:
+            r = runner.invoke(app, ["data", "1", "--csv"])
         assert r.exit_code == 0
-        assert r.exit_code == 0
+        printed = str(mc.print.call_args_list)
+        assert "col1" in printed
+        assert "col2" in printed
 
     def test_table(self):
         with patch(_DQR), patch(_QR):
@@ -375,16 +401,32 @@ class TestDisplayChartsTable:
     def test_dashboards_gt_two(self, mc):
         c = {**CHART, "dashboards": [{"id": i, "dashboard_title": f"D{i}"} for i in range(4)]}
         display_charts_table([c])
+        assert mc.print.called
+        rendered = _render(mc.print.call_args_list[0][0][0])
+        assert "+2 more" in rendered
 
     @patch(_CON)
     def test_no_dashboards(self, mc):
         display_charts_table([{**CHART, "dashboards": []}])
+        assert mc.print.called
+        rendered = _render(mc.print.call_args_list[0][0][0])
+        assert "None" in rendered
 
     @patch(_CON)
     def test_datasource_fallbacks(self, mc):
         display_charts_table([{**CHART, "datasource_name_text": None, "datasource_name": "fb"}])
+        rendered = _render(mc.print.call_args_list[0][0][0])
+        assert "fb" in rendered
+
+        mc.reset_mock()
         display_charts_table([{**CHART, "datasource_name_text": None, "datasource_name": None, "datasource_id": 42}])
+        rendered = _render(mc.print.call_args_list[0][0][0])
+        assert "ID:42" in rendered
+
+        mc.reset_mock()
         display_charts_table([{**CHART, "datasource_name_text": None, "datasource_name": None, "datasource_id": None}])
+        rendered = _render(mc.print.call_args_list[0][0][0])
+        assert "Unknown" in rendered
 
 
 # ===================================================================
@@ -396,14 +438,24 @@ class TestDisplayChartDetails:
     @patch(_CON)
     def test_with_metadata(self, mc):
         display_chart_details(CHART, workspace_hostname="ws.preset.io")
+        panel = mc.print.call_args_list[0][0][0]
+        content = str(panel.renderable)
+        assert "Sales Chart" in content
+        assert "ws.preset.io" in content
 
     @patch(_CON)
     def test_no_hostname(self, mc):
         display_chart_details(CHART, workspace_hostname=None)
+        panel = mc.print.call_args_list[0][0][0]
+        content = str(panel.renderable)
+        assert "Sales Chart" in content
+        assert "URL:" not in content
 
     @patch(_CON)
     def test_no_description(self, mc):
         display_chart_details({**CHART, "description": None})
+        panel = mc.print.call_args_list[0][0][0]
+        assert "Description:" not in str(panel.renderable)
 
     @patch(_CON)
     def test_dashboards_gt_five(self, mc):
@@ -414,10 +466,15 @@ class TestDisplayChartDetails:
     @patch(_CON)
     def test_dashboards_lte_five(self, mc):
         display_chart_details({**CHART, "dashboards": [{"id": i} for i in range(3)]})
+        assert any("3 dashboard" in str(c) for c in mc.print.call_args_list)
+        # Each dashboard shown as "Dashboard <id>" fallback
+        assert any("Dashboard 0" in str(c) for c in mc.print.call_args_list)
 
     @patch(_CON)
     def test_no_dashboards(self, mc):
         display_chart_details({**CHART, "dashboards": []})
+        # No dashboard section printed — only the panel
+        assert not any("dashboard(s)" in str(c) for c in mc.print.call_args_list)
 
     @patch(_CON)
     def test_query_context_lookup(self, mc):
@@ -429,6 +486,8 @@ class TestDisplayChartDetails:
         cl.client.session.get.return_value = resp
         cl.client.baseurl = "https://x"
         display_chart_details(c, client=cl)
+        panel = mc.print.call_args_list[0][0][0]
+        assert "pub.orders" in str(panel.renderable)
 
     @patch(_CON)
     def test_params_lookup(self, mc):
@@ -440,6 +499,8 @@ class TestDisplayChartDetails:
         cl.client.session.get.return_value = resp
         cl.client.baseurl = "https://x"
         display_chart_details(c, client=cl)
+        panel = mc.print.call_args_list[0][0][0]
+        assert "tbl" in str(panel.renderable)
 
     @patch(_CON)
     def test_no_table_name(self, mc):
@@ -451,6 +512,8 @@ class TestDisplayChartDetails:
         cl.client.session.get.return_value = resp
         cl.client.baseurl = "https://x"
         display_chart_details(c, client=cl)
+        panel = mc.print.call_args_list[0][0][0]
+        assert "Dataset ID: 5" in str(panel.renderable)
 
     @patch(_CON)
     def test_404(self, mc):
@@ -460,6 +523,8 @@ class TestDisplayChartDetails:
         cl.client.session.get.return_value = MagicMock(status_code=404)
         cl.client.baseurl = "https://x"
         display_chart_details(c, client=cl)
+        panel = mc.print.call_args_list[0][0][0]
+        assert "Dataset ID: 5 (not found)" in str(panel.renderable)
 
     @patch(_CON)
     def test_fetch_exception(self, mc):
@@ -469,11 +534,15 @@ class TestDisplayChartDetails:
         cl.client.session.get.side_effect = Exception("err")
         cl.client.baseurl = "https://x"
         display_chart_details(c, client=cl)
+        panel = mc.print.call_args_list[0][0][0]
+        assert "Dataset ID: 5" in str(panel.renderable)
 
     @patch(_CON)
     def test_no_client(self, mc):
         c = {**CHART, "datasource_name_text": None, "datasource_name": None}
         display_chart_details(c, client=None)
+        panel = mc.print.call_args_list[0][0][0]
+        assert "Unknown" in str(panel.renderable)
 
     @patch(_CON)
     def test_bad_json(self, mc):
@@ -481,6 +550,8 @@ class TestDisplayChartDetails:
              "query_context": "bad", "params": "bad"}
         cl = MagicMock(); cl.client.baseurl = "https://x"
         display_chart_details(c, client=cl)
+        panel = mc.print.call_args_list[0][0][0]
+        assert "Unknown" in str(panel.renderable)
 
     @patch(_CON)
     def test_datasource_info_not_dict(self, mc):
@@ -491,6 +562,9 @@ class TestDisplayChartDetails:
         cl = MagicMock(); cl.client.baseurl = "https://x"
         cl.client.session.get.return_value = MagicMock(status_code=404)
         display_chart_details(c, client=cl)
+        panel = mc.print.call_args_list[0][0][0]
+        # No dataset_id extracted, so falls back to "Unknown"
+        assert "Unknown" in str(panel.renderable)
 
     @patch(_CON)
     def test_params_already_dict(self, mc):
@@ -499,6 +573,9 @@ class TestDisplayChartDetails:
              "query_context": "{}", "params": {"datasource": "10__table"}}
         cl = MagicMock(); cl.client.baseurl = "https://x"
         display_chart_details(c, client=cl)
+        panel = mc.print.call_args_list[0][0][0]
+        # params is dict, not str — the isinstance(params, str) branch is skipped, so no dataset_id
+        assert "Unknown" in str(panel.renderable)
 
     @patch(_CON)
     def test_200_no_result_key(self, mc):
@@ -511,6 +588,9 @@ class TestDisplayChartDetails:
         cl.client.session.get.return_value = resp
         cl.client.baseurl = "https://x"
         display_chart_details(c, client=cl)
+        panel = mc.print.call_args_list[0][0][0]
+        # 200 response without "result" key -> dataset_name stays unset -> "Unknown"
+        assert "Unknown" in str(panel.renderable)
 
     @patch(_CON)
     def test_query_context_dict(self, mc):
@@ -522,6 +602,8 @@ class TestDisplayChartDetails:
         cl.client.session.get.return_value = resp
         cl.client.baseurl = "https://x"
         display_chart_details(c, client=cl)
+        panel = mc.print.call_args_list[0][0][0]
+        assert "s.t" in str(panel.renderable)
 
     @patch(_CON)
     def test_params_no_separator(self, mc):
@@ -529,10 +611,15 @@ class TestDisplayChartDetails:
              "query_context": "{}", "params": json.dumps({"datasource": "nope"})}
         cl = MagicMock(); cl.client.baseurl = "https://x"
         display_chart_details(c, client=cl)
+        panel = mc.print.call_args_list[0][0][0]
+        # No "__" separator means no dataset_id extracted -> "Unknown"
+        assert "Unknown" in str(panel.renderable)
 
     @patch(_CON)
     def test_dashboard_no_title(self, mc):
         display_chart_details({**CHART, "dashboards": [{"id": 99}]})
+        # Falls back to "Dashboard 99"
+        assert any("Dashboard 99" in str(c) for c in mc.print.call_args_list)
 
 
 # ===================================================================

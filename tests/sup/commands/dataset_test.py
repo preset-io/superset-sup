@@ -105,6 +105,9 @@ class TestListDatasets:
 
         result = runner.invoke(app, ["list", "--json"])
         assert result.exit_code == 0
+        parsed = json.loads(result.output)
+        assert len(parsed) == 2
+        assert parsed[0]["table_name"] == "sales"
 
     @patch(PATCH_SPINNER)
     @patch(PATCH_CLIENT)
@@ -211,6 +214,9 @@ class TestDatasetInfo:
 
         result = runner.invoke(app, ["info", "1", "--json"])
         assert result.exit_code == 0
+        parsed = json.loads(result.output)
+        assert parsed["id"] == 1
+        assert parsed["table_name"] == "sales"
 
     @patch("sup.commands.dataset.display_dataset_details")
     @patch(PATCH_SPINNER)
@@ -276,7 +282,12 @@ class TestDisplayDatasetsTable:
             },
         ]
         display_datasets_table(datasets, "ws.preset.io")
-        assert mock_console.print.called
+        table = mock_console.print.call_args_list[0][0][0]
+        # Name column should contain link with "sales"
+        name_cells = table.columns[1]._cells
+        assert any("sales" in cell for cell in name_cells)
+        # Hostname should appear in links
+        assert any("ws.preset.io" in cell for cell in name_cells)
 
     @patch("sup.commands.dataset.console")
     def test_with_hostname_no_explore_url(self, mock_console):
@@ -291,7 +302,9 @@ class TestDisplayDatasetsTable:
             },
         ]
         display_datasets_table(datasets, "ws.preset.io")
-        assert mock_console.print.called
+        table = mock_console.print.call_args_list[0][0][0]
+        name_cells = table.columns[1]._cells
+        assert any("users" in cell for cell in name_cells)
 
     @patch("sup.commands.dataset.console")
     def test_without_hostname(self, mock_console):
@@ -306,13 +319,17 @@ class TestDisplayDatasetsTable:
             },
         ]
         display_datasets_table(datasets, None)
-        assert mock_console.print.called
+        table = mock_console.print.call_args_list[0][0][0]
+        name_cells = table.columns[1]._cells
+        assert "orders" in name_cells
 
     @patch("sup.commands.dataset.console")
     def test_dataset_missing_fields(self, mock_console):
         datasets = [{"id": 4}]
         display_datasets_table(datasets)
-        assert mock_console.print.called
+        table = mock_console.print.call_args_list[0][0][0]
+        name_cells = table.columns[1]._cells
+        assert "Unknown" in name_cells
 
     @patch("sup.commands.dataset.console")
     def test_dataset_with_name_fallback(self, mock_console):
@@ -325,7 +342,9 @@ class TestDisplayDatasetsTable:
             },
         ]
         display_datasets_table(datasets)
-        assert mock_console.print.called
+        table = mock_console.print.call_args_list[0][0][0]
+        name_cells = table.columns[1]._cells
+        assert "fallback_name" in name_cells
 
 
 # ---------------------------------------------------------------------------
@@ -359,6 +378,8 @@ class TestDisplayDatasetDetails:
             "description": "Sales table",
         }
         display_dataset_details(dataset)
+        panel = mock_console.print.call_args_list[0][0][0]
+        assert "Sales table" in str(panel.renderable)
 
     @patch("sup.commands.dataset.console")
     def test_with_columns_under_20(self, mock_console):
@@ -399,6 +420,10 @@ class TestDisplayDatasetDetails:
             "columns": [],
         }
         display_dataset_details(dataset)
+        panel = mock_console.print.call_args_list[0][0][0]
+        assert "empty" in str(panel.title)
+        # Only the Panel should be printed (no column section)
+        assert mock_console.print.call_count == 1
 
     @patch("sup.commands.dataset.console")
     def test_column_no_description(self, mock_console):
@@ -410,6 +435,10 @@ class TestDisplayDatasetDetails:
             "columns": cols,
         }
         display_dataset_details(dataset)
+        # Should have Panel + column header + column table = 3 prints
+        assert mock_console.print.call_count == 3
+        all_text = " ".join(str(c) for c in mock_console.print.call_args_list)
+        assert "Columns" in all_text
 
     @patch("sup.commands.dataset.console")
     def test_name_fallback(self, mock_console):
@@ -420,6 +449,8 @@ class TestDisplayDatasetDetails:
             "columns": [],
         }
         display_dataset_details(dataset)
+        panel = mock_console.print.call_args_list[0][0][0]
+        assert "fallback" in str(panel.title)
 
 
 # ---------------------------------------------------------------------------

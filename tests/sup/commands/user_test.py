@@ -48,14 +48,12 @@ class TestListUsers:
         mock_client = MagicMock()
         mock_client.client.export_users.return_value = iter(SAMPLE_USERS)
 
-        with (
-            patch("sup.output.spinners.data_spinner", return_value=spinner_cm),
-            patch("sup.config.settings.SupContext"),
-            patch(
-                "sup.clients.superset.SupSupersetClient.from_context",
-                return_value=mock_client,
-            ),
-        ):
+        with patch("sup.output.spinners.data_spinner", return_value=spinner_cm), \
+             patch("sup.config.settings.SupContext"), \
+             patch(
+                 "sup.clients.superset.SupSupersetClient.from_context",
+                 return_value=mock_client,
+             ):
             result = runner.invoke(app, ["list"])
 
         assert result.exit_code == 0
@@ -67,14 +65,12 @@ class TestListUsers:
         mock_client = MagicMock()
         mock_client.client.export_users.return_value = iter(SAMPLE_USERS)
 
-        with (
-            patch("sup.output.spinners.data_spinner", return_value=spinner_cm),
-            patch("sup.config.settings.SupContext"),
-            patch(
-                "sup.clients.superset.SupSupersetClient.from_context",
-                return_value=mock_client,
-            ),
-        ):
+        with patch("sup.output.spinners.data_spinner", return_value=spinner_cm), \
+             patch("sup.config.settings.SupContext"), \
+             patch(
+                 "sup.clients.superset.SupSupersetClient.from_context",
+                 return_value=mock_client,
+             ):
             result = runner.invoke(app, ["list", "--json"])
 
         assert result.exit_code == 0
@@ -87,14 +83,12 @@ class TestListUsers:
         mock_client = MagicMock()
         mock_client.client.export_users.return_value = iter(SAMPLE_USERS)
 
-        with (
-            patch("sup.output.spinners.data_spinner", return_value=spinner_cm),
-            patch("sup.config.settings.SupContext"),
-            patch(
-                "sup.clients.superset.SupSupersetClient.from_context",
-                return_value=mock_client,
-            ),
-        ):
+        with patch("sup.output.spinners.data_spinner", return_value=spinner_cm), \
+             patch("sup.config.settings.SupContext"), \
+             patch(
+                 "sup.clients.superset.SupSupersetClient.from_context",
+                 return_value=mock_client,
+             ):
             result = runner.invoke(app, ["list", "--yaml"])
 
         assert result.exit_code == 0
@@ -106,15 +100,13 @@ class TestListUsers:
         mock_client = MagicMock()
         mock_client.client.export_users.return_value = iter(SAMPLE_USERS)
 
-        with (
-            patch("sup.output.spinners.data_spinner", return_value=spinner_cm) as mock_ds,
-            patch("sup.config.settings.SupContext"),
-            patch(
-                "sup.clients.superset.SupSupersetClient.from_context",
-                return_value=mock_client,
-            ),
-            patch("sup.output.formatters.display_porcelain_list") as mock_porcelain,
-        ):
+        with patch("sup.output.spinners.data_spinner", return_value=spinner_cm) as mock_ds, \
+             patch("sup.config.settings.SupContext"), \
+             patch(
+                 "sup.clients.superset.SupSupersetClient.from_context",
+                 return_value=mock_client,
+             ), \
+             patch("sup.output.formatters.display_porcelain_list") as mock_porcelain:
             result = runner.invoke(app, ["list", "--porcelain"])
 
         assert result.exit_code == 0
@@ -129,14 +121,12 @@ class TestListUsers:
         mock_client = MagicMock()
         mock_client.client.export_users.return_value = iter(SAMPLE_USERS)
 
-        with (
-            patch("sup.output.spinners.data_spinner", return_value=spinner_cm),
-            patch("sup.config.settings.SupContext"),
-            patch(
-                "sup.clients.superset.SupSupersetClient.from_context",
-                return_value=mock_client,
-            ),
-        ):
+        with patch("sup.output.spinners.data_spinner", return_value=spinner_cm), \
+             patch("sup.config.settings.SupContext"), \
+             patch(
+                 "sup.clients.superset.SupSupersetClient.from_context",
+                 return_value=mock_client,
+             ):
             result = runner.invoke(app, ["list", "--limit", "1"])
 
         assert result.exit_code == 0
@@ -152,14 +142,12 @@ class TestListUsers:
         mock_client = MagicMock()
         mock_client.client.export_users.return_value = iter(SAMPLE_USERS)
 
-        with (
-            patch("sup.output.spinners.data_spinner", return_value=spinner_cm),
-            patch("sup.config.settings.SupContext"),
-            patch(
-                "sup.clients.superset.SupSupersetClient.from_context",
-                return_value=mock_client,
-            ),
-        ):
+        with patch("sup.output.spinners.data_spinner", return_value=spinner_cm), \
+             patch("sup.config.settings.SupContext"), \
+             patch(
+                 "sup.clients.superset.SupSupersetClient.from_context",
+                 return_value=mock_client,
+             ):
             result = runner.invoke(app, ["list"])
 
         assert result.exit_code == 0
@@ -167,13 +155,11 @@ class TestListUsers:
     def test_error_no_porcelain(self):
         spinner_cm, _ = _make_spinner_mocks()
 
-        with (
-            patch("sup.output.spinners.data_spinner", return_value=spinner_cm),
-            patch(
-                "sup.config.settings.SupContext",
-                side_effect=RuntimeError("fail"),
-            ),
-        ):
+        with patch("sup.output.spinners.data_spinner", return_value=spinner_cm), \
+             patch(
+                 "sup.config.settings.SupContext",
+                 side_effect=RuntimeError("fail"),
+             ):
             result = runner.invoke(app, ["list"])
 
         assert result.exit_code == 1
@@ -182,13 +168,11 @@ class TestListUsers:
     def test_error_porcelain(self):
         spinner_cm, _ = _make_spinner_mocks()
 
-        with (
-            patch("sup.output.spinners.data_spinner", return_value=spinner_cm),
-            patch(
-                "sup.config.settings.SupContext",
-                side_effect=RuntimeError("fail"),
-            ),
-        ):
+        with patch("sup.output.spinners.data_spinner", return_value=spinner_cm), \
+             patch(
+                 "sup.config.settings.SupContext",
+                 side_effect=RuntimeError("fail"),
+             ):
             result = runner.invoke(app, ["list", "--porcelain"])
 
         assert result.exit_code == 1
@@ -203,15 +187,13 @@ class TestUserInfo:
         mock_client = MagicMock()
         mock_client.client.export_users.return_value = iter(SAMPLE_USERS)
 
-        with (
-            patch("sup.output.spinners.data_spinner", return_value=spinner_cm),
-            patch("sup.config.settings.SupContext"),
-            patch(
-                "sup.clients.superset.SupSupersetClient.from_context",
-                return_value=mock_client,
-            ),
-            patch("sup.commands.user.display_user_details") as mock_display,
-        ):
+        with patch("sup.output.spinners.data_spinner", return_value=spinner_cm), \
+             patch("sup.config.settings.SupContext"), \
+             patch(
+                 "sup.clients.superset.SupSupersetClient.from_context",
+                 return_value=mock_client,
+             ), \
+             patch("sup.commands.user.display_user_details") as mock_display:
             result = runner.invoke(app, ["info", "1"])
 
         assert result.exit_code == 0
@@ -223,14 +205,12 @@ class TestUserInfo:
         mock_client = MagicMock()
         mock_client.client.export_users.return_value = iter(SAMPLE_USERS)
 
-        with (
-            patch("sup.output.spinners.data_spinner", return_value=spinner_cm),
-            patch("sup.config.settings.SupContext"),
-            patch(
-                "sup.clients.superset.SupSupersetClient.from_context",
-                return_value=mock_client,
-            ),
-        ):
+        with patch("sup.output.spinners.data_spinner", return_value=spinner_cm), \
+             patch("sup.config.settings.SupContext"), \
+             patch(
+                 "sup.clients.superset.SupSupersetClient.from_context",
+                 return_value=mock_client,
+             ):
             result = runner.invoke(app, ["info", "1", "--porcelain"])
 
         assert result.exit_code == 0
@@ -241,14 +221,12 @@ class TestUserInfo:
         mock_client = MagicMock()
         mock_client.client.export_users.return_value = iter(SAMPLE_USERS)
 
-        with (
-            patch("sup.output.spinners.data_spinner", return_value=spinner_cm),
-            patch("sup.config.settings.SupContext"),
-            patch(
-                "sup.clients.superset.SupSupersetClient.from_context",
-                return_value=mock_client,
-            ),
-        ):
+        with patch("sup.output.spinners.data_spinner", return_value=spinner_cm), \
+             patch("sup.config.settings.SupContext"), \
+             patch(
+                 "sup.clients.superset.SupSupersetClient.from_context",
+                 return_value=mock_client,
+             ):
             result = runner.invoke(app, ["info", "1", "--json"])
 
         assert result.exit_code == 0
@@ -260,14 +238,12 @@ class TestUserInfo:
         mock_client = MagicMock()
         mock_client.client.export_users.return_value = iter(SAMPLE_USERS)
 
-        with (
-            patch("sup.output.spinners.data_spinner", return_value=spinner_cm),
-            patch("sup.config.settings.SupContext"),
-            patch(
-                "sup.clients.superset.SupSupersetClient.from_context",
-                return_value=mock_client,
-            ),
-        ):
+        with patch("sup.output.spinners.data_spinner", return_value=spinner_cm), \
+             patch("sup.config.settings.SupContext"), \
+             patch(
+                 "sup.clients.superset.SupSupersetClient.from_context",
+                 return_value=mock_client,
+             ):
             result = runner.invoke(app, ["info", "1", "--yaml"])
 
         assert result.exit_code == 0
@@ -279,14 +255,12 @@ class TestUserInfo:
         mock_client = MagicMock()
         mock_client.client.export_users.return_value = iter(SAMPLE_USERS)
 
-        with (
-            patch("sup.output.spinners.data_spinner", return_value=spinner_cm),
-            patch("sup.config.settings.SupContext"),
-            patch(
-                "sup.clients.superset.SupSupersetClient.from_context",
-                return_value=mock_client,
-            ),
-        ):
+        with patch("sup.output.spinners.data_spinner", return_value=spinner_cm), \
+             patch("sup.config.settings.SupContext"), \
+             patch(
+                 "sup.clients.superset.SupSupersetClient.from_context",
+                 return_value=mock_client,
+             ):
             result = runner.invoke(app, ["info", "999"])
 
         assert result.exit_code == 1
@@ -297,14 +271,12 @@ class TestUserInfo:
         mock_client = MagicMock()
         mock_client.client.export_users.return_value = iter(SAMPLE_USERS)
 
-        with (
-            patch("sup.output.spinners.data_spinner", return_value=spinner_cm),
-            patch("sup.config.settings.SupContext"),
-            patch(
-                "sup.clients.superset.SupSupersetClient.from_context",
-                return_value=mock_client,
-            ),
-        ):
+        with patch("sup.output.spinners.data_spinner", return_value=spinner_cm), \
+             patch("sup.config.settings.SupContext"), \
+             patch(
+                 "sup.clients.superset.SupSupersetClient.from_context",
+                 return_value=mock_client,
+             ):
             result = runner.invoke(app, ["info", "999", "--porcelain"])
 
         assert result.exit_code == 1
@@ -313,13 +285,11 @@ class TestUserInfo:
     def test_error_no_porcelain(self):
         spinner_cm, _ = _make_spinner_mocks()
 
-        with (
-            patch("sup.output.spinners.data_spinner", return_value=spinner_cm),
-            patch(
-                "sup.config.settings.SupContext",
-                side_effect=RuntimeError("boom"),
-            ),
-        ):
+        with patch("sup.output.spinners.data_spinner", return_value=spinner_cm), \
+             patch(
+                 "sup.config.settings.SupContext",
+                 side_effect=RuntimeError("boom"),
+             ):
             result = runner.invoke(app, ["info", "1"])
 
         assert result.exit_code == 1
@@ -328,13 +298,11 @@ class TestUserInfo:
     def test_error_porcelain(self):
         spinner_cm, _ = _make_spinner_mocks()
 
-        with (
-            patch("sup.output.spinners.data_spinner", return_value=spinner_cm),
-            patch(
-                "sup.config.settings.SupContext",
-                side_effect=RuntimeError("boom"),
-            ),
-        ):
+        with patch("sup.output.spinners.data_spinner", return_value=spinner_cm), \
+             patch(
+                 "sup.config.settings.SupContext",
+                 side_effect=RuntimeError("boom"),
+             ):
             result = runner.invoke(app, ["info", "1", "--porcelain"])
 
         assert result.exit_code == 1

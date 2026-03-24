@@ -115,13 +115,11 @@ class TestListWorkspaces:
         client = MagicMock()
         client.get_all_workspaces.return_value = [{"id": 1, "title": "WS1"}]
         ctx = _make_ctx()
-        with (
-            patch(CONSOLE_PATH),
-            patch(CTX_PATH, return_value=ctx),
-            patch(CLIENT_PATH) as mock_cls,
-            patch(SPINNER_PATH, side_effect=_fake_spinner),
-            patch(PORCELAIN_PATH),
-        ):
+        with patch(CONSOLE_PATH), \
+             patch(CTX_PATH, return_value=ctx), \
+             patch(CLIENT_PATH) as mock_cls, \
+             patch(SPINNER_PATH, side_effect=_fake_spinner), \
+             patch(PORCELAIN_PATH):
             mock_cls.from_context.return_value = client
             result = runner.invoke(app, ["list"])
             assert result.exit_code == 0
@@ -131,12 +129,10 @@ class TestListWorkspaces:
         client = MagicMock()
         client.get_all_workspaces.return_value = [{"id": 1}]
         ctx = _make_ctx()
-        with (
-            patch(CONSOLE_PATH),
-            patch(CTX_PATH, return_value=ctx),
-            patch(CLIENT_PATH) as mock_cls,
-            patch(SPINNER_PATH, side_effect=_fake_spinner),
-        ):
+        with patch(CONSOLE_PATH), \
+             patch(CTX_PATH, return_value=ctx), \
+             patch(CLIENT_PATH) as mock_cls, \
+             patch(SPINNER_PATH, side_effect=_fake_spinner):
             mock_cls.from_context.return_value = client
             result = runner.invoke(app, ["list", "--json"])
             assert result.exit_code == 0
@@ -145,12 +141,10 @@ class TestListWorkspaces:
         client = MagicMock()
         client.get_all_workspaces.return_value = [{"id": 1}]
         ctx = _make_ctx()
-        with (
-            patch(CONSOLE_PATH),
-            patch(CTX_PATH, return_value=ctx),
-            patch(CLIENT_PATH) as mock_cls,
-            patch(SPINNER_PATH, side_effect=_fake_spinner),
-        ):
+        with patch(CONSOLE_PATH), \
+             patch(CTX_PATH, return_value=ctx), \
+             patch(CLIENT_PATH) as mock_cls, \
+             patch(SPINNER_PATH, side_effect=_fake_spinner):
             mock_cls.from_context.return_value = client
             result = runner.invoke(app, ["list", "--yaml"])
             assert result.exit_code == 0
@@ -159,13 +153,11 @@ class TestListWorkspaces:
         client = MagicMock()
         client.get_all_workspaces.return_value = [{"id": 1}]
         ctx = _make_ctx()
-        with (
-            patch(CONSOLE_PATH),
-            patch(CTX_PATH, return_value=ctx),
-            patch(CLIENT_PATH) as mock_cls,
-            patch(SPINNER_PATH, side_effect=_fake_spinner),
-            patch(PORCELAIN_PATH) as mock_porcelain,
-        ):
+        with patch(CONSOLE_PATH), \
+             patch(CTX_PATH, return_value=ctx), \
+             patch(CLIENT_PATH) as mock_cls, \
+             patch(SPINNER_PATH, side_effect=_fake_spinner), \
+             patch(PORCELAIN_PATH) as mock_porcelain:
             mock_cls.from_context.return_value = client
             result = runner.invoke(app, ["list", "--porcelain"])
             assert result.exit_code == 0
@@ -175,12 +167,10 @@ class TestListWorkspaces:
         client = MagicMock()
         client.get_workspaces_for_team.return_value = [{"id": 1}]
         ctx = _make_ctx()
-        with (
-            patch(CONSOLE_PATH),
-            patch(CTX_PATH, return_value=ctx),
-            patch(CLIENT_PATH) as mock_cls,
-            patch(SPINNER_PATH, side_effect=_fake_spinner),
-        ):
+        with patch(CONSOLE_PATH), \
+             patch(CTX_PATH, return_value=ctx), \
+             patch(CLIENT_PATH) as mock_cls, \
+             patch(SPINNER_PATH, side_effect=_fake_spinner):
             mock_cls.from_context.return_value = client
             result = runner.invoke(app, ["list", "--team", "myteam"])
             assert result.exit_code == 0
@@ -190,12 +180,10 @@ class TestListWorkspaces:
         client = MagicMock()
         client.get_all_workspaces.return_value = [{"id": i} for i in range(10)]
         ctx = _make_ctx()
-        with (
-            patch(CONSOLE_PATH),
-            patch(CTX_PATH, return_value=ctx),
-            patch(CLIENT_PATH) as mock_cls,
-            patch(SPINNER_PATH, side_effect=_fake_spinner),
-        ):
+        with patch(CONSOLE_PATH), \
+             patch(CTX_PATH, return_value=ctx), \
+             patch(CLIENT_PATH) as mock_cls, \
+             patch(SPINNER_PATH, side_effect=_fake_spinner):
             mock_cls.from_context.return_value = client
             result = runner.invoke(app, ["list", "--limit", "3"])
             assert result.exit_code == 0
@@ -204,12 +192,10 @@ class TestListWorkspaces:
 
     def test_error_non_porcelain(self):
         ctx = _make_ctx()
-        with (
-            patch(CONSOLE_PATH) as mock_console,
-            patch(CTX_PATH, return_value=ctx),
-            patch(CLIENT_PATH) as mock_cls,
-            patch(SPINNER_PATH, side_effect=_fake_spinner),
-        ):
+        with patch(CONSOLE_PATH) as mock_console, \
+             patch(CTX_PATH, return_value=ctx), \
+             patch(CLIENT_PATH) as mock_cls, \
+             patch(SPINNER_PATH, side_effect=_fake_spinner):
             mock_cls.from_context.side_effect = RuntimeError("boom")
             result = runner.invoke(app, ["list"])
             assert result.exit_code == 1
@@ -218,12 +204,10 @@ class TestListWorkspaces:
 
     def test_error_porcelain(self):
         ctx = _make_ctx()
-        with (
-            patch(CONSOLE_PATH),
-            patch(CTX_PATH, return_value=ctx),
-            patch(CLIENT_PATH) as mock_cls,
-            patch(SPINNER_PATH, side_effect=_fake_spinner),
-        ):
+        with patch(CONSOLE_PATH), \
+             patch(CTX_PATH, return_value=ctx), \
+             patch(CLIENT_PATH) as mock_cls, \
+             patch(SPINNER_PATH, side_effect=_fake_spinner):
             mock_cls.from_context.side_effect = RuntimeError("boom")
             result = runner.invoke(app, ["list", "--porcelain"])
             assert result.exit_code == 1
@@ -241,11 +225,9 @@ class TestUseWorkspace:
             {"id": 42, "hostname": "ws.preset.io"},
         ]
         ctx = _make_ctx()
-        with (
-            patch(CONSOLE_PATH),
-            patch(CTX_PATH, return_value=ctx),
-            patch(CLIENT_PATH) as mock_cls,
-        ):
+        with patch(CONSOLE_PATH), \
+             patch(CTX_PATH, return_value=ctx), \
+             patch(CLIENT_PATH) as mock_cls:
             mock_cls.from_context.return_value = client
             result = runner.invoke(app, ["use", "42"])
             assert result.exit_code == 0
@@ -259,11 +241,9 @@ class TestUseWorkspace:
             {"id": 42, "hostname": "ws.preset.io"},
         ]
         ctx = _make_ctx()
-        with (
-            patch(CONSOLE_PATH),
-            patch(CTX_PATH, return_value=ctx),
-            patch(CLIENT_PATH) as mock_cls,
-        ):
+        with patch(CONSOLE_PATH), \
+             patch(CTX_PATH, return_value=ctx), \
+             patch(CLIENT_PATH) as mock_cls:
             mock_cls.from_context.return_value = client
             result = runner.invoke(app, ["use", "42", "--persist"])
             assert result.exit_code == 0
@@ -277,22 +257,18 @@ class TestUseWorkspace:
             {"id": 99, "hostname": "other.preset.io"},
         ]
         ctx = _make_ctx()
-        with (
-            patch(CONSOLE_PATH),
-            patch(CTX_PATH, return_value=ctx),
-            patch(CLIENT_PATH) as mock_cls,
-        ):
+        with patch(CONSOLE_PATH), \
+             patch(CTX_PATH, return_value=ctx), \
+             patch(CLIENT_PATH) as mock_cls:
             mock_cls.from_context.return_value = client
             result = runner.invoke(app, ["use", "42"])
             assert result.exit_code == 1
 
     def test_error(self):
         ctx = _make_ctx()
-        with (
-            patch(CONSOLE_PATH),
-            patch(CTX_PATH, return_value=ctx),
-            patch(CLIENT_PATH) as mock_cls,
-        ):
+        with patch(CONSOLE_PATH), \
+             patch(CTX_PATH, return_value=ctx), \
+             patch(CLIENT_PATH) as mock_cls:
             mock_cls.from_context.side_effect = RuntimeError("fail")
             result = runner.invoke(app, ["use", "42"])
             assert result.exit_code == 1
@@ -313,13 +289,11 @@ class TestWorkspaceInfo:
         client = MagicMock()
         client.get_all_workspaces.return_value = [self._ws()]
         ctx = _make_ctx()
-        with (
-            patch(CONSOLE_PATH),
-            patch(CTX_PATH, return_value=ctx),
-            patch(CLIENT_PATH) as mock_cls,
-            patch(SPINNER_PATH, side_effect=_fake_spinner),
-            patch("sup.commands.workspace.display_workspace_details") as mock_display,
-        ):
+        with patch(CONSOLE_PATH), \
+             patch(CTX_PATH, return_value=ctx), \
+             patch(CLIENT_PATH) as mock_cls, \
+             patch(SPINNER_PATH, side_effect=_fake_spinner), \
+             patch("sup.commands.workspace.display_workspace_details") as mock_display:
             mock_cls.from_context.return_value = client
             result = runner.invoke(app, ["info", "123"])
             assert result.exit_code == 0
@@ -329,13 +303,11 @@ class TestWorkspaceInfo:
         client = MagicMock()
         client.get_all_workspaces.return_value = [self._ws()]
         ctx = _make_ctx(workspace_id=123)
-        with (
-            patch(CONSOLE_PATH),
-            patch(CTX_PATH, return_value=ctx),
-            patch(CLIENT_PATH) as mock_cls,
-            patch(SPINNER_PATH, side_effect=_fake_spinner),
-            patch("sup.commands.workspace.display_workspace_details") as mock_display,
-        ):
+        with patch(CONSOLE_PATH), \
+             patch(CTX_PATH, return_value=ctx), \
+             patch(CLIENT_PATH) as mock_cls, \
+             patch(SPINNER_PATH, side_effect=_fake_spinner), \
+             patch("sup.commands.workspace.display_workspace_details") as mock_display:
             mock_cls.from_context.return_value = client
             result = runner.invoke(app, ["info"])
             assert result.exit_code == 0
@@ -344,12 +316,10 @@ class TestWorkspaceInfo:
     def test_no_workspace_configured(self):
         ctx = _make_ctx(workspace_id=None)
         client = MagicMock()
-        with (
-            patch(CONSOLE_PATH),
-            patch(CTX_PATH, return_value=ctx),
-            patch(CLIENT_PATH) as mock_cls,
-            patch(SPINNER_PATH, side_effect=_fake_spinner),
-        ):
+        with patch(CONSOLE_PATH), \
+             patch(CTX_PATH, return_value=ctx), \
+             patch(CLIENT_PATH) as mock_cls, \
+             patch(SPINNER_PATH, side_effect=_fake_spinner):
             mock_cls.from_context.return_value = client
             result = runner.invoke(app, ["info"])
             assert result.exit_code == 1
@@ -357,12 +327,10 @@ class TestWorkspaceInfo:
     def test_no_workspace_configured_porcelain(self):
         ctx = _make_ctx(workspace_id=None)
         client = MagicMock()
-        with (
-            patch(CONSOLE_PATH),
-            patch(CTX_PATH, return_value=ctx),
-            patch(CLIENT_PATH) as mock_cls,
-            patch(SPINNER_PATH, side_effect=_fake_spinner),
-        ):
+        with patch(CONSOLE_PATH), \
+             patch(CTX_PATH, return_value=ctx), \
+             patch(CLIENT_PATH) as mock_cls, \
+             patch(SPINNER_PATH, side_effect=_fake_spinner):
             mock_cls.from_context.return_value = client
             result = runner.invoke(app, ["info", "--porcelain"])
             assert result.exit_code == 1
@@ -371,12 +339,10 @@ class TestWorkspaceInfo:
         client = MagicMock()
         client.get_all_workspaces.return_value = [{"id": 999, "title": "Other"}]
         ctx = _make_ctx()
-        with (
-            patch(CONSOLE_PATH),
-            patch(CTX_PATH, return_value=ctx),
-            patch(CLIENT_PATH) as mock_cls,
-            patch(SPINNER_PATH, side_effect=_fake_spinner),
-        ):
+        with patch(CONSOLE_PATH), \
+             patch(CTX_PATH, return_value=ctx), \
+             patch(CLIENT_PATH) as mock_cls, \
+             patch(SPINNER_PATH, side_effect=_fake_spinner):
             mock_cls.from_context.return_value = client
             result = runner.invoke(app, ["info", "123"])
             assert result.exit_code == 1
@@ -385,12 +351,10 @@ class TestWorkspaceInfo:
         client = MagicMock()
         client.get_all_workspaces.return_value = [{"id": 999, "title": "Other"}]
         ctx = _make_ctx()
-        with (
-            patch(CONSOLE_PATH),
-            patch(CTX_PATH, return_value=ctx),
-            patch(CLIENT_PATH) as mock_cls,
-            patch(SPINNER_PATH, side_effect=_fake_spinner),
-        ):
+        with patch(CONSOLE_PATH), \
+             patch(CTX_PATH, return_value=ctx), \
+             patch(CLIENT_PATH) as mock_cls, \
+             patch(SPINNER_PATH, side_effect=_fake_spinner):
             mock_cls.from_context.return_value = client
             result = runner.invoke(app, ["info", "123", "--porcelain"])
             assert result.exit_code == 1
@@ -399,12 +363,10 @@ class TestWorkspaceInfo:
         client = MagicMock()
         client.get_all_workspaces.return_value = [self._ws()]
         ctx = _make_ctx()
-        with (
-            patch(CONSOLE_PATH),
-            patch(CTX_PATH, return_value=ctx),
-            patch(CLIENT_PATH) as mock_cls,
-            patch(SPINNER_PATH, side_effect=_fake_spinner),
-        ):
+        with patch(CONSOLE_PATH), \
+             patch(CTX_PATH, return_value=ctx), \
+             patch(CLIENT_PATH) as mock_cls, \
+             patch(SPINNER_PATH, side_effect=_fake_spinner):
             mock_cls.from_context.return_value = client
             result = runner.invoke(app, ["info", "123", "--porcelain"])
             assert result.exit_code == 0
@@ -414,12 +376,10 @@ class TestWorkspaceInfo:
         client = MagicMock()
         client.get_all_workspaces.return_value = [self._ws()]
         ctx = _make_ctx()
-        with (
-            patch(CONSOLE_PATH),
-            patch(CTX_PATH, return_value=ctx),
-            patch(CLIENT_PATH) as mock_cls,
-            patch(SPINNER_PATH, side_effect=_fake_spinner),
-        ):
+        with patch(CONSOLE_PATH), \
+             patch(CTX_PATH, return_value=ctx), \
+             patch(CLIENT_PATH) as mock_cls, \
+             patch(SPINNER_PATH, side_effect=_fake_spinner):
             mock_cls.from_context.return_value = client
             result = runner.invoke(app, ["info", "123", "--json"])
             assert result.exit_code == 0
@@ -428,36 +388,30 @@ class TestWorkspaceInfo:
         client = MagicMock()
         client.get_all_workspaces.return_value = [self._ws()]
         ctx = _make_ctx()
-        with (
-            patch(CONSOLE_PATH),
-            patch(CTX_PATH, return_value=ctx),
-            patch(CLIENT_PATH) as mock_cls,
-            patch(SPINNER_PATH, side_effect=_fake_spinner),
-        ):
+        with patch(CONSOLE_PATH), \
+             patch(CTX_PATH, return_value=ctx), \
+             patch(CLIENT_PATH) as mock_cls, \
+             patch(SPINNER_PATH, side_effect=_fake_spinner):
             mock_cls.from_context.return_value = client
             result = runner.invoke(app, ["info", "123", "--yaml"])
             assert result.exit_code == 0
 
     def test_generic_exception(self):
         ctx = _make_ctx()
-        with (
-            patch(CONSOLE_PATH),
-            patch(CTX_PATH, return_value=ctx),
-            patch(CLIENT_PATH) as mock_cls,
-            patch(SPINNER_PATH, side_effect=_fake_spinner),
-        ):
+        with patch(CONSOLE_PATH), \
+             patch(CTX_PATH, return_value=ctx), \
+             patch(CLIENT_PATH) as mock_cls, \
+             patch(SPINNER_PATH, side_effect=_fake_spinner):
             mock_cls.from_context.side_effect = RuntimeError("fail")
             result = runner.invoke(app, ["info", "123"])
             assert result.exit_code == 1
 
     def test_generic_exception_porcelain(self):
         ctx = _make_ctx()
-        with (
-            patch(CONSOLE_PATH),
-            patch(CTX_PATH, return_value=ctx),
-            patch(CLIENT_PATH) as mock_cls,
-            patch(SPINNER_PATH, side_effect=_fake_spinner),
-        ):
+        with patch(CONSOLE_PATH), \
+             patch(CTX_PATH, return_value=ctx), \
+             patch(CLIENT_PATH) as mock_cls, \
+             patch(SPINNER_PATH, side_effect=_fake_spinner):
             mock_cls.from_context.side_effect = RuntimeError("fail")
             result = runner.invoke(app, ["info", "123", "--porcelain"])
             assert result.exit_code == 1
@@ -573,11 +527,9 @@ class TestSetImportTarget:
     def test_persist(self):
         client = MagicMock()
         ctx = _make_ctx()
-        with (
-            patch(CONSOLE_PATH),
-            patch(CTX_PATH, return_value=ctx),
-            patch(CLIENT_PATH) as mock_cls,
-        ):
+        with patch(CONSOLE_PATH), \
+             patch(CTX_PATH, return_value=ctx), \
+             patch(CLIENT_PATH) as mock_cls:
             mock_cls.from_context.return_value = client
             result = runner.invoke(app, ["set-target", "456", "--persist"])
             assert result.exit_code == 0
@@ -586,11 +538,9 @@ class TestSetImportTarget:
     def test_no_persist(self):
         client = MagicMock()
         ctx = _make_ctx()
-        with (
-            patch(CONSOLE_PATH),
-            patch(CTX_PATH, return_value=ctx),
-            patch(CLIENT_PATH) as mock_cls,
-        ):
+        with patch(CONSOLE_PATH), \
+             patch(CTX_PATH, return_value=ctx), \
+             patch(CLIENT_PATH) as mock_cls:
             mock_cls.from_context.return_value = client
             result = runner.invoke(app, ["set-target", "456"])
             assert result.exit_code == 0
@@ -598,11 +548,9 @@ class TestSetImportTarget:
 
     def test_error(self):
         ctx = _make_ctx()
-        with (
-            patch(CONSOLE_PATH),
-            patch(CTX_PATH, return_value=ctx),
-            patch(CLIENT_PATH) as mock_cls,
-        ):
+        with patch(CONSOLE_PATH), \
+             patch(CTX_PATH, return_value=ctx), \
+             patch(CLIENT_PATH) as mock_cls:
             mock_cls.from_context.side_effect = RuntimeError("fail")
             result = runner.invoke(app, ["set-target", "456"])
             assert result.exit_code == 1
@@ -620,10 +568,8 @@ class TestShowWorkspaceContext:
 
     def test_source_configured_no_target(self):
         ctx = _make_ctx(workspace_id=123, target_workspace_id=None)
-        with (
-            patch(CONSOLE_PATH) as mock_console,
-            patch(CTX_PATH, return_value=ctx),
-        ):
+        with patch(CONSOLE_PATH) as mock_console, \
+             patch(CTX_PATH, return_value=ctx):
             result = runner.invoke(app, ["show"])
             assert result.exit_code == 0
             prints = self._prints(mock_console)
@@ -633,10 +579,8 @@ class TestShowWorkspaceContext:
 
     def test_source_not_configured(self):
         ctx = _make_ctx(workspace_id=None, target_workspace_id=None)
-        with (
-            patch(CONSOLE_PATH) as mock_console,
-            patch(CTX_PATH, return_value=ctx),
-        ):
+        with patch(CONSOLE_PATH) as mock_console, \
+             patch(CTX_PATH, return_value=ctx):
             result = runner.invoke(app, ["show"])
             assert result.exit_code == 0
             prints = self._prints(mock_console)
@@ -644,10 +588,8 @@ class TestShowWorkspaceContext:
 
     def test_target_different_from_source(self):
         ctx = _make_ctx(workspace_id=123, target_workspace_id=456)
-        with (
-            patch(CONSOLE_PATH) as mock_console,
-            patch(CTX_PATH, return_value=ctx),
-        ):
+        with patch(CONSOLE_PATH) as mock_console, \
+             patch(CTX_PATH, return_value=ctx):
             result = runner.invoke(app, ["show"])
             assert result.exit_code == 0
             prints = self._prints(mock_console)
@@ -657,10 +599,8 @@ class TestShowWorkspaceContext:
 
     def test_target_same_as_source(self):
         ctx = _make_ctx(workspace_id=123, target_workspace_id=123)
-        with (
-            patch(CONSOLE_PATH) as mock_console,
-            patch(CTX_PATH, return_value=ctx),
-        ):
+        with patch(CONSOLE_PATH) as mock_console, \
+             patch(CTX_PATH, return_value=ctx):
             result = runner.invoke(app, ["show"])
             assert result.exit_code == 0
             prints = self._prints(mock_console)
@@ -668,10 +608,8 @@ class TestShowWorkspaceContext:
             assert "same as source" in prints
 
     def test_error(self):
-        with (
-            patch(CONSOLE_PATH),
-            patch(CTX_PATH, side_effect=RuntimeError("fail")),
-        ):
+        with patch(CONSOLE_PATH), \
+             patch(CTX_PATH, side_effect=RuntimeError("fail")):
             result = runner.invoke(app, ["show"])
             assert result.exit_code == 1
 
@@ -685,12 +623,10 @@ class TestShowWorkspaceContext:
         client = MagicMock()
         client.get_all_workspaces.return_value = [{"id": 1}]
         ctx = _make_ctx()
-        with (
-            patch(CONSOLE_PATH),
-            patch(CTX_PATH, return_value=ctx),
-            patch(CLIENT_PATH) as mock_cls,
-            patch(SPINNER_PATH, side_effect=_silent_spinner),
-        ):
+        with patch(CONSOLE_PATH), \
+             patch(CTX_PATH, return_value=ctx), \
+             patch(CLIENT_PATH) as mock_cls, \
+             patch(SPINNER_PATH, side_effect=_silent_spinner):
             mock_cls.from_context.return_value = client
             result = runner.invoke(app, ["list"])
             assert result.exit_code == 0

@@ -222,6 +222,34 @@ class TestSyncDbtCore:
         assert result.exit_code == 0
         assert "dbt Core sync completed" in result.output
 
+    def test_success_porcelain(self, tmp_path):
+        """Branch: porcelain success path (229->exit)."""
+        manifest = tmp_path / "manifest.json"
+        manifest.write_text("{}")
+
+        click_patch, _ = _mock_click_runner(0, "")
+
+        with patch(_P_CTX), patch(_P_CLIENT), click_patch:
+            result = runner.invoke(app, ["core", str(manifest), "--porcelain"])
+
+        assert result.exit_code == 0
+        assert "dbt Core sync completed" not in result.output
+
+    def test_workspace_id_porcelain(self, tmp_path):
+        """Branch: workspace_id + porcelain (175->177)."""
+        manifest = tmp_path / "manifest.json"
+        manifest.write_text("{}")
+
+        click_patch, _ = _mock_click_runner(0, "")
+
+        with patch(_P_CTX), patch(_P_CLIENT), click_patch:
+            result = runner.invoke(
+                app, ["core", str(manifest), "--workspace-id", "42", "--porcelain"]
+            )
+
+        assert result.exit_code == 0
+        assert "Using workspace" not in result.output
+
     @patch(_P_CTX, side_effect=RuntimeError("config broken"))
     def test_exception_not_porcelain(self, mock_ctx_cls, tmp_path):
         manifest = tmp_path / "manifest.json"
@@ -485,6 +513,44 @@ class TestSyncDbtCloud:
             result = runner.invoke(app, ["cloud"])
         assert result.exit_code == 0
         assert "dbt Cloud sync completed" in result.output
+
+    def test_success_porcelain(self):
+        """Branch: porcelain success path (468->exit)."""
+        click_patch, _ = _mock_click_runner(0, "")
+
+        with patch(_P_CTX) as mock_ctx_cls, \
+             patch(_P_CLIENT), \
+             click_patch:
+            mock_ctx = MagicMock()
+            mock_ctx.config.dbt_cloud_api_token = "tok"
+            mock_ctx.config.dbt_cloud_account_id = None
+            mock_ctx.config.dbt_cloud_project_id = None
+            mock_ctx.config.dbt_cloud_job_id = None
+            mock_ctx_cls.return_value = mock_ctx
+
+            result = runner.invoke(app, ["cloud", "--porcelain"])
+        assert result.exit_code == 0
+        assert "dbt Cloud sync completed" not in result.output
+
+    def test_workspace_id_porcelain(self):
+        """Branch: workspace_id + porcelain (408->410)."""
+        click_patch, _ = _mock_click_runner(0, "")
+
+        with patch(_P_CTX) as mock_ctx_cls, \
+             patch(_P_CLIENT), \
+             click_patch:
+            mock_ctx = MagicMock()
+            mock_ctx.config.dbt_cloud_api_token = "tok"
+            mock_ctx.config.dbt_cloud_account_id = None
+            mock_ctx.config.dbt_cloud_project_id = None
+            mock_ctx.config.dbt_cloud_job_id = None
+            mock_ctx_cls.return_value = mock_ctx
+
+            result = runner.invoke(
+                app, ["cloud", "--workspace-id", "99", "--porcelain"]
+            )
+        assert result.exit_code == 0
+        assert "Using workspace" not in result.output
 
     def test_exception_not_porcelain(self):
         with patch(_P_CTX) as mock_ctx_cls, \

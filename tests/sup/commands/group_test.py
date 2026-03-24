@@ -331,6 +331,50 @@ class TestListGroups:
         assert result.exit_code != 0
         assert "Failed to list groups" not in result.output
 
+    @patch("typer.prompt", return_value="t1")
+    @patch(_P_DS)
+    @patch(_P_PC)
+    @patch(_P_AUTH)
+    @patch(_P_CTX)
+    def test_multiple_teams_porcelain(
+        self, mock_ctx, mock_auth, mock_pc_cls, mock_ds, mock_prompt
+    ):
+        """Branch 75->82: multiple teams with porcelain skips prompt display."""
+        cm, sp = _make_spinner_cm()
+        mock_ds.return_value = cm
+        client = MagicMock()
+        client.get_teams.return_value = [
+            {"name": "t1", "title": "Team 1"},
+            {"name": "t2", "title": "Team 2"},
+        ]
+        client.get_group_membership.return_value = {
+            "totalResults": 1,
+            "Resources": [{"id": "g1", "displayName": "G1", "members": []}],
+        }
+        mock_pc_cls.return_value = client
+
+        result = runner.invoke(app, ["list", "--porcelain"])
+        assert result.exit_code == 0
+
+    @patch(_P_DS)
+    @patch(_P_PC)
+    @patch(_P_AUTH)
+    @patch(_P_CTX)
+    def test_spinner_none(self, mock_ctx, mock_auth, mock_pc_cls, mock_ds):
+        """Branch 100->58: spinner returns None (porcelain mode)."""
+        cm, _ = _make_spinner_cm(obj=None)
+        cm.__enter__ = MagicMock(return_value=None)
+        mock_ds.return_value = cm
+        client = MagicMock()
+        client.get_group_membership.return_value = {
+            "totalResults": 1,
+            "Resources": [{"id": "g1", "displayName": "G1", "members": []}],
+        }
+        mock_pc_cls.return_value = client
+
+        result = runner.invoke(app, ["list", "--team", "t1", "--porcelain"])
+        assert result.exit_code == 0
+
 
 # ---------------------------------------------------------------------------
 # sync_groups
@@ -482,6 +526,29 @@ class TestSyncGroups:
         assert "cancelled" in result.output
 
     @patch("sup.commands.group.display_sync_results")
+    @patch("sup.commands.group.typer.confirm", return_value=True)
+    @patch("sup.commands.group.execute_group_sync")
+    @patch("sup.commands.group.get_all_groups", return_value=[])
+    @patch(_P_SP)
+    @patch(_P_PC)
+    @patch(_P_AUTH)
+    @patch(_P_CTX)
+    def test_confirm_accept(
+        self, mock_ctx, mock_auth, mock_pc_cls, mock_sp, mock_gag, mock_exec, mock_confirm, mock_disp, tmp_path
+    ):
+        """Branch 255->260: user confirms (not force, not porcelain, confirm=True)."""
+        cm, sp = _make_spinner_cm()
+        mock_sp.return_value = cm
+        cfg = tmp_path / "config.yml"
+        cfg.write_text(yaml.dump({"groups": [{"name": "New", "members": []}]}))
+        mock_pc_cls.return_value = MagicMock()
+        mock_exec.return_value = {"created": 1, "updated": 0, "deleted": 0, "errors": 0, "total": 1}
+
+        result = runner.invoke(app, ["sync", str(cfg), "--team", "t1"])
+        assert result.exit_code == 0
+        mock_exec.assert_called_once()
+
+    @patch("sup.commands.group.display_sync_results")
     @patch("sup.commands.group.execute_group_sync")
     @patch("sup.commands.group.get_all_groups", return_value=[])
     @patch(_P_SP)
@@ -551,6 +618,117 @@ class TestSyncGroups:
         result = runner.invoke(app, ["sync", str(cfg), "--team", "t1", "--porcelain"])
         assert result.exit_code != 0
         assert "Failed to sync groups" not in result.output
+
+    @patch("sup.commands.group.get_all_groups", return_value=[])
+    @patch("sup.commands.group.plan_group_sync", return_value={"create": [], "update": [], "delete": []})
+    @patch(_P_SP)
+    @patch(_P_PC)
+    @patch(_P_AUTH)
+    @patch(_P_CTX)
+    def test_multiple_teams_porcelain(
+        self, mock_ctx, mock_auth, mock_pc_cls, mock_sp, mock_pgs, mock_gag, tmp_path
+    ):
+        """Branch 223->230: multiple teams with porcelain skips prompt."""
+        cfg = tmp_path / "config.yml"
+        cfg.write_text(yaml.dump({"groups": [{"name": "G1", "members": []}]}))
+        client = MagicMock()
+        client.get_teams.return_value = ["team_a", "team_b"]
+        mock_pc_cls.return_value = client
+
+        # porcelain=True and no --team: 'if not porcelain' is False -> skips to 230
+        # team stays None, which is fine for mocked get_all_groups
+        result = runner.invoke(app, ["sync", str(cfg), "--porcelain"])
+        assert result.exit_code == 0
+
+    @patch("sup.commands.group.get_all_groups", return_value=[])
+    @patch("sup.commands.group.plan_group_sync", return_value={"create": [], "update": [], "delete": []})
+    @patch(_P_SP)
+    @patch(_P_PC)
+    @patch(_P_AUTH)
+    @patch(_P_CTX)
+    def test_all_in_sync_porcelain(
+        self, mock_ctx, mock_auth, mock_pc_cls, mock_sp, mock_pgs, mock_gag, tmp_path
+    ):
+        """Branch 237->242: all in sync with porcelain."""
+        cfg = tmp_path / "config.yml"
+        cfg.write_text(yaml.dump({"groups": [{"name": "G1", "members": []}]}))
+        mock_pc_cls.return_value = MagicMock()
+
+        result = runner.invoke(app, ["sync", str(cfg), "--team", "t1", "--porcelain"])
+        assert result.exit_code == 0
+        assert "All groups are already in sync" not in result.output
+
+    @patch("sup.commands.group.execute_group_sync", return_value={"created": 1, "updated": 0, "deleted": 0, "errors": 0, "total": 1})
+    @patch("sup.commands.group.get_all_groups", return_value=[])
+    @patch("sup.commands.group.plan_group_sync", return_value={"create": [{"name": "G1", "members": []}], "update": [], "delete": []})
+    @patch(_P_SP)
+    @patch(_P_PC)
+    @patch(_P_AUTH)
+    @patch(_P_CTX)
+    def test_dry_run_porcelain(
+        self, mock_ctx, mock_auth, mock_pc_cls, mock_sp, mock_pgs, mock_gag, mock_exec, tmp_path
+    ):
+        """Branch 249->251: dry_run with porcelain."""
+        cm, sp = _make_spinner_cm()
+        mock_sp.return_value = cm
+        cfg = tmp_path / "config.yml"
+        cfg.write_text(yaml.dump({"groups": [{"name": "G1", "members": []}]}))
+        mock_pc_cls.return_value = MagicMock()
+
+        result = runner.invoke(
+            app, ["sync", str(cfg), "--team", "t1", "--dry-run", "--porcelain"]
+        )
+        assert result.exit_code == 0
+        assert "Dry run complete" not in result.output
+
+    @patch("sup.commands.group.execute_group_sync", return_value={"created": 1, "updated": 0, "deleted": 0, "errors": 0, "total": 1})
+    @patch("sup.commands.group.display_sync_results")
+    @patch("sup.commands.group.get_all_groups", return_value=[])
+    @patch("sup.commands.group.plan_group_sync", return_value={"create": [{"name": "G1", "members": []}], "update": [], "delete": []})
+    @patch(_P_SP)
+    @patch(_P_PC)
+    @patch(_P_AUTH)
+    @patch(_P_CTX)
+    def test_force_porcelain_spinner_none(
+        self, mock_ctx, mock_auth, mock_pc_cls, mock_sp, mock_pgs, mock_gag, mock_dsr, mock_exec, tmp_path
+    ):
+        """Branches 263->260: porcelain with force, spinner returns None."""
+        cm, _ = _make_spinner_cm()
+        cm.__enter__ = MagicMock(return_value=None)
+        mock_sp.return_value = cm
+        cfg = tmp_path / "config.yml"
+        cfg.write_text(yaml.dump({"groups": [{"name": "G1", "members": []}]}))
+        mock_pc_cls.return_value = MagicMock()
+
+        result = runner.invoke(
+            app, ["sync", str(cfg), "--team", "t1", "--force", "--porcelain"]
+        )
+        assert result.exit_code == 0
+
+    @patch("sup.commands.group.execute_group_sync", return_value={"created": 1, "updated": 0, "deleted": 0, "errors": 0, "total": 1})
+    @patch("sup.commands.group.display_sync_results")
+    @patch("sup.commands.group.get_all_groups", return_value=[])
+    @patch("sup.commands.group.plan_group_sync", return_value={"create": [{"name": "G1", "members": []}], "update": [], "delete": []})
+    @patch(_P_SP)
+    @patch(_P_PC)
+    @patch(_P_AUTH)
+    @patch(_P_CTX)
+    def test_porcelain_skips_confirm(
+        self, mock_ctx, mock_auth, mock_pc_cls, mock_sp, mock_pgs, mock_gag, mock_dsr, mock_exec, tmp_path
+    ):
+        """Branch 255->260: porcelain (no force) skips confirm prompt."""
+        cm, _ = _make_spinner_cm()
+        mock_sp.return_value = cm
+        cfg = tmp_path / "config.yml"
+        cfg.write_text(yaml.dump({"groups": [{"name": "G1", "members": []}]}))
+        mock_pc_cls.return_value = MagicMock()
+
+        # --porcelain without --force: 'not force and not porcelain' = True and False = False
+        result = runner.invoke(
+            app, ["sync", str(cfg), "--team", "t1", "--porcelain"]
+        )
+        assert result.exit_code == 0
+        assert "created:1" in result.output
 
 
 # ---------------------------------------------------------------------------
@@ -661,6 +839,45 @@ class TestCreateGroup:
         )
         assert result.exit_code == 0
         assert "p1\tMyGroup" in result.output
+
+    @patch("sup.commands.group.typer.prompt", return_value="t1")
+    @patch("sup.commands.group.create_scim_group", return_value={"id": "p2"})
+    @patch(_P_SP)
+    @patch(_P_PC)
+    @patch(_P_AUTH)
+    @patch(_P_CTX)
+    def test_multiple_teams_porcelain(
+        self, mock_ctx, mock_auth, mock_pc_cls, mock_sp, mock_csg, mock_prompt
+    ):
+        """Branch 329->336: multiple teams with porcelain."""
+        cm, _ = _make_spinner_cm()
+        mock_sp.return_value = cm
+        client = MagicMock()
+        client.get_teams.return_value = [
+            {"name": "t1", "title": "T1"},
+            {"name": "t2", "title": "T2"},
+        ]
+        mock_pc_cls.return_value = client
+
+        result = runner.invoke(app, ["create", "MyGroup", "--porcelain"])
+        assert result.exit_code == 0
+
+    @patch("sup.commands.group.create_scim_group", return_value={"id": "p3"})
+    @patch(_P_SP)
+    @patch(_P_PC)
+    @patch(_P_AUTH)
+    @patch(_P_CTX)
+    def test_with_members_porcelain(self, mock_ctx, mock_auth, mock_pc_cls, mock_sp, mock_csg):
+        """Branch 346->354: members warning with porcelain."""
+        cm, _ = _make_spinner_cm()
+        mock_sp.return_value = cm
+        mock_pc_cls.return_value = MagicMock()
+
+        result = runner.invoke(
+            app, ["create", "MyGroup", "--team", "t1", "--member", "a@co.com", "--porcelain"]
+        )
+        assert result.exit_code == 0
+        assert "not yet implemented" not in result.output
 
     @patch(_P_SP)
     @patch(_P_PC, side_effect=RuntimeError("boom"))

@@ -32,7 +32,11 @@ jobs:
       - name: Install dependencies
         run: uv sync --locked --extra testing
 
-      - name: Test with pytest
-        run: |
-          uv run pre-commit run --all-files
-          uv run pytest --cov-fail-under=100 --cov=src/preset_cli -vv tests/
+      - name: Lint
+        run: uv run pre-commit run --all-files
+
+      - name: Test legacy CLI (preset_cli)
+        run: uv run pytest --cov-fail-under=100 --cov=src/preset_cli -vv tests/ --ignore=tests/sup
+
+      - name: Test sup commands (100% coverage required)
+        run: uv run pytest --cov --cov-config=.coveragerc-sup --cov-report=term-missing -vv tests/sup/commands/

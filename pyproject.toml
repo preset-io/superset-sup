@@ -100,6 +100,9 @@ addopts = "--cov preset_cli --cov-report term-missing --verbose"
 norecursedirs = ["dist", "build", ".tox"]
 testpaths = ["tests"]
 
+[tool.coverage.run]
+branch = true
+
 [tool.ruff]
 target-version = "py38"
 line-length = 100

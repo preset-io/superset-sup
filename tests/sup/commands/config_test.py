@@ -50,10 +50,9 @@ def test_show_config_auth_configured():
     mock_ctx.global_config.show_query_time = True
     mock_ctx.global_config.monochrome = False
 
-    with patch(CONSOLE_PATH) as mock_console, \
-         patch(CTX_PATH, return_value=mock_ctx), \
-         patch(PATHS_GLOBAL, return_value="/g"), \
-         patch(PATHS_PROJECT, return_value="/p"):
+    with patch(CONSOLE_PATH) as mock_console, patch(CTX_PATH, return_value=mock_ctx), patch(
+        PATHS_GLOBAL, return_value="/g"
+    ), patch(PATHS_PROJECT, return_value="/p"):
         result = runner.invoke(app, ["show"])
         assert result.exit_code == 0
         # Extract Panel renderable content + plain prints
@@ -83,10 +82,9 @@ def test_show_config_auth_not_configured():
     mock_ctx.global_config.show_query_time = True
     mock_ctx.global_config.monochrome = False
 
-    with patch(CONSOLE_PATH) as mock_console, \
-         patch(CTX_PATH, return_value=mock_ctx), \
-         patch(PATHS_GLOBAL, return_value="/g"), \
-         patch(PATHS_PROJECT, return_value="/p"):
+    with patch(CONSOLE_PATH) as mock_console, patch(CTX_PATH, return_value=mock_ctx), patch(
+        PATHS_GLOBAL, return_value="/g"
+    ), patch(PATHS_PROJECT, return_value="/p"):
         result = runner.invoke(app, ["show"])
         assert result.exit_code == 0
         prints = " ".join(str(c) for c in mock_console.print.call_args_list)
@@ -94,8 +92,7 @@ def test_show_config_auth_not_configured():
 
 
 def test_show_config_exception():
-    with patch(CONSOLE_PATH) as mock_console, \
-         patch(CTX_PATH, side_effect=RuntimeError("boom")):
+    with patch(CONSOLE_PATH) as mock_console, patch(CTX_PATH, side_effect=RuntimeError("boom")):
         result = runner.invoke(app, ["show"])
         assert result.exit_code == 0
         prints = " ".join(str(c) for c in mock_console.print.call_args_list)
@@ -198,9 +195,7 @@ def test_set_show_query_time_false():
 
 def test_set_monochrome_on():
     ctx = _make_ctx()
-    with patch(CONSOLE_PATH), \
-         patch(CTX_PATH, return_value=ctx), \
-         patch(RESET_CONSOLE) as mock_reset:
+    with patch(CONSOLE_PATH), patch(CTX_PATH, return_value=ctx), patch(RESET_CONSOLE) as mock_reset:
         result = runner.invoke(app, ["set", "monochrome", "true"])
         assert result.exit_code == 0
         assert ctx.global_config.color_output is False
@@ -209,9 +204,7 @@ def test_set_monochrome_on():
 
 def test_set_monochrome_off():
     ctx = _make_ctx()
-    with patch(CONSOLE_PATH), \
-         patch(CTX_PATH, return_value=ctx), \
-         patch(RESET_CONSOLE) as mock_reset:
+    with patch(CONSOLE_PATH), patch(CTX_PATH, return_value=ctx), patch(RESET_CONSOLE) as mock_reset:
         result = runner.invoke(app, ["set", "monochrome", "off"])
         assert result.exit_code == 0
         assert ctx.global_config.color_output is True
@@ -220,9 +213,7 @@ def test_set_monochrome_off():
 
 def test_set_color_output_on():
     ctx = _make_ctx()
-    with patch(CONSOLE_PATH), \
-         patch(CTX_PATH, return_value=ctx), \
-         patch(RESET_CONSOLE) as mock_reset:
+    with patch(CONSOLE_PATH), patch(CTX_PATH, return_value=ctx), patch(RESET_CONSOLE) as mock_reset:
         result = runner.invoke(app, ["set", "color-output", "yes"])
         assert result.exit_code == 0
         assert ctx.global_config.color_output is True
@@ -231,9 +222,7 @@ def test_set_color_output_on():
 
 def test_set_color_output_off():
     ctx = _make_ctx()
-    with patch(CONSOLE_PATH), \
-         patch(CTX_PATH, return_value=ctx), \
-         patch(RESET_CONSOLE) as mock_reset:
+    with patch(CONSOLE_PATH), patch(CTX_PATH, return_value=ctx), patch(RESET_CONSOLE) as mock_reset:
         result = runner.invoke(app, ["set", "color-output", "no"])
         assert result.exit_code == 0
         assert ctx.global_config.color_output is False
@@ -288,10 +277,9 @@ def test_auth_existing_valid_decline_update():
     ctx = _make_ctx()
     ctx.get_preset_credentials.return_value = ("tok", "sec")
 
-    with patch(CONSOLE_PATH), \
-         patch(CTX_PATH, return_value=ctx), \
-         patch(AUTH_PATH, return_value=True), \
-         patch("builtins.input", return_value="n"):
+    with patch(CONSOLE_PATH), patch(CTX_PATH, return_value=ctx), patch(
+        AUTH_PATH, return_value=True
+    ), patch("builtins.input", return_value="n"):
         result = runner.invoke(app, ["auth"])
         assert result.exit_code == 0
 
@@ -302,10 +290,9 @@ def test_auth_existing_valid_wants_update_then_valid_store_global():
 
     inputs = iter(["y", "newtoken", "newsecret", "1"])
 
-    with patch(CONSOLE_PATH), \
-         patch(CTX_PATH, return_value=ctx), \
-         patch(AUTH_PATH, return_value=True), \
-         patch("builtins.input", side_effect=inputs):
+    with patch(CONSOLE_PATH), patch(CTX_PATH, return_value=ctx), patch(
+        AUTH_PATH, return_value=True
+    ), patch("builtins.input", side_effect=inputs):
         result = runner.invoke(app, ["auth"])
         assert result.exit_code == 0
         assert ctx.global_config.preset_api_token == "newtoken"
@@ -319,10 +306,9 @@ def test_auth_existing_invalid_new_valid_env_vars():
 
     inputs = iter(["newtoken", "newsecret", "2"])
 
-    with patch(CONSOLE_PATH), \
-         patch(CTX_PATH, return_value=ctx), \
-         patch(AUTH_PATH, side_effect=[False, True]), \
-         patch("builtins.input", side_effect=inputs):
+    with patch(CONSOLE_PATH), patch(CTX_PATH, return_value=ctx), patch(
+        AUTH_PATH, side_effect=[False, True]
+    ), patch("builtins.input", side_effect=inputs):
         result = runner.invoke(app, ["auth"])
         assert result.exit_code == 0
 
@@ -333,10 +319,9 @@ def test_auth_no_existing_new_valid_skip_storage():
 
     inputs = iter(["newtoken", "newsecret", "3"])
 
-    with patch(CONSOLE_PATH), \
-         patch(CTX_PATH, return_value=ctx), \
-         patch(AUTH_PATH, return_value=True), \
-         patch("builtins.input", side_effect=inputs):
+    with patch(CONSOLE_PATH), patch(CTX_PATH, return_value=ctx), patch(
+        AUTH_PATH, return_value=True
+    ), patch("builtins.input", side_effect=inputs):
         result = runner.invoke(app, ["auth"])
         assert result.exit_code == 0
 
@@ -347,10 +332,9 @@ def test_auth_new_creds_invalid():
 
     inputs = iter(["newtoken", "newsecret"])
 
-    with patch(CONSOLE_PATH) as mock_console, \
-         patch(CTX_PATH, return_value=ctx), \
-         patch(AUTH_PATH, return_value=False), \
-         patch("builtins.input", side_effect=inputs):
+    with patch(CONSOLE_PATH) as mock_console, patch(CTX_PATH, return_value=ctx), patch(
+        AUTH_PATH, return_value=False
+    ), patch("builtins.input", side_effect=inputs):
         result = runner.invoke(app, ["auth"])
         assert result.exit_code == 0
         prints = " ".join(str(c) for c in mock_console.print.call_args_list)
@@ -361,9 +345,9 @@ def test_auth_empty_token():
     ctx = _make_ctx()
     ctx.get_preset_credentials.return_value = (None, None)
 
-    with patch(CONSOLE_PATH) as mock_console, \
-         patch(CTX_PATH, return_value=ctx), \
-         patch("builtins.input", return_value=""):
+    with patch(CONSOLE_PATH) as mock_console, patch(CTX_PATH, return_value=ctx), patch(
+        "builtins.input", return_value=""
+    ):
         result = runner.invoke(app, ["auth"])
         assert result.exit_code == 0
         prints = " ".join(str(c) for c in mock_console.print.call_args_list)
@@ -376,9 +360,9 @@ def test_auth_empty_secret():
 
     inputs = iter(["sometoken", ""])
 
-    with patch(CONSOLE_PATH) as mock_console, \
-         patch(CTX_PATH, return_value=ctx), \
-         patch("builtins.input", side_effect=inputs):
+    with patch(CONSOLE_PATH) as mock_console, patch(CTX_PATH, return_value=ctx), patch(
+        "builtins.input", side_effect=inputs
+    ):
         result = runner.invoke(app, ["auth"])
         assert result.exit_code == 0
         prints = " ".join(str(c) for c in mock_console.print.call_args_list)
@@ -406,9 +390,9 @@ def test_init_project():
 
 
 def test_show_env_vars():
-    with patch(CONSOLE_PATH) as mock_console, \
-         patch(PATHS_GLOBAL, return_value="/g"), \
-         patch(PATHS_PROJECT, return_value="/p"):
+    with patch(CONSOLE_PATH) as mock_console, patch(PATHS_GLOBAL, return_value="/g"), patch(
+        PATHS_PROJECT, return_value="/p"
+    ):
         result = runner.invoke(app, ["env"])
         assert result.exit_code == 0
         assert mock_console.print.call_count > 0

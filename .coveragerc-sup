@@ -1,0 +1,9 @@
+[run]
+branch = true
+source = src/sup/commands
+
+[report]
+fail_under = 100
+show_missing = true
+exclude_lines =
+    if __name__ == .__main__.

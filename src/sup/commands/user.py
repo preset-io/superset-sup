@@ -1,18 +1,20 @@
 """
 User management commands for sup CLI.
 
-Handles user listing, role management, and security operations.
+Handles user listing, role management, export/import, and invitations.
 """
 
-from typing import Optional
+import logging
+from pathlib import Path
+from typing import List, Optional
 
 import typer
-
-# Removed: from rich.console import Console
 from typing_extensions import Annotated
 
 from sup.output.console import console
 from sup.output.styles import EMOJIS, RICH_STYLES
+
+_logger = logging.getLogger(__name__)
 
 app = typer.Typer(help="Manage users", no_args_is_help=True)
 
@@ -192,3 +194,398 @@ def display_user_details(user: dict) -> None:
     console.print(
         Panel(panel_content, title=f"User: {full_name}", border_style=RICH_STYLES["brand"])
     )
+
+
+@app.command("export")
+def export_users(
+    path: Annotated[
+        Path,
+        typer.Argument(help="Output file path"),
+    ] = Path("users_workspace_roles.yaml"),
+    teams: Annotated[
+        Optional[List[str]],
+        typer.Option("--team", "-t", help="Filter by team (repeatable)"),
+    ] = None,
+    json_output: Annotated[bool, typer.Option("--json", help="Output as JSON")] = False,
+    yaml_output: Annotated[bool, typer.Option("--yaml", help="Output as YAML to stdout")] = False,
+    porcelain: Annotated[
+        bool,
+        typer.Option("--porcelain", help="Machine-readable output"),
+    ] = False,
+):
+    """
+    Export users and their workspace roles to a YAML file.
+
+    Exports all users across teams with their team and workspace role assignments.
+    The output format is compatible with 'sup user import'.
+
+    Example:
+        sup user export
+        sup user export users.yaml
+        sup user export --team "My Team"
+        sup user export --json
+    """
+    from preset_cli.api.clients.preset import PresetClient
+    from preset_cli.cli.export_users import (
+        convert_user_data_to_list,
+        get_filtered_teams,
+        process_team_members,
+        process_team_workspaces,
+    )
+
+    from sup.auth.preset import get_preset_auth
+    from sup.config.settings import SupContext
+    from sup.output.spinners import spinner
+
+    try:
+        with spinner("Exporting users and workspace roles", silent=porcelain) as sp:
+            ctx = SupContext()
+            auth = get_preset_auth(ctx)
+            client = PresetClient("https://api.app.preset.io/", auth)
+
+            team_filter = set(teams) if teams else set()
+            filtered_teams = get_filtered_teams(client, team_filter)
+
+            if not filtered_teams:
+                if not porcelain:
+                    console.print("No teams found.", style=RICH_STYLES["dim"])
+                return
+
+            # Initialize user data storage
+            from collections import defaultdict
+
+            user_data = defaultdict(
+                lambda: {
+                    "email": None,
+                    "first_name": None,
+                    "last_name": None,
+                    "username": None,
+                    "workspaces": {},
+                },
+            )
+
+            # Role mappings
+            workspace_role_map = {
+                "Admin": "workspace admin",
+                "PresetAlpha": "primary creator",
+                "PresetBeta": "secondary creator",
+                "PresetGamma": "limited creator",
+                "PresetReportsOnly": "viewer",
+                "PresetDashboardsOnly": "dashboard viewer",
+                "PresetNoAccess": "no access",
+                "Alpha": "primary creator",
+                "Beta": "secondary creator",
+                "Gamma": "limited creator",
+                "ReportsOnly": "viewer",
+                "DashboardsOnly": "dashboard viewer",
+                "NoAccess": "no access",
+            }
+            team_role_map = {1: "admin", 2: "user"}
+
+            for team in filtered_teams:
+                team_name = team["name"]
+                team_title = team["title"]
+
+                if sp:
+                    sp.text = f"Processing team: {team_title}"
+
+                process_team_members(
+                    client, team_name, team_title, user_data, team_role_map
+                )
+                process_team_workspaces(
+                    client, team_name, team_title, user_data, workspace_role_map
+                )
+
+            users_list = convert_user_data_to_list(user_data)
+
+            if sp:
+                sp.text = f"Found {len(users_list)} users"
+
+        if json_output:
+            import json
+
+            console.print(json.dumps(users_list, indent=2))
+        elif yaml_output:
+            import yaml
+
+            console.print(yaml.safe_dump(users_list, default_flow_style=False, sort_keys=False))
+        elif porcelain:
+            for user in users_list:
+                email = user.get("email", "")
+                first = user.get("first_name", "")
+                last = user.get("last_name", "")
+                print(f"{email}\t{first}\t{last}")
+        else:
+            import yaml
+
+            with open(path, "w", encoding="utf-8") as output:
+                yaml.dump(users_list, output, default_flow_style=False, sort_keys=False)
+
+            console.print(
+                f"{EMOJIS['success']} Exported {len(users_list)} users to {path}",
+                style=RICH_STYLES["success"],
+            )
+
+    except typer.Exit:
+        raise
+    except Exception as e:
+        if not porcelain:
+            console.print(
+                f"{EMOJIS['error']} Failed to export users: {e}",
+                style=RICH_STYLES["error"],
+            )
+        raise typer.Exit(1)
+
+
+@app.command("import")
+def import_users_cmd(
+    path: Annotated[
+        Path,
+        typer.Argument(help="Input YAML file path"),
+    ] = Path("users.yaml"),
+    teams: Annotated[
+        Optional[List[str]],
+        typer.Option("--team", "-t", help="Target team (repeatable)"),
+    ] = None,
+    dry_run: Annotated[
+        bool,
+        typer.Option("--dry-run", help="Preview changes without applying"),
+    ] = False,
+    porcelain: Annotated[
+        bool,
+        typer.Option("--porcelain", help="Machine-readable output"),
+    ] = False,
+):
+    """
+    Import users via SCIM from a YAML file.
+
+    Supports two file formats (auto-detected):
+    - Simple format: basic user info (email, first_name, last_name)
+    - Workspace roles format: user info + workspace role assignments
+
+    Example:
+        sup user import users.yaml
+        sup user import users_workspace_roles.yaml --team "My Team"
+        sup user import --dry-run
+    """
+    import yaml
+
+    from preset_cli.api.clients.preset import PresetClient
+    from preset_cli.cli.main import (
+        UserFileFormat,
+        detect_users_file_format,
+        import_users_with_workspace_roles,
+    )
+
+    from sup.auth.preset import get_preset_auth
+    from sup.config.settings import SupContext
+    from sup.output.spinners import spinner
+
+    try:
+        if not path.exists():
+            if not porcelain:
+                console.print(
+                    f"{EMOJIS['error']} File not found: {path}",
+                    style=RICH_STYLES["error"],
+                )
+            raise typer.Exit(1)
+
+        with open(path, encoding="utf-8") as input_:
+            users = yaml.load(input_, Loader=yaml.SafeLoader)
+
+        if not users:
+            if not porcelain:
+                console.print("No users found in file.", style=RICH_STYLES["dim"])
+            return
+
+        file_format = detect_users_file_format(users)
+
+        if dry_run:
+            if not porcelain:
+                fmt_label = "with workspace roles" if file_format == UserFileFormat.WORKSPACE_ROLES else "simple"
+                console.print(
+                    f"{EMOJIS['info']} Dry run: would import {len(users)} users ({fmt_label} format)",
+                    style=RICH_STYLES["info"],
+                )
+                for user in users:
+                    console.print(
+                        f"  - {user.get('email', 'unknown')}",
+                        style=RICH_STYLES["dim"],
+                    )
+            else:
+                for user in users:
+                    print(f"import\t{user.get('email', 'unknown')}")
+            return
+
+        ctx = SupContext()
+        auth = get_preset_auth(ctx)
+        client = PresetClient("https://api.app.preset.io/", auth)
+
+        # Resolve teams
+        team_names = _resolve_teams(client, teams, porcelain)
+        if not team_names:
+            return
+
+        with spinner(f"Importing {len(users)} users", silent=porcelain):
+            if file_format == UserFileFormat.WORKSPACE_ROLES:
+                import_users_with_workspace_roles(client, team_names, users)
+            else:
+                client.import_users(team_names, users)
+
+        if porcelain:
+            print(f"imported:{len(users)}")
+        else:
+            console.print(
+                f"{EMOJIS['success']} Imported {len(users)} users from {path}",
+                style=RICH_STYLES["success"],
+            )
+
+    except typer.Exit:
+        raise
+    except Exception as e:
+        if not porcelain:
+            console.print(
+                f"{EMOJIS['error']} Failed to import users: {e}",
+                style=RICH_STYLES["error"],
+            )
+        raise typer.Exit(1)
+
+
+@app.command("invite")
+def invite_users(
+    path: Annotated[
+        Path,
+        typer.Argument(help="YAML file with user emails"),
+    ] = Path("users.yaml"),
+    teams: Annotated[
+        Optional[List[str]],
+        typer.Option("--team", "-t", help="Target team (repeatable)"),
+    ] = None,
+    dry_run: Annotated[
+        bool,
+        typer.Option("--dry-run", help="Preview changes without applying"),
+    ] = False,
+    porcelain: Annotated[
+        bool,
+        typer.Option("--porcelain", help="Machine-readable output"),
+    ] = False,
+):
+    """
+    Invite users to join Preset teams.
+
+    Reads a YAML file containing user emails and sends invitations.
+    The YAML file should contain a list of objects with an 'email' field.
+
+    Example:
+        sup user invite users.yaml --team "My Team"
+        sup user invite --dry-run
+    """
+    import yaml
+
+    from preset_cli.api.clients.preset import PresetClient
+
+    from sup.auth.preset import get_preset_auth
+    from sup.config.settings import SupContext
+    from sup.output.spinners import spinner
+
+    try:
+        if not path.exists():
+            if not porcelain:
+                console.print(
+                    f"{EMOJIS['error']} File not found: {path}",
+                    style=RICH_STYLES["error"],
+                )
+            raise typer.Exit(1)
+
+        with open(path, encoding="utf-8") as input_:
+            config = yaml.load(input_, Loader=yaml.SafeLoader)
+
+        if not config:
+            if not porcelain:
+                console.print("No users found in file.", style=RICH_STYLES["dim"])
+            return
+
+        emails = [user["email"] for user in config]
+
+        if dry_run:
+            if not porcelain:
+                console.print(
+                    f"{EMOJIS['info']} Dry run: would invite {len(emails)} users",
+                    style=RICH_STYLES["info"],
+                )
+                for email in emails:
+                    console.print(f"  - {email}", style=RICH_STYLES["dim"])
+            else:
+                for email in emails:
+                    print(f"invite\t{email}")
+            return
+
+        ctx = SupContext()
+        auth = get_preset_auth(ctx)
+        client = PresetClient("https://api.app.preset.io/", auth)
+
+        # Resolve teams
+        team_names = _resolve_teams(client, teams, porcelain)
+        if not team_names:
+            return
+
+        with spinner(f"Inviting {len(emails)} users", silent=porcelain):
+            client.invite_users(team_names, emails)
+
+        if porcelain:
+            print(f"invited:{len(emails)}")
+        else:
+            console.print(
+                f"{EMOJIS['success']} Invited {len(emails)} users",
+                style=RICH_STYLES["success"],
+            )
+
+    except typer.Exit:
+        raise
+    except Exception as e:
+        if not porcelain:
+            console.print(
+                f"{EMOJIS['error']} Failed to invite users: {e}",
+                style=RICH_STYLES["error"],
+            )
+        raise typer.Exit(1)
+
+
+def _resolve_teams(
+    client,
+    teams: Optional[List[str]],
+    porcelain: bool,
+) -> List[str]:
+    """Resolve team names from user input or prompt for selection."""
+    if teams:
+        # Convert team titles to internal names if needed
+        all_teams = client.get_teams()
+        team_name_map = {t["title"]: t["name"] for t in all_teams}
+        team_name_map.update({t["name"]: t["name"] for t in all_teams})
+        resolved = []
+        for t in teams:
+            if t in team_name_map:
+                resolved.append(team_name_map[t])
+            else:
+                _logger.warning("Team '%s' not found, skipping", t)
+        return resolved
+
+    # No teams specified — get all teams
+    all_teams = client.get_teams()
+    if not all_teams:
+        if not porcelain:
+            console.print("No teams found.", style=RICH_STYLES["dim"])
+        return []
+
+    if len(all_teams) == 1:
+        return [all_teams[0]["name"]]
+
+    # Prompt for team selection
+    if not porcelain:
+        console.print("\nAvailable teams:", style=RICH_STYLES["dim"])
+        for t in all_teams:
+            console.print(f"  - {t['title']} ({t['name']})")
+        selected = typer.prompt("Select team name")
+        return [selected]
+
+    return [t["name"] for t in all_teams]

@@ -4,7 +4,7 @@ Dashboard management commands for sup CLI.
 Working version without decorators - follows dataset.py pattern.
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 import typer
 
@@ -553,7 +553,6 @@ def push_dashboards(
         sup dashboard push --option env=prod --load-env  # Template with variables
     """
     from preset_cli.cli.superset.sync.native.command import ResourceType
-
     from sup.commands.push_helper import push_assets
 
     try:

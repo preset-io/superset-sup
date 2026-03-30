@@ -614,7 +614,6 @@ def push_datasets(
         sup dataset push --option env=prod --load-env  # Template with variables
     """
     from preset_cli.cli.superset.sync.native.command import ResourceType
-
     from sup.commands.push_helper import push_assets
 
     try:

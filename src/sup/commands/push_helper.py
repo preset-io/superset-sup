@@ -48,7 +48,6 @@ def push_assets(
         porcelain: Whether to use machine-readable output
     """
     from preset_cli.cli.superset.sync.native.command import native
-
     from sup.auth.preset import SupPresetAuth
     from sup.clients.preset import SupPresetClient
     from sup.config.settings import SupContext

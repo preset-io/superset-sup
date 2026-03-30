@@ -150,7 +150,6 @@ def import_ownership(
         get_logs,
         write_logs_to_file,
     )
-
     from sup.clients.superset import SupSupersetClient
     from sup.config.settings import SupContext
     from sup.output.spinners import spinner
@@ -211,8 +210,7 @@ def import_ownership(
             with open(log_file_path, "w", encoding="utf-8") as log_file:
                 for resource_name, resources in config.items():
                     resource_ids = {
-                        str(v): k
-                        for k, v in client.client.get_uuids(resource_name).items()
+                        str(v): k for k, v in client.client.get_uuids(resource_name).items()
                     }
 
                     for ownership in resources:

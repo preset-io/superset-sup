@@ -6,7 +6,7 @@ Handles export, import, and sync of Superset roles and permissions.
 
 import logging
 from pathlib import Path
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 import typer
 import yaml
@@ -224,7 +224,6 @@ def sync_roles(
     """
     from preset_cli.api.clients.preset import PresetClient
     from preset_cli.cli.main import sync_all_user_roles_to_team
-
     from sup.auth.preset import get_preset_auth
     from sup.config.settings import SupContext
     from sup.output.spinners import spinner
@@ -274,9 +273,7 @@ def sync_roles(
         if not team_names:
             return
 
-        with spinner(
-            f"Syncing roles for {len(user_roles)} users", silent=porcelain
-        ) as sp:
+        with spinner(f"Syncing roles for {len(user_roles)} users", silent=porcelain) as sp:
             for team_name in team_names:
                 if sp:
                     sp.text = f"Syncing roles in team: {team_name}"
@@ -303,13 +300,13 @@ def sync_roles(
 
 
 def _resolve_teams(
-    client,
+    client: Any,
     teams: Optional[List[str]],
     porcelain: bool,
 ) -> List[str]:
     """Resolve team names from user input or prompt for selection."""
     if teams:
-        all_teams = client.get_teams()
+        all_teams: List[Dict[str, Any]] = client.get_teams()
         team_name_map = {t["title"]: t["name"] for t in all_teams}
         team_name_map.update({t["name"]: t["name"] for t in all_teams})
         resolved = []
@@ -331,9 +328,9 @@ def _resolve_teams(
 
     if not porcelain:
         console.print("\nAvailable teams:", style=RICH_STYLES["dim"])
-        for t in all_teams:
-            console.print(f"  - {t['title']} ({t['name']})")
+        for team in all_teams:
+            console.print(f"  - {team['title']} ({team['name']})")
         selected = typer.prompt("Select team name")
         return [selected]
 
-    return [t["name"] for t in all_teams]
+    return [team["name"] for team in all_teams]

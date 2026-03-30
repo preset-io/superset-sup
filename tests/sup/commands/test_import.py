@@ -3,9 +3,8 @@ Tests for the sup import native command.
 """
 
 import os
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
-# Create a test app wrapping the command directly
 import typer
 from typer.testing import CliRunner
 
@@ -15,6 +14,24 @@ test_app = typer.Typer()
 test_app.command()(import_native)
 
 runner = CliRunner()
+
+_CTX = "sup.config.settings.SupContext"
+_PCLI = "sup.clients.preset.SupPresetClient"
+_PAUTH = "sup.auth.preset.SupPresetAuth"
+_NATIVE = "preset_cli.cli.superset.sync.native.command.native"
+
+
+def _mock_ctx(target_workspace_id=None, workspace_id=42):
+    m = MagicMock()
+    m.get_target_workspace_id.return_value = target_workspace_id
+    m.get_workspace_id.return_value = workspace_id
+    return m
+
+
+def _mock_preset_client(workspaces=None):
+    cli = MagicMock()
+    cli.get_all_workspaces.return_value = workspaces or []
+    return cli
 
 
 def test_import_native_dir_not_found():
@@ -44,7 +61,7 @@ def test_import_native_invalid_asset_type():
         assert result.exit_code == 1
 
 
-@patch("sup.config.settings.SupContext")
+@patch(_CTX)
 def test_import_native_no_workspace(MockContext):
     """Test importing without configured workspace."""
     mock_ctx = MockContext.return_value
@@ -58,3 +75,260 @@ def test_import_native_no_workspace(MockContext):
             ["assets", "--force", "--porcelain"],
         )
         assert result.exit_code == 1
+
+
+@patch(_CTX)
+def test_import_native_fallback_to_source_workspace(MockContext):
+    """Test fallback to source workspace when no target configured."""
+    mock_ctx = MockContext.return_value
+    mock_ctx.get_target_workspace_id.return_value = None
+    mock_ctx.get_workspace_id.return_value = None
+
+    with runner.isolated_filesystem():
+        os.mkdir("assets")
+        result = runner.invoke(
+            test_app,
+            ["assets", "--force", "--porcelain"],
+        )
+        assert result.exit_code == 1
+        mock_ctx.get_workspace_id.assert_called_once()
+
+
+@patch(_NATIVE)
+@patch(_PAUTH)
+@patch(_PCLI)
+@patch(_CTX)
+def test_import_native_success(MockContext, MockPresetClient, MockAuth, mock_native):
+    """Test successful import invokes native() via click context."""
+    MockContext.return_value = _mock_ctx(target_workspace_id=10)
+    MockPresetClient.from_context.return_value = _mock_preset_client(
+        workspaces=[{"id": 10, "hostname": "ws.preset.io"}]
+    )
+    MockAuth.from_sup_config.return_value = MagicMock()
+
+    with runner.isolated_filesystem():
+        os.mkdir("assets")
+        result = runner.invoke(
+            test_app,
+            ["assets", "--force", "--porcelain"],
+        )
+        assert result.exit_code == 0
+
+
+@patch(_NATIVE)
+@patch(_PAUTH)
+@patch(_PCLI)
+@patch(_CTX)
+def test_import_native_success_with_valid_asset_type(
+    MockContext, MockPresetClient, MockAuth, mock_native
+):
+    """Test successful import with a valid --asset-type."""
+    MockContext.return_value = _mock_ctx(target_workspace_id=10)
+    MockPresetClient.from_context.return_value = _mock_preset_client(
+        workspaces=[{"id": 10, "hostname": "ws.preset.io"}]
+    )
+    MockAuth.from_sup_config.return_value = MagicMock()
+
+    with runner.isolated_filesystem():
+        os.mkdir("assets")
+        result = runner.invoke(
+            test_app,
+            ["assets", "--asset-type", "chart", "--force", "--porcelain"],
+        )
+        assert result.exit_code == 0
+
+
+@patch(_NATIVE)
+@patch(_PAUTH)
+@patch(_PCLI)
+@patch(_CTX)
+def test_import_native_fallback_source_success(
+    MockContext, MockPresetClient, MockAuth, mock_native
+):
+    """Test import uses source workspace when target is not set."""
+    MockContext.return_value = _mock_ctx(target_workspace_id=None, workspace_id=42)
+    MockPresetClient.from_context.return_value = _mock_preset_client(
+        workspaces=[{"id": 42, "hostname": "ws.preset.io"}]
+    )
+    MockAuth.from_sup_config.return_value = MagicMock()
+
+    with runner.isolated_filesystem():
+        os.mkdir("assets")
+        result = runner.invoke(
+            test_app,
+            ["assets", "--force", "--porcelain"],
+        )
+        assert result.exit_code == 0
+
+
+@patch(_PCLI)
+@patch(_CTX)
+def test_import_native_workspace_not_found(MockContext, MockPresetClient):
+    """Test import when target workspace ID not in workspace list."""
+    MockContext.return_value = _mock_ctx(target_workspace_id=999)
+    MockPresetClient.from_context.return_value = _mock_preset_client(
+        workspaces=[{"id": 10, "hostname": "ws.preset.io"}]
+    )
+
+    with runner.isolated_filesystem():
+        os.mkdir("assets")
+        result = runner.invoke(
+            test_app,
+            ["assets", "--force", "--porcelain"],
+        )
+        assert result.exit_code == 1
+
+
+@patch(_PCLI)
+@patch(_CTX)
+def test_import_native_no_hostname(MockContext, MockPresetClient):
+    """Test import when workspace has no hostname."""
+    MockContext.return_value = _mock_ctx(target_workspace_id=10)
+    MockPresetClient.from_context.return_value = _mock_preset_client(
+        workspaces=[{"id": 10, "hostname": None}]
+    )
+
+    with runner.isolated_filesystem():
+        os.mkdir("assets")
+        result = runner.invoke(
+            test_app,
+            ["assets", "--force", "--porcelain"],
+        )
+        assert result.exit_code == 1
+
+
+@patch(_NATIVE)
+@patch(_PAUTH)
+@patch(_PCLI)
+@patch(_CTX)
+def test_import_native_confirmation_cancelled(MockContext, MockPresetClient, MockAuth, mock_native):
+    """Test import cancelled at confirmation prompt."""
+    MockContext.return_value = _mock_ctx(target_workspace_id=10)
+    MockPresetClient.from_context.return_value = _mock_preset_client(
+        workspaces=[{"id": 10, "hostname": "ws.preset.io"}]
+    )
+
+    with runner.isolated_filesystem():
+        os.mkdir("assets")
+        result = runner.invoke(test_app, ["assets"], input="n\n")
+        assert result.exit_code == 0
+
+
+@patch(_NATIVE)
+@patch(_PAUTH)
+@patch(_PCLI)
+@patch(_CTX)
+def test_import_native_confirmation_accepted(MockContext, MockPresetClient, MockAuth, mock_native):
+    """Test import accepted at confirmation prompt."""
+    MockContext.return_value = _mock_ctx(target_workspace_id=10)
+    MockPresetClient.from_context.return_value = _mock_preset_client(
+        workspaces=[{"id": 10, "hostname": "ws.preset.io"}]
+    )
+    MockAuth.from_sup_config.return_value = MagicMock()
+
+    with runner.isolated_filesystem():
+        os.mkdir("assets")
+        result = runner.invoke(test_app, ["assets"], input="y\n")
+        assert result.exit_code == 0
+
+
+@patch(_NATIVE)
+@patch(_PAUTH)
+@patch(_PCLI)
+@patch(_CTX)
+def test_import_native_confirmation_with_overwrite(
+    MockContext, MockPresetClient, MockAuth, mock_native
+):
+    """Test confirmation prompt displays overwrite warning."""
+    MockContext.return_value = _mock_ctx(target_workspace_id=10)
+    MockPresetClient.from_context.return_value = _mock_preset_client(
+        workspaces=[{"id": 10, "hostname": "ws.preset.io"}]
+    )
+
+    with runner.isolated_filesystem():
+        os.mkdir("assets")
+        result = runner.invoke(test_app, ["assets", "--overwrite"], input="n\n")
+        assert result.exit_code == 0
+
+
+@patch(_NATIVE)
+@patch(_PAUTH)
+@patch(_PCLI)
+@patch(_CTX)
+def test_import_native_confirmation_with_asset_type(
+    MockContext, MockPresetClient, MockAuth, mock_native
+):
+    """Test confirmation prompt displays asset type."""
+    MockContext.return_value = _mock_ctx(target_workspace_id=10)
+    MockPresetClient.from_context.return_value = _mock_preset_client(
+        workspaces=[{"id": 10, "hostname": "ws.preset.io"}]
+    )
+
+    with runner.isolated_filesystem():
+        os.mkdir("assets")
+        result = runner.invoke(test_app, ["assets", "--asset-type", "dashboard"], input="n\n")
+        assert result.exit_code == 0
+
+
+@patch(_NATIVE)
+@patch(_PAUTH)
+@patch(_PCLI)
+@patch(_CTX)
+def test_import_native_success_not_porcelain(MockContext, MockPresetClient, MockAuth, mock_native):
+    """Test successful import with human-readable output."""
+    MockContext.return_value = _mock_ctx(target_workspace_id=10)
+    MockPresetClient.from_context.return_value = _mock_preset_client(
+        workspaces=[{"id": 10, "hostname": "ws.preset.io"}]
+    )
+    MockAuth.from_sup_config.return_value = MagicMock()
+
+    with runner.isolated_filesystem():
+        os.mkdir("assets")
+        result = runner.invoke(test_app, ["assets", "--force"])
+        assert result.exit_code == 0
+
+
+@patch(_CTX)
+def test_import_native_exception_porcelain(MockContext):
+    """Test exception handling in porcelain mode."""
+    MockContext.side_effect = RuntimeError("boom")
+
+    with runner.isolated_filesystem():
+        os.mkdir("assets")
+        result = runner.invoke(
+            test_app,
+            ["assets", "--force", "--porcelain"],
+        )
+        assert result.exit_code == 1
+
+
+@patch(_CTX)
+def test_import_native_exception_not_porcelain(MockContext):
+    """Test exception handling with human-readable output."""
+    MockContext.side_effect = RuntimeError("boom")
+
+    with runner.isolated_filesystem():
+        os.mkdir("assets")
+        result = runner.invoke(test_app, ["assets", "--force"])
+        assert result.exit_code == 1
+
+
+@patch(_NATIVE)
+@patch(_PAUTH)
+@patch(_PCLI)
+@patch(_CTX)
+def test_import_native_with_db_password(MockContext, MockPresetClient, MockAuth, mock_native):
+    """Test import with --db-password option."""
+    MockContext.return_value = _mock_ctx(target_workspace_id=10)
+    MockPresetClient.from_context.return_value = _mock_preset_client(
+        workspaces=[{"id": 10, "hostname": "ws.preset.io"}]
+    )
+    MockAuth.from_sup_config.return_value = MagicMock()
+
+    with runner.isolated_filesystem():
+        os.mkdir("assets")
+        result = runner.invoke(
+            test_app,
+            ["assets", "--db-password", "uuid1=pass1", "--force", "--porcelain"],
+        )
+        assert result.exit_code == 0

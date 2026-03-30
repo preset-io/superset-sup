@@ -2,7 +2,7 @@
 Tests for the sup user export/import/invite commands.
 """
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import yaml
 from typer.testing import CliRunner
@@ -55,9 +55,7 @@ PATCH_CONTEXT = "sup.config.settings.SupContext"
 @patch(PATCH_PRESET_CLIENT)
 @patch(PATCH_AUTH)
 @patch(PATCH_CONTEXT)
-def test_export_users(
-    _MockContext, _MockAuth, MockClient, _mock_members, _mock_workspaces
-):
+def test_export_users(_MockContext, _MockAuth, MockClient, _mock_members, _mock_workspaces):
     """Test exporting users to a YAML file."""
     mock_client = MockClient.return_value
     mock_client.get_teams.return_value = [{"name": "team1", "title": "Team 1"}]

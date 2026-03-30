@@ -6,7 +6,7 @@ Handles user listing, role management, export/import, and invitations.
 
 import logging
 from pathlib import Path
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 import typer
 from typing_extensions import Annotated
@@ -232,7 +232,6 @@ def export_users(
         process_team_members,
         process_team_workspaces,
     )
-
     from sup.auth.preset import get_preset_auth
     from sup.config.settings import SupContext
     from sup.output.spinners import spinner
@@ -254,7 +253,7 @@ def export_users(
             # Initialize user data storage
             from collections import defaultdict
 
-            user_data = defaultdict(
+            user_data: Dict[str, Dict[str, Any]] = defaultdict(
                 lambda: {
                     "email": None,
                     "first_name": None,
@@ -289,9 +288,7 @@ def export_users(
                 if sp:
                     sp.text = f"Processing team: {team_title}"
 
-                process_team_members(
-                    client, team_name, team_title, user_data, team_role_map
-                )
+                process_team_members(client, team_name, team_title, user_data, team_role_map)
                 process_team_workspaces(
                     client, team_name, team_title, user_data, workspace_role_map
                 )
@@ -376,7 +373,6 @@ def import_users_cmd(
         detect_users_file_format,
         import_users_with_workspace_roles,
     )
-
     from sup.auth.preset import get_preset_auth
     from sup.config.settings import SupContext
     from sup.output.spinners import spinner
@@ -402,9 +398,14 @@ def import_users_cmd(
 
         if dry_run:
             if not porcelain:
-                fmt_label = "with workspace roles" if file_format == UserFileFormat.WORKSPACE_ROLES else "simple"
+                fmt_label = (
+                    "with workspace roles"
+                    if file_format == UserFileFormat.WORKSPACE_ROLES
+                    else "simple"
+                )
                 console.print(
-                    f"{EMOJIS['info']} Dry run: would import {len(users)} users ({fmt_label} format)",
+                    f"{EMOJIS['info']} Dry run: would import "
+                    f"{len(users)} users ({fmt_label} format)",
                     style=RICH_STYLES["info"],
                 )
                 for user in users:
@@ -483,7 +484,6 @@ def invite_users(
     import yaml
 
     from preset_cli.api.clients.preset import PresetClient
-
     from sup.auth.preset import get_preset_auth
     from sup.config.settings import SupContext
     from sup.output.spinners import spinner
@@ -583,8 +583,8 @@ def _resolve_teams(
     # Prompt for team selection
     if not porcelain:
         console.print("\nAvailable teams:", style=RICH_STYLES["dim"])
-        for t in all_teams:
-            console.print(f"  - {t['title']} ({t['name']})")
+        for team in all_teams:
+            console.print(f"  - {team['title']} ({team['name']})")
         selected = typer.prompt("Select team name")
         return [selected]
 

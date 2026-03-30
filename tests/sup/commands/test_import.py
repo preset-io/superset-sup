@@ -5,12 +5,11 @@ Tests for the sup import native command.
 import os
 from unittest.mock import patch
 
+# Create a test app wrapping the command directly
+import typer
 from typer.testing import CliRunner
 
 from sup.commands.import_ import import_native
-
-# Create a test app wrapping the command directly
-import typer
 
 test_app = typer.Typer()
 test_app.command()(import_native)

@@ -116,7 +116,6 @@ def import_native(
     import click
 
     from preset_cli.cli.superset.sync.native.command import ResourceType, native
-
     from sup.auth.preset import SupPresetAuth
     from sup.clients.preset import SupPresetClient
     from sup.config.settings import SupContext

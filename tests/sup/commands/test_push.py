@@ -2,8 +2,7 @@
 Tests for the dashboard push and dataset push commands.
 """
 
-from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 from typer.testing import CliRunner
 
@@ -19,7 +18,7 @@ def test_dashboard_push_calls_push_assets():
     """Test that dashboard push delegates to push_assets with DASHBOARD type."""
     with patch(PATCH_PUSH) as mock_push:
         with runner.isolated_filesystem():
-            result = runner.invoke(
+            _result = runner.invoke(
                 dashboard_app,
                 ["push", "--force", "--porcelain"],
             )
@@ -35,7 +34,7 @@ def test_dataset_push_calls_push_assets():
     """Test that dataset push delegates to push_assets with DATASET type."""
     with patch(PATCH_PUSH) as mock_push:
         with runner.isolated_filesystem():
-            result = runner.invoke(
+            _result = runner.invoke(
                 dataset_app,
                 ["push", "--force", "--porcelain"],
             )
@@ -48,7 +47,7 @@ def test_dataset_push_calls_push_assets():
 def test_dashboard_push_with_overwrite():
     """Test dashboard push with --overwrite flag."""
     with patch(PATCH_PUSH) as mock_push:
-        result = runner.invoke(
+        _result = runner.invoke(
             dashboard_app,
             ["push", "--overwrite", "--force", "--porcelain"],
         )
@@ -59,7 +58,7 @@ def test_dashboard_push_with_overwrite():
 def test_dataset_push_with_continue_on_error():
     """Test dataset push with --continue-on-error flag."""
     with patch(PATCH_PUSH) as mock_push:
-        result = runner.invoke(
+        _result = runner.invoke(
             dataset_app,
             ["push", "--continue-on-error", "--force", "--porcelain"],
         )
@@ -70,7 +69,7 @@ def test_dataset_push_with_continue_on_error():
 def test_dashboard_push_with_assets_folder():
     """Test dashboard push with custom assets folder."""
     with patch(PATCH_PUSH) as mock_push:
-        result = runner.invoke(
+        _result = runner.invoke(
             dashboard_app,
             ["push", "./my_assets", "--force", "--porcelain"],
         )

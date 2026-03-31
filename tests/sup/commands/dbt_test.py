@@ -368,6 +368,15 @@ class TestSyncDbtCloud:
         assert "Excluded: tag:b" in result.output
         assert "Will write exposures" in result.output
         assert "DRY RUN" in result.output
+        # dry-run summary
+        assert "Sync Configuration Summary" in result.output
+        assert "Token: ****" in result.output  # token < 4 chars, fully masked
+        assert "Account ID: 111" in result.output
+        assert "Project ID: 222" in result.output
+        assert "Job ID: 333" in result.output
+        assert "Select: tag:a" in result.output
+        assert "Exclude: tag:b" in result.output
+        assert "Exposures: /exp.yml" in result.output
 
     @patch(_P_CTX)
     def test_dry_run_porcelain(self, mock_ctx_cls):
@@ -381,6 +390,114 @@ class TestSyncDbtCloud:
         result = runner.invoke(app, ["cloud", "--dry-run", "--porcelain"])
         assert result.exit_code == 0
         assert "DRY RUN" not in result.output
+        assert "token:****" in result.output
+        assert "exposures:no" in result.output
+        assert "import_db:no" in result.output
+        assert "disallow_edits:no" in result.output
+        assert "exposures_only:no" in result.output
+        assert "preserve_metadata:no" in result.output
+        assert "merge_metadata:no" in result.output
+
+    @patch(_P_CTX)
+    def test_dry_run_porcelain_all_fields(self, mock_ctx_cls):
+        mock_ctx = MagicMock()
+        mock_ctx.config.dbt_cloud_api_token = "mytoken1234"
+        mock_ctx.config.dbt_cloud_account_id = 111
+        mock_ctx.config.dbt_cloud_project_id = 222
+        mock_ctx.config.dbt_cloud_job_id = 333
+        mock_ctx_cls.return_value = mock_ctx
+
+        result = runner.invoke(
+            app,
+            [
+                "cloud",
+                "--dry-run",
+                "--porcelain",
+                "--workspace-id",
+                "99",
+                "--select",
+                "tag:a",
+                "--select",
+                "tag:b",
+                "--exclude",
+                "tag:c",
+                "--exposures",
+                "/exp.yml",
+                "--database-id",
+                "5",
+                "--disallow-edits",
+                "--exposures-only",
+                "--preserve-metadata",
+                "--merge-metadata",
+            ],
+        )
+        assert result.exit_code == 0
+        assert "token:****1234" in result.output
+        assert "account_id:111" in result.output
+        assert "project_id:222" in result.output
+        assert "job_id:333" in result.output
+        assert "workspace_id:99" in result.output
+        assert "select:tag:a,tag:b" in result.output
+        assert "exclude:tag:c" in result.output
+        assert "exposures:/exp.yml" in result.output
+        assert "import_db:yes" in result.output
+        assert "disallow_edits:yes" in result.output
+        assert "exposures_only:yes" in result.output
+        assert "preserve_metadata:yes" in result.output
+        assert "merge_metadata:yes" in result.output
+
+    @patch(_P_CTX)
+    def test_dry_run_rich_all_branches(self, mock_ctx_cls):
+        """Covers all rich dry-run branches."""
+        mock_ctx = MagicMock()
+        mock_ctx.config.dbt_cloud_api_token = "ab"  # short token
+        mock_ctx.config.dbt_cloud_account_id = None
+        mock_ctx.config.dbt_cloud_project_id = None
+        mock_ctx.config.dbt_cloud_job_id = None
+        mock_ctx_cls.return_value = mock_ctx
+
+        result = runner.invoke(
+            app,
+            [
+                "cloud",
+                "--dry-run",
+                "--workspace-id",
+                "42",
+                "--select",
+                "tag:x",
+                "--exclude",
+                "tag:y",
+                "--database-id",
+                "7",
+                "--database-name",
+                "mydb",
+            ],
+        )
+        assert result.exit_code == 0
+        assert "Token: ****" in result.output  # token < 4 chars, fully masked
+        assert "Target workspace: 42" in result.output
+        assert "Select: tag:x" in result.output
+        assert "Exclude: tag:y" in result.output
+        assert "Exposures: not configured" in result.output
+        assert "Database ID: 7" in result.output
+        assert "Database name: mydb" in result.output
+
+    @patch(_P_CTX)
+    def test_dry_run_porcelain_database_name(self, mock_ctx_cls):
+        """Porcelain import_db branch via database_name."""
+        mock_ctx = MagicMock()
+        mock_ctx.config.dbt_cloud_api_token = "tok"
+        mock_ctx.config.dbt_cloud_account_id = None
+        mock_ctx.config.dbt_cloud_project_id = None
+        mock_ctx.config.dbt_cloud_job_id = None
+        mock_ctx_cls.return_value = mock_ctx
+
+        result = runner.invoke(
+            app,
+            ["cloud", "--dry-run", "--porcelain", "--database-name", "mydb"],
+        )
+        assert result.exit_code == 0
+        assert "import_db:yes" in result.output
 
     def test_success_with_workspace_id(self):
         click_patch, _ = _mock_click_runner(0, "done")

@@ -267,6 +267,17 @@ def pull_datasets(
             help="Pull datasets only, without related database connections",
         ),
     ] = False,
+    disable_jinja_escaping: Annotated[
+        bool,
+        typer.Option(
+            "--disable-jinja-escaping",
+            help="Export raw YAML without escaping {{ }} templates",
+        ),
+    ] = False,
+    force_unix_eol: Annotated[
+        bool,
+        typer.Option("--force-unix-eol", help="Force Unix end-of-line characters"),
+    ] = False,
     porcelain: Annotated[
         bool,
         typer.Option("--porcelain", help="Machine-readable output (no decorations)"),
@@ -402,8 +413,13 @@ def pull_datasets(
             if not target.parent.exists():
                 target.parent.mkdir(parents=True, exist_ok=True)
 
-            # Write file
-            with open(target, "w", encoding="utf-8") as output:
+            # Handle Jinja2 escaping
+            if not disable_jinja_escaping:
+                file_contents = _escape_jinja(file_contents)
+
+            # Write file with proper line endings
+            newline = "\n" if force_unix_eol else None
+            with open(target, "w", encoding="utf-8", newline=newline) as output:
                 output.write(file_contents)
 
             files_written += 1
@@ -553,3 +569,33 @@ def display_dataset_details(dataset: Dict[str, Any]) -> None:
                 f"... and {len(columns) - 20} more columns",
                 style=RICH_STYLES["dim"],
             )
+
+
+def _escape_jinja(content: str) -> str:
+    """Escape Jinja2 templates in YAML content."""
+
+    import yaml
+
+    try:
+        data = yaml.safe_load(content)
+        if isinstance(data, dict):
+            data = _traverse_escape(data)
+            return yaml.dump(data, sort_keys=False)
+    except yaml.YAMLError:
+        pass
+    return content
+
+
+def _traverse_escape(value):
+    """Recursively escape Jinja2 markers in data structures."""
+    import re
+
+    if isinstance(value, dict):
+        return {k: _traverse_escape(v) for k, v in value.items()}
+    elif isinstance(value, list):
+        return [_traverse_escape(item) for item in value]
+    elif isinstance(value, str):
+        value = re.sub(r"{{", "__JINJA2_OPEN__", value)
+        value = re.sub(r"}}", "__JINJA2_CLOSE__", value)
+        return value
+    return value

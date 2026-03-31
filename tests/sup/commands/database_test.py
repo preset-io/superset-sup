@@ -379,3 +379,242 @@ class TestDisplayDatabaseDetails:
             assert "CVAS" not in content
             assert "DML" not in content
             assert "Async" not in content
+
+
+# ---------------------------------------------------------------------------
+# pull_databases tests
+# ---------------------------------------------------------------------------
+
+PATCH_CTX = "sup.config.settings.SupContext"
+PATCH_CLIENT = "sup.clients.superset.SupSupersetClient"
+PATCH_SPINNER = "sup.output.spinners.data_spinner"
+
+
+class TestPullDatabases:
+    def _make_zip(self, tmp_path):
+        """Create a mock zip buffer with database YAML."""
+        import io
+        from zipfile import ZipFile
+
+        buf = io.BytesIO()
+        with ZipFile(buf, "w") as zf:
+            zf.writestr("db_export/databases/prod.yaml", "database_name: prod")
+        buf.seek(0)
+        return buf
+
+    def _setup_mocks(self, mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path):
+        ctx = MagicMock()
+        assets = tmp_path / "assets"
+        assets.mkdir(parents=True)
+        ctx.get_assets_folder.return_value = str(assets)
+        mock_ctx_cls.return_value = ctx
+
+        client = MagicMock()
+        client.get_databases.return_value = [{"id": 1, "database_name": "prod"}]
+        client.client.export_zip.return_value = self._make_zip(tmp_path)
+        mock_client_cls.from_context.return_value = client
+
+        sp = MagicMock()
+        mock_spinner.return_value.__enter__ = MagicMock(return_value=sp)
+        mock_spinner.return_value.__exit__ = MagicMock(return_value=False)
+
+        return ctx, client, sp
+
+    @patch(PATCH_SPINNER)
+    @patch(PATCH_CLIENT)
+    @patch(PATCH_CTX)
+    def test_pull_all(self, mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path):
+        ctx, client, sp = self._setup_mocks(mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path)
+        result = runner.invoke(app, ["pull"])
+        assert result.exit_code == 0
+        assert "Exported" in result.output
+
+    @patch(PATCH_SPINNER)
+    @patch(PATCH_CLIENT)
+    @patch(PATCH_CTX)
+    def test_pull_by_id(self, mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path):
+        ctx, client, sp = self._setup_mocks(mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path)
+        result = runner.invoke(app, ["pull", "--id", "1"])
+        assert result.exit_code == 0
+
+    @patch(PATCH_SPINNER)
+    @patch(PATCH_CLIENT)
+    @patch(PATCH_CTX)
+    def test_pull_by_ids(self, mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path):
+        ctx, client, sp = self._setup_mocks(mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path)
+        result = runner.invoke(app, ["pull", "--ids", "1,2"])
+        assert result.exit_code == 0
+
+    @patch(PATCH_SPINNER)
+    @patch(PATCH_CLIENT)
+    @patch(PATCH_CTX)
+    def test_pull_no_match(self, mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path):
+        ctx, client, sp = self._setup_mocks(mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path)
+        client.get_databases.return_value = []
+        result = runner.invoke(app, ["pull"])
+        assert result.exit_code == 0
+        assert "No databases" in result.output
+
+    @patch(PATCH_SPINNER)
+    @patch(PATCH_CLIENT)
+    @patch(PATCH_CTX)
+    def test_pull_porcelain(self, mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path):
+        ctx, client, sp = self._setup_mocks(mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path)
+        # In porcelain mode, data_spinner yields None
+        mock_spinner.return_value.__enter__ = MagicMock(return_value=None)
+        result = runner.invoke(app, ["pull", "--porcelain"])
+        assert result.exit_code == 0
+
+    @patch(PATCH_SPINNER)
+    @patch(PATCH_CLIENT)
+    @patch(PATCH_CTX)
+    def test_pull_overwrite(self, mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path):
+        ctx, client, sp = self._setup_mocks(mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path)
+        assets = tmp_path / "assets"
+        db_dir = assets / "databases"
+        db_dir.mkdir(parents=True, exist_ok=True)
+        (db_dir / "prod.yaml").write_text("old content")
+        result = runner.invoke(app, ["pull", "--overwrite"])
+        assert result.exit_code == 0
+        assert "database_name" in (db_dir / "prod.yaml").read_text()
+
+    @patch(PATCH_SPINNER)
+    @patch(PATCH_CLIENT)
+    @patch(PATCH_CTX)
+    def test_pull_skip_existing(self, mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path):
+        ctx, client, sp = self._setup_mocks(mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path)
+        assets = tmp_path / "assets"
+        db_dir = assets / "databases"
+        db_dir.mkdir(parents=True, exist_ok=True)
+        (db_dir / "prod.yaml").write_text("old content")
+        result = runner.invoke(app, ["pull"])
+        assert result.exit_code == 0
+        assert (db_dir / "prod.yaml").read_text() == "old content"
+
+    @patch(PATCH_SPINNER)
+    @patch(PATCH_CLIENT)
+    @patch(PATCH_CTX)
+    def test_pull_disable_jinja_escaping(
+        self, mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path
+    ):
+        ctx, client, sp = self._setup_mocks(mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path)
+        result = runner.invoke(app, ["pull", "--disable-jinja-escaping"])
+        assert result.exit_code == 0
+
+    @patch(PATCH_SPINNER)
+    @patch(PATCH_CLIENT)
+    @patch(PATCH_CTX)
+    def test_pull_force_unix_eol(self, mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path):
+        ctx, client, sp = self._setup_mocks(mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path)
+        result = runner.invoke(app, ["pull", "--force-unix-eol"])
+        assert result.exit_code == 0
+
+    @patch(PATCH_SPINNER)
+    @patch(PATCH_CLIENT)
+    @patch(PATCH_CTX)
+    def test_pull_creates_output_dir(self, mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path):
+        ctx, client, sp = self._setup_mocks(mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path)
+        new_dir = tmp_path / "new_assets"
+        ctx.get_assets_folder.return_value = str(new_dir)
+        assert not new_dir.exists()
+        result = runner.invoke(app, ["pull"])
+        assert result.exit_code == 0
+        assert new_dir.exists()
+
+    @patch(PATCH_SPINNER)
+    @patch(PATCH_CLIENT)
+    @patch(PATCH_CTX)
+    def test_pull_porcelain_output(self, mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path):
+        ctx, client, sp = self._setup_mocks(mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path)
+        result = runner.invoke(app, ["pull", "--porcelain"])
+        assert result.exit_code == 0
+        # Porcelain outputs "count\tpath"
+        assert "\t" in result.output
+
+    @patch(PATCH_SPINNER)
+    @patch(PATCH_CLIENT)
+    @patch(PATCH_CTX)
+    def test_pull_skip_existing_porcelain(
+        self, mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path
+    ):
+        ctx, client, sp = self._setup_mocks(mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path)
+        assets = tmp_path / "assets"
+        db_dir = assets / "databases"
+        db_dir.mkdir(parents=True, exist_ok=True)
+        (db_dir / "prod.yaml").write_text("old content")
+        result = runner.invoke(app, ["pull", "--porcelain"])
+        assert result.exit_code == 0
+        assert (db_dir / "prod.yaml").read_text() == "old content"
+
+    @patch(PATCH_SPINNER)
+    @patch(PATCH_CLIENT)
+    @patch(PATCH_CTX)
+    def test_pull_error_porcelain(self, mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path):
+        ctx = MagicMock()
+        ctx.get_assets_folder.return_value = str(tmp_path)
+        mock_ctx_cls.return_value = ctx
+        mock_client_cls.from_context.side_effect = Exception("fail")
+        mock_spinner.return_value.__enter__ = MagicMock(side_effect=Exception("fail"))
+        mock_spinner.return_value.__exit__ = MagicMock(return_value=False)
+        result = runner.invoke(app, ["pull", "--porcelain"])
+        assert result.exit_code == 1
+
+    @patch(PATCH_SPINNER)
+    @patch(PATCH_CLIENT)
+    @patch(PATCH_CTX)
+    def test_pull_path_is_file(self, mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path):
+        ctx = MagicMock()
+        fpath = tmp_path / "notdir"
+        fpath.write_text("x")
+        ctx.get_assets_folder.return_value = str(fpath)
+        mock_ctx_cls.return_value = ctx
+        result = runner.invoke(app, ["pull"])
+        assert result.exit_code == 1
+
+    @patch(PATCH_SPINNER)
+    @patch(PATCH_CLIENT)
+    @patch(PATCH_CTX)
+    def test_pull_error(self, mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path):
+        ctx = MagicMock()
+        ctx.get_assets_folder.return_value = str(tmp_path)
+        mock_ctx_cls.return_value = ctx
+        mock_client_cls.from_context.side_effect = Exception("connection failed")
+        mock_spinner.return_value.__enter__ = MagicMock(side_effect=Exception("connection failed"))
+        mock_spinner.return_value.__exit__ = MagicMock(return_value=False)
+        result = runner.invoke(app, ["pull"])
+        assert result.exit_code == 1
+
+
+# ---------------------------------------------------------------------------
+# _escape_jinja / _traverse_escape tests
+# ---------------------------------------------------------------------------
+
+
+class TestEscapeJinja:
+    def test_escapes_jinja_markers(self):
+        from sup.commands.database import _escape_jinja
+
+        result = _escape_jinja("key: '{{ value }}'")
+        assert "__JINJA2_OPEN__" in result
+        assert "__JINJA2_CLOSE__" in result
+
+    def test_invalid_yaml_returns_unchanged(self):
+        from sup.commands.database import _escape_jinja
+
+        content = "not: valid: yaml: {{{"
+        assert _escape_jinja(content) == content
+
+    def test_non_dict_yaml_returns_unchanged(self):
+        from sup.commands.database import _escape_jinja
+
+        content = "- item1\n- item2"
+        assert _escape_jinja(content) == content
+
+    def test_traverse_nested(self):
+        from sup.commands.database import _traverse_escape
+
+        data = {"a": {"b": "{{ x }}", "c": [1, "{{ y }}"]}}
+        result = _traverse_escape(data)
+        assert "__JINJA2_OPEN__" in result["a"]["b"]
+        assert "__JINJA2_OPEN__" in result["a"]["c"][1]
+        assert result["a"]["c"][0] == 1

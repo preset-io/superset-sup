@@ -42,6 +42,76 @@ def format_dbt_help():
 app = typer.Typer(help=format_dbt_help(), rich_markup_mode="rich", no_args_is_help=True)
 
 
+def _resolve_manifest(file_path: str) -> Path:
+    """
+    Resolve a manifest.json path from either a direct path or a dbt_project.yml.
+
+    If file_path points to a dbt_project.yml, reads it to find target-path
+    and returns the resolved manifest.json path.
+    """
+    import yaml
+
+    path = Path(file_path)
+
+    if path.name == "dbt_project.yml":
+        if not path.exists():
+            return path  # Let caller handle the error
+
+        with open(path, encoding="utf-8") as f:
+            project = yaml.safe_load(f)
+
+        target_path = project.get("target-path", "target")
+        return path.parent / target_path / "manifest.json"
+
+    return path
+
+
+def _dry_run_preview(
+    manifest_path: str,
+    select: Optional[List[str]],
+    exclude: Optional[List[str]],
+    import_db: bool,
+    exposures_path: Optional[str],
+    porcelain: bool,
+) -> None:
+    """Preview what would be synced without making changes."""
+    import json
+
+    from preset_cli.cli.superset.sync.dbt.lib import apply_select
+    from preset_cli.cli.superset.sync.dbt.schemas import ModelSchema
+
+    with open(manifest_path, encoding="utf-8") as f:
+        data = json.load(f)
+
+    model_schema = ModelSchema()
+    all_models = []
+    for node in data.get("nodes", {}).values():
+        if node.get("resource_type") == "model":
+            unique_id = node["unique_id"]
+            node["children"] = data.get("child_map", {}).get(unique_id, [])
+            all_models.append(model_schema.load(node))
+
+    selected = apply_select(all_models, tuple(select or []), tuple(exclude or []))
+
+    if porcelain:
+        for model in selected:
+            print(f"{model['name']}\t{model['schema']}\t{model['database']}")
+    else:
+        console.print(
+            f"{EMOJIS['info']} DRY RUN - {len(selected)} models would be synced:",
+            style=RICH_STYLES["info"],
+        )
+        for model in selected:
+            console.print(
+                f"  - {model['name']} ({model['schema']}.{model['database']})",
+                style=RICH_STYLES["dim"],
+            )
+        if import_db:
+            console.print("  Database connection would be imported")
+        if exposures_path:
+            console.print(f"  Exposures would be written to: {exposures_path}")
+
+
 @app.command("core")
 def sync_dbt_core(
     manifest_path: Annotated[
@@ -130,15 +200,18 @@ def sync_dbt_core(
     from sup.clients.superset import SupSupersetClient
     from sup.config.settings import SupContext
 
-    # Validate manifest exists
-    manifest = Path(manifest_path)
+    # Resolve manifest (supports dbt_project.yml)
+    manifest = _resolve_manifest(manifest_path)
     if not manifest.exists():
         if not porcelain:
             console.print(
-                f"{EMOJIS['error']} Manifest file not found: {manifest_path}",
+                f"{EMOJIS['error']} Manifest file not found: {manifest}",
                 style=RICH_STYLES["error"],
             )
         raise typer.Exit(1)
+
+    # Use resolved path for the rest of the command
+    manifest_path = str(manifest)
 
     if not porcelain:
         console.print(
@@ -158,12 +231,7 @@ def sync_dbt_core(
             console.print(f"📝 Will write exposures to: {exposures_path}")
 
     if dry_run:
-        if not porcelain:
-            console.print(
-                f"{EMOJIS['info']} DRY RUN - No changes will be made",
-                style=RICH_STYLES["info"],
-            )
-        # TODO: Implement dry run preview
+        _dry_run_preview(manifest_path, select, exclude, import_db, exposures_path, porcelain)
         return
 
     try:

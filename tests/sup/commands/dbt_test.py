@@ -80,19 +80,157 @@ class TestSyncDbtCore:
         assert "DRY RUN" in result.output
         assert result.exit_code == 0
 
-    def test_dry_run_returns_early(self, tmp_path):
+    @patch("preset_cli.cli.superset.sync.dbt.lib.apply_select")
+    @patch("preset_cli.cli.superset.sync.dbt.schemas.ModelSchema")
+    def test_dry_run_with_models(self, mock_schema_cls, mock_apply, tmp_path):
         manifest = tmp_path / "manifest.json"
-        manifest.write_text("{}")
+        manifest.write_text(
+            json.dumps(
+                {
+                    "nodes": {
+                        "model.proj.orders": {
+                            "resource_type": "model",
+                            "unique_id": "model.proj.orders",
+                        }
+                    },
+                    "child_map": {},
+                }
+            )
+        )
+        model = {"name": "orders", "schema": "public", "database": "analytics"}
+        mock_schema_cls.return_value.load.return_value = model
+        mock_apply.return_value = [model]
+
         result = runner.invoke(app, ["core", str(manifest), "--dry-run"])
         assert result.exit_code == 0
         assert "DRY RUN" in result.output
+        assert "1 models would be synced" in result.output
+        assert "orders" in result.output
 
-    def test_dry_run_porcelain(self, tmp_path):
+    @patch("preset_cli.cli.superset.sync.dbt.lib.apply_select")
+    @patch("preset_cli.cli.superset.sync.dbt.schemas.ModelSchema")
+    def test_dry_run_porcelain(self, mock_schema_cls, mock_apply, tmp_path):
         manifest = tmp_path / "manifest.json"
-        manifest.write_text("{}")
+        manifest.write_text(
+            json.dumps(
+                {
+                    "nodes": {
+                        "model.proj.orders": {
+                            "resource_type": "model",
+                            "unique_id": "model.proj.orders",
+                        }
+                    },
+                    "child_map": {},
+                }
+            )
+        )
+        model = {"name": "orders", "schema": "public", "database": "analytics"}
+        mock_schema_cls.return_value.load.return_value = model
+        mock_apply.return_value = [model]
+
         result = runner.invoke(app, ["core", str(manifest), "--dry-run", "--porcelain"])
         assert result.exit_code == 0
+        assert "orders\tpublic\tanalytics" in result.output
         assert "DRY RUN" not in result.output
+
+    @patch("preset_cli.cli.superset.sync.dbt.lib.apply_select")
+    @patch("preset_cli.cli.superset.sync.dbt.schemas.ModelSchema")
+    def test_dry_run_with_import_db_and_exposures(self, mock_schema_cls, mock_apply, tmp_path):
+        manifest = tmp_path / "manifest.json"
+        manifest.write_text(json.dumps({"nodes": {}, "child_map": {}}))
+        mock_schema_cls.return_value = MagicMock()
+        mock_apply.return_value = []
+
+        result = runner.invoke(
+            app,
+            [
+                "core",
+                str(manifest),
+                "--dry-run",
+                "--import-db",
+                "--exposures",
+                "/tmp/exp.yml",
+            ],
+        )
+        assert result.exit_code == 0
+        assert "Database connection would be imported" in result.output
+        assert "Exposures would be written to" in result.output
+
+    @patch("preset_cli.cli.superset.sync.dbt.lib.apply_select")
+    @patch("preset_cli.cli.superset.sync.dbt.schemas.ModelSchema")
+    def test_dry_run_no_models(self, mock_schema_cls, mock_apply, tmp_path):
+        """Test dry-run with no model nodes in manifest."""
+        manifest = tmp_path / "manifest.json"
+        manifest.write_text(json.dumps({"nodes": {}, "child_map": {}}))
+        mock_schema_cls.return_value = MagicMock()
+        mock_apply.return_value = []
+
+        result = runner.invoke(app, ["core", str(manifest), "--dry-run"])
+        assert result.exit_code == 0
+        assert "0 models would be synced" in result.output
+
+    @patch("preset_cli.cli.superset.sync.dbt.lib.apply_select")
+    @patch("preset_cli.cli.superset.sync.dbt.schemas.ModelSchema")
+    def test_dry_run_skips_non_model_nodes(self, mock_schema_cls, mock_apply, tmp_path):
+        """Test dry-run skips non-model nodes (tests, sources, etc.)."""
+        manifest = tmp_path / "manifest.json"
+        manifest.write_text(
+            json.dumps(
+                {
+                    "nodes": {
+                        "test.proj.test1": {
+                            "resource_type": "test",
+                            "unique_id": "test.proj.test1",
+                        }
+                    },
+                    "child_map": {},
+                }
+            )
+        )
+        mock_schema_cls.return_value = MagicMock()
+        mock_apply.return_value = []
+
+        result = runner.invoke(app, ["core", str(manifest), "--dry-run"])
+        assert result.exit_code == 0
+        assert "0 models would be synced" in result.output
+
+    def test_dbt_project_yml_resolves_manifest(self, tmp_path):
+        """Test that dbt_project.yml resolves to target/manifest.json."""
+        project = tmp_path / "dbt_project.yml"
+        project.write_text("target-path: custom_target\n")
+        target_dir = tmp_path / "custom_target"
+        target_dir.mkdir()
+        manifest = target_dir / "manifest.json"
+        manifest.write_text(json.dumps({"nodes": {}, "child_map": {}}))
+
+        result = runner.invoke(app, ["core", str(project), "--dry-run"])
+        assert result.exit_code == 0
+
+    def test_dbt_project_yml_default_target(self, tmp_path):
+        """Test dbt_project.yml with default target-path."""
+        project = tmp_path / "dbt_project.yml"
+        project.write_text("name: my_project\n")
+        target_dir = tmp_path / "target"
+        target_dir.mkdir()
+        manifest = target_dir / "manifest.json"
+        manifest.write_text(json.dumps({"nodes": {}, "child_map": {}}))
+
+        result = runner.invoke(app, ["core", str(project), "--dry-run"])
+        assert result.exit_code == 0
+
+    def test_dbt_project_yml_not_found(self, tmp_path):
+        """Test dbt_project.yml that doesn't exist."""
+        result = runner.invoke(app, ["core", str(tmp_path / "dbt_project.yml")])
+        assert result.exit_code == 1
+        assert "not found" in result.output
+
+    def test_dbt_project_yml_manifest_not_found(self, tmp_path):
+        """Test dbt_project.yml where resolved manifest doesn't exist."""
+        project = tmp_path / "dbt_project.yml"
+        project.write_text("target-path: nonexistent\n")
+        result = runner.invoke(app, ["core", str(project)])
+        assert result.exit_code == 1
+        assert "not found" in result.output
 
     def test_success_with_workspace_id(self, tmp_path):
         manifest = tmp_path / "manifest.json"

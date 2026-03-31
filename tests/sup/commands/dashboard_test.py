@@ -806,7 +806,6 @@ class TestPullDashboards:
         assert result.exit_code == 0
         assert (dashboards_dir / "Sales.yaml").read_text() == "old"
 
-
     @patch(PATCH_SPINNER)
     @patch(PATCH_CLIENT)
     @patch(PATCH_CTX)
@@ -814,7 +813,10 @@ class TestPullDashboards:
         self, mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path
     ):
         ctx, client, sp = self._setup_pull_mocks(
-            mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path,
+            mock_ctx_cls,
+            mock_client_cls,
+            mock_spinner,
+            tmp_path,
         )
         result = runner.invoke(app, ["pull", "--disable-jinja-escaping"])
         assert result.exit_code == 0
@@ -822,11 +824,12 @@ class TestPullDashboards:
     @patch(PATCH_SPINNER)
     @patch(PATCH_CLIENT)
     @patch(PATCH_CTX)
-    def test_pull_force_unix_eol(
-        self, mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path
-    ):
+    def test_pull_force_unix_eol(self, mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path):
         ctx, client, sp = self._setup_pull_mocks(
-            mock_ctx_cls, mock_client_cls, mock_spinner, tmp_path,
+            mock_ctx_cls,
+            mock_client_cls,
+            mock_spinner,
+            tmp_path,
         )
         result = runner.invoke(app, ["pull", "--force-unix-eol"])
         assert result.exit_code == 0

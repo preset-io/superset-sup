@@ -11,6 +11,7 @@ import typer
 # Removed: from rich.console import Console
 from typing_extensions import Annotated
 
+from sup.lib import escape_jinja
 from sup.output.console import console
 from sup.output.styles import EMOJIS, RICH_STYLES
 
@@ -315,7 +316,7 @@ def pull_databases(
                 target.parent.mkdir(parents=True, exist_ok=True)
 
             if not disable_jinja_escaping:
-                file_contents = _escape_jinja(file_contents)
+                file_contents = escape_jinja(file_contents)
 
             newline = "\n" if force_unix_eol else None
             with open(target, "w", encoding="utf-8", newline=newline) as output:
@@ -340,36 +341,6 @@ def pull_databases(
                 style=RICH_STYLES["error"],
             )
         raise typer.Exit(1)
-
-
-def _escape_jinja(content: str) -> str:
-    """Escape Jinja2 templates in YAML content."""
-
-    import yaml
-
-    try:
-        data = yaml.safe_load(content)
-        if isinstance(data, dict):
-            data = _traverse_escape(data)
-            return yaml.dump(data, sort_keys=False)
-    except yaml.YAMLError:
-        pass
-    return content
-
-
-def _traverse_escape(value):
-    """Recursively escape Jinja2 markers in data structures."""
-    import re
-
-    if isinstance(value, dict):
-        return {k: _traverse_escape(v) for k, v in value.items()}
-    elif isinstance(value, list):
-        return [_traverse_escape(item) for item in value]
-    elif isinstance(value, str):
-        value = re.sub(r"{{", "__JINJA2_OPEN__", value)
-        value = re.sub(r"}}", "__JINJA2_CLOSE__", value)
-        return value
-    return value
 
 
 def display_database_details(database: dict) -> None:

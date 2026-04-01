@@ -832,25 +832,25 @@ class TestPullDatasets:
 
 class TestEscapeJinja:
     def test_escapes_jinja_markers(self):
-        from sup.commands.dataset import _escape_jinja
+        from sup.lib import escape_jinja
 
-        result = _escape_jinja("key: '{{ value }}'")
+        result = escape_jinja("key: '{{ value }}'")
         assert "__JINJA2_OPEN__" in result
         assert "__JINJA2_CLOSE__" in result
 
     def test_invalid_yaml_returns_unchanged(self):
-        from sup.commands.dataset import _escape_jinja
+        from sup.lib import escape_jinja
 
         content = "not: valid: yaml: {{{"
-        assert _escape_jinja(content) == content
+        assert escape_jinja(content) == content
 
     def test_non_dict_yaml_returns_unchanged(self):
-        from sup.commands.dataset import _escape_jinja
+        from sup.lib import escape_jinja
 
-        assert _escape_jinja("- item1\n- item2") == "- item1\n- item2"
+        assert escape_jinja("- item1\n- item2") == "- item1\n- item2"
 
     def test_traverse_nested(self):
-        from sup.commands.dataset import _traverse_escape
+        from sup.lib import _traverse_escape
 
         data = {"a": {"b": "{{ x }}", "c": [1, "{{ y }}"]}}
         result = _traverse_escape(data)

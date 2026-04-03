@@ -142,9 +142,7 @@ def test_sync_native_success_with_valid_asset_type(
 @patch(_PAUTH)
 @patch(_PCLI)
 @patch(_CTX)
-def test_sync_native_fallback_source_success(
-    MockContext, MockPresetClient, MockAuth, mock_native
-):
+def test_sync_native_fallback_source_success(MockContext, MockPresetClient, MockAuth, mock_native):
     """Test push uses source workspace when target is not set."""
     MockContext.return_value = _mock_ctx(target_workspace_id=None, workspace_id=42)
     MockPresetClient.from_context.return_value = _mock_preset_client(

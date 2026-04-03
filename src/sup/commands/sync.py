@@ -693,6 +693,7 @@ def execute_push(
                 )
             raise
 
+
 @app.command("native")
 def sync_native(
     directory: Annotated[
@@ -941,6 +942,7 @@ def sync_native(
                 style=RICH_STYLES["error"],
             )
         raise typer.Exit(1)
+
 
 if __name__ == "__main__":
     app()

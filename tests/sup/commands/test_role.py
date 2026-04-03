@@ -1,4 +1,4 @@
-"""Tests for the sup role export/import/sync commands."""
+"""Tests for the sup role pull/push/sync commands."""
 
 from unittest.mock import MagicMock, patch
 
@@ -40,48 +40,48 @@ PATCH_AUTH = "sup.auth.preset.get_preset_auth"
 
 @patch(PATCH_CLIENT)
 @patch(PATCH_CONTEXT)
-def test_export_roles(_MockContext, MockClient):
+def test_pull_roles(_MockContext, MockClient):
     mock_client = MagicMock()
     mock_client.client.export_roles.return_value = iter(SAMPLE_ROLES)
     MockClient.from_context.return_value = mock_client
     with runner.isolated_filesystem():
-        result = runner.invoke(app, ["export", "roles.yaml"])
+        result = runner.invoke(app, ["pull", "roles.yaml"])
         assert result.exit_code == 0
         with open("roles.yaml") as f:
-            exported = yaml.safe_load(f)
-        assert len(exported) == 2
-        assert exported[0]["name"] == "Admin"
+            pulled = yaml.safe_load(f)
+        assert len(pulled) == 2
+        assert pulled[0]["name"] == "Admin"
 
 
 @patch(PATCH_CLIENT)
 @patch(PATCH_CONTEXT)
-def test_export_roles_json(_MockContext, MockClient):
+def test_pull_roles_json(_MockContext, MockClient):
     mock_client = MagicMock()
     mock_client.client.export_roles.return_value = iter(SAMPLE_ROLES)
     MockClient.from_context.return_value = mock_client
-    result = runner.invoke(app, ["export", "--json"])
+    result = runner.invoke(app, ["pull", "--json"])
     assert result.exit_code == 0
     assert "Admin" in result.output
 
 
 @patch(PATCH_CLIENT)
 @patch(PATCH_CONTEXT)
-def test_export_roles_yaml(_MockContext, MockClient):
+def test_pull_roles_yaml(_MockContext, MockClient):
     mock_client = MagicMock()
     mock_client.client.export_roles.return_value = iter(SAMPLE_ROLES)
     MockClient.from_context.return_value = mock_client
-    result = runner.invoke(app, ["export", "--yaml"])
+    result = runner.invoke(app, ["pull", "--yaml"])
     assert result.exit_code == 0
     assert "Admin" in result.output
 
 
 @patch(PATCH_CLIENT)
 @patch(PATCH_CONTEXT)
-def test_export_roles_porcelain(_MockContext, MockClient):
+def test_pull_roles_porcelain(_MockContext, MockClient):
     mock_client = MagicMock()
     mock_client.client.export_roles.return_value = iter(SAMPLE_ROLES)
     MockClient.from_context.return_value = mock_client
-    result = runner.invoke(app, ["export", "--porcelain"])
+    result = runner.invoke(app, ["pull", "--porcelain"])
     assert result.exit_code == 0
     assert "Admin\t2" in result.output
     assert "Gamma\t1" in result.output
@@ -89,120 +89,120 @@ def test_export_roles_porcelain(_MockContext, MockClient):
 
 @patch(PATCH_CLIENT)
 @patch(PATCH_CONTEXT)
-def test_export_roles_error(_MockContext, MockClient):
+def test_pull_roles_error(_MockContext, MockClient):
     MockClient.from_context.side_effect = RuntimeError("boom")
-    result = runner.invoke(app, ["export"])
+    result = runner.invoke(app, ["pull"])
     assert result.exit_code == 1
-    assert "Failed to export roles" in result.output
+    assert "Failed to pull roles" in result.output
 
 
 @patch(PATCH_CLIENT)
 @patch(PATCH_CONTEXT)
-def test_export_roles_error_porcelain(_MockContext, MockClient):
+def test_pull_roles_error_porcelain(_MockContext, MockClient):
     MockClient.from_context.side_effect = RuntimeError("boom")
-    result = runner.invoke(app, ["export", "--porcelain"])
+    result = runner.invoke(app, ["pull", "--porcelain"])
     assert result.exit_code == 1
     assert "Failed" not in result.output
 
 
 @patch(PATCH_CLIENT)
 @patch(PATCH_CONTEXT)
-def test_import_roles(_MockContext, MockClient):
+def test_push_roles(_MockContext, MockClient):
     mock_client = MagicMock()
     MockClient.from_context.return_value = mock_client
     with runner.isolated_filesystem():
         with open("roles.yaml", "w") as f:
             yaml.dump(SAMPLE_ROLES, f)
-        result = runner.invoke(app, ["import", "roles.yaml"])
+        result = runner.invoke(app, ["push", "roles.yaml"])
         assert result.exit_code == 0
     assert mock_client.client.import_role.call_count == 2
 
 
 @patch(PATCH_CLIENT)
 @patch(PATCH_CONTEXT)
-def test_import_roles_porcelain(_MockContext, MockClient):
+def test_push_roles_porcelain(_MockContext, MockClient):
     mock_client = MagicMock()
     MockClient.from_context.return_value = mock_client
     with runner.isolated_filesystem():
         with open("roles.yaml", "w") as f:
             yaml.dump(SAMPLE_ROLES, f)
-        result = runner.invoke(app, ["import", "roles.yaml", "--porcelain"])
+        result = runner.invoke(app, ["push", "roles.yaml", "--porcelain"])
         assert result.exit_code == 0
-        assert "imported:2" in result.output
+        assert "pushed:2" in result.output
 
 
-def test_import_roles_dry_run():
+def test_push_roles_dry_run():
     with runner.isolated_filesystem():
         with open("roles.yaml", "w") as f:
             yaml.dump(SAMPLE_ROLES, f)
-        result = runner.invoke(app, ["import", "roles.yaml", "--dry-run"])
+        result = runner.invoke(app, ["push", "roles.yaml", "--dry-run"])
         assert result.exit_code == 0
         assert "Dry run" in result.output
 
 
-def test_import_roles_dry_run_porcelain():
+def test_push_roles_dry_run_porcelain():
     with runner.isolated_filesystem():
         with open("roles.yaml", "w") as f:
             yaml.dump(SAMPLE_ROLES, f)
-        result = runner.invoke(app, ["import", "roles.yaml", "--dry-run", "--porcelain"])
+        result = runner.invoke(app, ["push", "roles.yaml", "--dry-run", "--porcelain"])
         assert result.exit_code == 0
         assert "import\tAdmin" in result.output
 
 
-def test_import_roles_file_not_found():
+def test_push_roles_file_not_found():
     with runner.isolated_filesystem():
-        result = runner.invoke(app, ["import", "nonexistent.yaml"])
+        result = runner.invoke(app, ["push", "nonexistent.yaml"])
         assert result.exit_code == 1
 
 
-def test_import_roles_file_not_found_porcelain():
+def test_push_roles_file_not_found_porcelain():
     with runner.isolated_filesystem():
-        result = runner.invoke(app, ["import", "nonexistent.yaml", "--porcelain"])
+        result = runner.invoke(app, ["push", "nonexistent.yaml", "--porcelain"])
         assert result.exit_code == 1
         assert "File not found" not in result.output
 
 
-def test_import_roles_empty_file():
+def test_push_roles_empty_file():
     with runner.isolated_filesystem():
         with open("roles.yaml", "w") as f:
             f.write("")
-        result = runner.invoke(app, ["import", "roles.yaml"])
+        result = runner.invoke(app, ["push", "roles.yaml"])
         assert result.exit_code == 0
         assert "No roles found" in result.output
 
 
-def test_import_roles_empty_file_porcelain():
+def test_push_roles_empty_file_porcelain():
     with runner.isolated_filesystem():
         with open("roles.yaml", "w") as f:
             f.write("")
-        result = runner.invoke(app, ["import", "roles.yaml", "--porcelain"])
+        result = runner.invoke(app, ["push", "roles.yaml", "--porcelain"])
         assert result.exit_code == 0
 
 
 @patch(PATCH_CLIENT)
 @patch(PATCH_CONTEXT)
-def test_import_roles_error(_MockContext, MockClient):
+def test_push_roles_error(_MockContext, MockClient):
     mock_client = MagicMock()
     mock_client.client.import_role.side_effect = RuntimeError("boom")
     MockClient.from_context.return_value = mock_client
     with runner.isolated_filesystem():
         with open("roles.yaml", "w") as f:
             yaml.dump(SAMPLE_ROLES, f)
-        result = runner.invoke(app, ["import", "roles.yaml"])
+        result = runner.invoke(app, ["push", "roles.yaml"])
         assert result.exit_code == 1
-        assert "Failed to import roles" in result.output
+        assert "Failed to push roles" in result.output
 
 
 @patch(PATCH_CLIENT)
 @patch(PATCH_CONTEXT)
-def test_import_roles_error_porcelain(_MockContext, MockClient):
+def test_push_roles_error_porcelain(_MockContext, MockClient):
     mock_client = MagicMock()
     mock_client.client.import_role.side_effect = RuntimeError("boom")
     MockClient.from_context.return_value = mock_client
     with runner.isolated_filesystem():
         with open("roles.yaml", "w") as f:
             yaml.dump(SAMPLE_ROLES, f)
-        result = runner.invoke(app, ["import", "roles.yaml", "--porcelain"])
+        result = runner.invoke(app, ["push", "roles.yaml", "--porcelain"])
         assert result.exit_code == 1
         assert "Failed" not in result.output
 
@@ -419,26 +419,26 @@ def test_resolve_teams_multiple_porcelain():
 
 @patch(PATCH_CLIENT)
 @patch(PATCH_CONTEXT)
-def test_export_roles_typer_exit(_MockContext, MockClient):
-    """Cover except typer.Exit: raise in export."""
+def test_pull_roles_typer_exit(_MockContext, MockClient):
+    """Cover except typer.Exit: raise in pull."""
     import typer
 
     MockClient.from_context.side_effect = typer.Exit(1)
-    result = runner.invoke(app, ["export"])
+    result = runner.invoke(app, ["pull"])
     assert result.exit_code == 1
 
 
 @patch(PATCH_CLIENT)
 @patch(PATCH_CONTEXT)
-def test_import_roles_typer_exit(_MockContext, MockClient):
-    """Cover except typer.Exit: raise in import."""
+def test_push_roles_typer_exit(_MockContext, MockClient):
+    """Cover except typer.Exit: raise in push."""
     import typer
 
     MockClient.from_context.side_effect = typer.Exit(1)
     with runner.isolated_filesystem():
         with open("roles.yaml", "w") as f:
             yaml.dump(SAMPLE_ROLES, f)
-        result = runner.invoke(app, ["import", "roles.yaml"])
+        result = runner.invoke(app, ["push", "roles.yaml"])
         assert result.exit_code == 1
 
 

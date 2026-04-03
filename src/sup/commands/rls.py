@@ -1,7 +1,7 @@
 """
 Row-Level Security (RLS) management commands for sup CLI.
 
-Handles export and import of RLS rules for Superset workspaces.
+Handles pull and push of RLS rules for Superset workspaces.
 """
 
 from pathlib import Path
@@ -17,8 +17,8 @@ from sup.output.styles import EMOJIS, RICH_STYLES
 app = typer.Typer(help="Manage row-level security rules", no_args_is_help=True)
 
 
-@app.command("export")
-def export_rls(
+@app.command("pull")
+def pull_rls(
     path: Annotated[
         Path,
         typer.Argument(help="Output file path"),
@@ -35,15 +35,15 @@ def export_rls(
     ] = False,
 ):
     """
-    Export RLS rules to a YAML file.
+    Pull RLS rules to a YAML file.
 
-    Exports all row-level security rules from the workspace to a YAML file
-    that can be version-controlled and imported into other workspaces.
+    Pulls all row-level security rules from the workspace to a YAML file
+    that can be version-controlled and pushed into other workspaces.
 
     Example:
-        sup rls export
-        sup rls export rules.yaml
-        sup rls export --json
+        sup rls pull
+        sup rls pull rules.yaml
+        sup rls pull --json
     """
     from sup.clients.superset import SupSupersetClient
     from sup.config.settings import SupContext
@@ -71,7 +71,7 @@ def export_rls(
                 yaml.dump(rules, output, sort_keys=False)
 
             console.print(
-                f"{EMOJIS['success']} Exported {len(rules)} RLS rules to {path}",
+                f"{EMOJIS['success']} Pulled {len(rules)} RLS rules to {path}",
                 style=RICH_STYLES["success"],
             )
 
@@ -80,14 +80,14 @@ def export_rls(
     except Exception as e:
         if not porcelain:
             console.print(
-                f"{EMOJIS['error']} Failed to export RLS rules: {e}",
+                f"{EMOJIS['error']} Failed to pull RLS rules: {e}",
                 style=RICH_STYLES["error"],
             )
         raise typer.Exit(1)
 
 
-@app.command("import")
-def import_rls(
+@app.command("push")
+def push_rls(
     path: Annotated[
         Path,
         typer.Argument(help="Input YAML file path"),
@@ -106,15 +106,15 @@ def import_rls(
     ] = False,
 ):
     """
-    Import RLS rules from a YAML file.
+    Push RLS rules from a YAML file.
 
-    Reads RLS rules from a YAML file and imports them into the workspace.
-    Use --dry-run to preview what would be imported.
+    Reads RLS rules from a YAML file and pushes them into the workspace.
+    Use --dry-run to preview what would be pushed.
 
     Example:
-        sup rls import
-        sup rls import rules.yaml
-        sup rls import --dry-run
+        sup rls push
+        sup rls push rules.yaml
+        sup rls push --dry-run
     """
     from sup.clients.superset import SupSupersetClient
     from sup.config.settings import SupContext
@@ -140,7 +140,7 @@ def import_rls(
         if dry_run:
             if not porcelain:
                 console.print(
-                    f"{EMOJIS['info']} Dry run: would import {len(rules)} RLS rules",
+                    f"{EMOJIS['info']} Dry run: would push {len(rules)} RLS rules",
                     style=RICH_STYLES["info"],
                 )
                 for rule in rules:
@@ -154,15 +154,15 @@ def import_rls(
         ctx = SupContext()
         client = SupSupersetClient.from_context(ctx, workspace_id=workspace_id)
 
-        with spinner(f"Importing {len(rules)} RLS rules", silent=porcelain):
+        with spinner(f"Pushing {len(rules)} RLS rules", silent=porcelain):
             for rule in rules:
                 client.client.import_rls(rule)
 
         if porcelain:
-            print(f"imported:{len(rules)}")
+            print(f"pushed:{len(rules)}")
         else:
             console.print(
-                f"{EMOJIS['success']} Imported {len(rules)} RLS rules from {path}",
+                f"{EMOJIS['success']} Pushed {len(rules)} RLS rules from {path}",
                 style=RICH_STYLES["success"],
             )
 
@@ -171,7 +171,7 @@ def import_rls(
     except Exception as e:
         if not porcelain:
             console.print(
-                f"{EMOJIS['error']} Failed to import RLS rules: {e}",
+                f"{EMOJIS['error']} Failed to push RLS rules: {e}",
                 style=RICH_STYLES["error"],
             )
         raise typer.Exit(1)

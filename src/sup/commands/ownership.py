@@ -1,7 +1,7 @@
 """
 Asset ownership management commands for sup CLI.
 
-Handles export and import of dataset, chart, and dashboard ownership metadata.
+Handles pull and push of dataset, chart, and dashboard ownership metadata.
 """
 
 import logging
@@ -23,8 +23,8 @@ app = typer.Typer(help="Manage asset ownership", no_args_is_help=True)
 RESOURCE_TYPES = ["dataset", "chart", "dashboard"]
 
 
-@app.command("export")
-def export_ownership(
+@app.command("pull")
+def pull_ownership(
     path: Annotated[
         Path,
         typer.Argument(help="Output file path"),
@@ -41,21 +41,21 @@ def export_ownership(
     ] = False,
 ):
     """
-    Export asset ownership to a YAML file.
+    Pull asset ownership to a YAML file.
 
-    Exports ownership metadata for datasets, charts, and dashboards.
+    Pulls ownership metadata for datasets, charts, and dashboards.
 
     Example:
-        sup ownership export
-        sup ownership export ownership.yaml
-        sup ownership export --json
+        sup ownership pull
+        sup ownership pull ownership.yaml
+        sup ownership pull --json
     """
     from sup.clients.superset import SupSupersetClient
     from sup.config.settings import SupContext
     from sup.output.spinners import spinner
 
     try:
-        with spinner("Exporting ownership metadata", silent=porcelain):
+        with spinner("Pulling ownership metadata", silent=porcelain):
             ctx = SupContext()
             client = SupSupersetClient.from_context(ctx, workspace_id=workspace_id)
 
@@ -90,7 +90,7 @@ def export_ownership(
                 yaml.dump(ownership_dict, output)
 
             console.print(
-                f"{EMOJIS['success']} Exported ownership for {total} assets to {path}",
+                f"{EMOJIS['success']} Pulled ownership for {total} assets to {path}",
                 style=RICH_STYLES["success"],
             )
 
@@ -99,14 +99,14 @@ def export_ownership(
     except Exception as e:
         if not porcelain:
             console.print(
-                f"{EMOJIS['error']} Failed to export ownership: {e}",
+                f"{EMOJIS['error']} Failed to pull ownership: {e}",
                 style=RICH_STYLES["error"],
             )
         raise typer.Exit(1)
 
 
-@app.command("import")
-def import_ownership(
+@app.command("push")
+def push_ownership(
     path: Annotated[
         Path,
         typer.Argument(help="Input YAML file path"),
@@ -120,7 +120,7 @@ def import_ownership(
         typer.Option(
             "--continue-on-error",
             "-c",
-            help="Continue if an asset fails to import ownership",
+            help="Continue if an asset fails to push ownership",
         ),
     ] = False,
     dry_run: Annotated[
@@ -133,16 +133,16 @@ def import_ownership(
     ] = False,
 ):
     """
-    Import asset ownership from a YAML file.
+    Push asset ownership from a YAML file.
 
-    Reads ownership metadata from a YAML file and applies it to assets in the workspace.
+    Reads ownership metadata from a YAML file and pushes it to assets in the workspace.
     Supports checkpoint/resume via progress.log when using --continue-on-error.
 
     Example:
-        sup ownership import
-        sup ownership import ownership.yaml
-        sup ownership import --continue-on-error
-        sup ownership import --dry-run
+        sup ownership push
+        sup ownership push ownership.yaml
+        sup ownership push --continue-on-error
+        sup ownership push --dry-run
     """
     from preset_cli.cli.superset.lib import (
         LogType,
@@ -177,7 +177,7 @@ def import_ownership(
         if dry_run:
             if not porcelain:
                 console.print(
-                    f"{EMOJIS['info']} Dry run: would import ownership for {total} assets",
+                    f"{EMOJIS['info']} Dry run: would push ownership for {total} assets",
                     style=RICH_STYLES["info"],
                 )
                 for resource_name, resources in config.items():
@@ -203,10 +203,10 @@ def import_ownership(
         # Build user email->id map
         users = {user["email"]: user["id"] for user in client.client.export_users()}
 
-        imported = 0
+        pushed = 0
         failed = 0
 
-        with spinner(f"Importing ownership for {total} assets", silent=porcelain) as sp:
+        with spinner(f"Pushing ownership for {total} assets", silent=porcelain) as sp:
             with open(log_file_path, "w", encoding="utf-8") as log_file:
                 for resource_name, resources in config.items():
                     resource_ids = {
@@ -226,10 +226,10 @@ def import_ownership(
                                 users,
                                 resource_ids,
                             )
-                            imported += 1
+                            pushed += 1
                         except Exception as exc:
                             _logger.debug(
-                                "Failed to import ownership for %s %s: %s",
+                                "Failed to push ownership for %s %s: %s",
                                 resource_name,
                                 ownership["name"],
                                 str(exc),
@@ -243,7 +243,7 @@ def import_ownership(
                         write_logs_to_file(log_file, logs)
 
                         if sp:
-                            sp.text = f"Imported {imported}/{total} assets"
+                            sp.text = f"Pushed {pushed}/{total} assets"
 
         # Clean up logs on success
         if not continue_on_error or not any(
@@ -252,11 +252,11 @@ def import_ownership(
             clean_logs(LogType.OWNERSHIP, logs)
 
         if porcelain:
-            print(f"imported:{imported}")
+            print(f"pushed:{pushed}")
             if failed:
                 print(f"failed:{failed}")
         else:
-            msg = f"{EMOJIS['success']} Imported ownership for {imported} assets"
+            msg = f"{EMOJIS['success']} Pushed ownership for {pushed} assets"
             if failed:
                 msg += f" ({failed} failed)"
             console.print(msg, style=RICH_STYLES["success"])
@@ -266,7 +266,7 @@ def import_ownership(
     except Exception as e:
         if not porcelain:
             console.print(
-                f"{EMOJIS['error']} Failed to import ownership: {e}",
+                f"{EMOJIS['error']} Failed to push ownership: {e}",
                 style=RICH_STYLES["error"],
             )
         raise typer.Exit(1)

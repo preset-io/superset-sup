@@ -1,7 +1,7 @@
 """
 Role management commands for sup CLI.
 
-Handles export, import, and sync of Superset roles and permissions.
+Handles pull, push, and sync of Superset roles and permissions.
 """
 
 import logging
@@ -20,8 +20,8 @@ _logger = logging.getLogger(__name__)
 app = typer.Typer(help="Manage roles and permissions", no_args_is_help=True)
 
 
-@app.command("export")
-def export_roles(
+@app.command("pull")
+def pull_roles(
     path: Annotated[
         Path,
         typer.Argument(help="Output file path"),
@@ -38,14 +38,14 @@ def export_roles(
     ] = False,
 ):
     """
-    Export roles and permissions to a YAML file.
+    Pull roles and permissions to a YAML file.
 
-    Exports all Superset roles with their permission sets from the workspace.
+    Pulls all Superset roles with their permission sets from the workspace.
 
     Example:
-        sup role export
-        sup role export roles.yaml
-        sup role export --json
+        sup role pull
+        sup role pull roles.yaml
+        sup role pull --json
     """
     from sup.clients.superset import SupSupersetClient
     from sup.config.settings import SupContext
@@ -73,7 +73,7 @@ def export_roles(
                 yaml.dump(roles, output)
 
             console.print(
-                f"{EMOJIS['success']} Exported {len(roles)} roles to {path}",
+                f"{EMOJIS['success']} Pulled {len(roles)} roles to {path}",
                 style=RICH_STYLES["success"],
             )
 
@@ -82,14 +82,14 @@ def export_roles(
     except Exception as e:
         if not porcelain:
             console.print(
-                f"{EMOJIS['error']} Failed to export roles: {e}",
+                f"{EMOJIS['error']} Failed to pull roles: {e}",
                 style=RICH_STYLES["error"],
             )
         raise typer.Exit(1)
 
 
-@app.command("import")
-def import_roles(
+@app.command("push")
+def push_roles(
     path: Annotated[
         Path,
         typer.Argument(help="Input YAML file path"),
@@ -108,14 +108,14 @@ def import_roles(
     ] = False,
 ):
     """
-    Import roles and permissions from a YAML file.
+    Push roles and permissions from a YAML file.
 
-    Reads roles from a YAML file and imports them into the workspace.
+    Reads roles from a YAML file and pushes them into the workspace.
 
     Example:
-        sup role import
-        sup role import roles.yaml
-        sup role import --dry-run
+        sup role push
+        sup role push roles.yaml
+        sup role push --dry-run
     """
     from sup.clients.superset import SupSupersetClient
     from sup.config.settings import SupContext
@@ -141,7 +141,7 @@ def import_roles(
         if dry_run:
             if not porcelain:
                 console.print(
-                    f"{EMOJIS['info']} Dry run: would import {len(roles)} roles",
+                    f"{EMOJIS['info']} Dry run: would push {len(roles)} roles",
                     style=RICH_STYLES["info"],
                 )
                 for role in roles:
@@ -159,15 +159,15 @@ def import_roles(
         ctx = SupContext()
         client = SupSupersetClient.from_context(ctx, workspace_id=workspace_id)
 
-        with spinner(f"Importing {len(roles)} roles", silent=porcelain):
+        with spinner(f"Pushing {len(roles)} roles", silent=porcelain):
             for role in roles:
                 client.client.import_role(role)
 
         if porcelain:
-            print(f"imported:{len(roles)}")
+            print(f"pushed:{len(roles)}")
         else:
             console.print(
-                f"{EMOJIS['success']} Imported {len(roles)} roles from {path}",
+                f"{EMOJIS['success']} Pushed {len(roles)} roles from {path}",
                 style=RICH_STYLES["success"],
             )
 
@@ -176,7 +176,7 @@ def import_roles(
     except Exception as e:
         if not porcelain:
             console.print(
-                f"{EMOJIS['error']} Failed to import roles: {e}",
+                f"{EMOJIS['error']} Failed to push roles: {e}",
                 style=RICH_STYLES["error"],
             )
         raise typer.Exit(1)

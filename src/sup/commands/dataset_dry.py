@@ -182,11 +182,11 @@ def dataset_info(
         raise typer.Exit(1)
 
 
-# Export command would follow the same pattern - much cleaner!
-@app.command("export")
-@with_universal_filters  # Could add export-specific filters too
+# Pull command would follow the same pattern - much cleaner!
+@app.command("pull")
+@with_universal_filters  # Could add pull-specific filters too
 @with_output_options
-def export_dataset(
+def pull_dataset(
     filters: UniversalFilters,
     output: OutputOptions,
     folder: Annotated[
@@ -199,21 +199,21 @@ def export_dataset(
     ] = False,
     dry_run: Annotated[
         bool,
-        typer.Option("--dry-run", help="Preview export without writing files"),
+        typer.Option("--dry-run", help="Preview pull without writing files"),
     ] = False,
 ):
     """
-    Export dataset(s) to YAML files.
+    Pull dataset(s) to YAML files.
 
     The decorators automatically provide all the universal filters
     and output options - no need to manually define them!
     """
     console.print(
-        f"{EMOJIS['export']} Exporting datasets...",
+        f"{EMOJIS['export']} Pulling datasets...",
         style=RICH_STYLES["info"],
     )
-    # TODO: Implement dataset export using the filters and output objects
+    # TODO: Implement dataset pull using the filters and output objects
     console.print(
-        f"{EMOJIS['warning']} Dataset export not yet implemented",
+        f"{EMOJIS['warning']} Dataset pull not yet implemented",
         style=RICH_STYLES["warning"],
     )

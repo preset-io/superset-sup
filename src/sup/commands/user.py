@@ -1,7 +1,7 @@
 """
 User management commands for sup CLI.
 
-Handles user listing, role management, export/import, and invitations.
+Handles user listing, role management, pull/push, and invitations.
 """
 
 import logging
@@ -196,8 +196,8 @@ def display_user_details(user: dict) -> None:
     )
 
 
-@app.command("export")
-def export_users(
+@app.command("pull")
+def pull_users(
     path: Annotated[
         Path,
         typer.Argument(help="Output file path"),
@@ -214,16 +214,16 @@ def export_users(
     ] = False,
 ):
     """
-    Export users and their workspace roles to a YAML file.
+    Pull users and their workspace roles to a YAML file.
 
-    Exports all users across teams with their team and workspace role assignments.
-    The output format is compatible with 'sup user import'.
+    Pulls all users across teams with their team and workspace role assignments.
+    The output format is compatible with 'sup user push'.
 
     Example:
-        sup user export
-        sup user export users.yaml
-        sup user export --team "My Team"
-        sup user export --json
+        sup user pull
+        sup user pull users.yaml
+        sup user pull --team "My Team"
+        sup user pull --json
     """
     from preset_cli.api.clients.preset import PresetClient
     from preset_cli.cli.export_users import (
@@ -237,7 +237,7 @@ def export_users(
     from sup.output.spinners import spinner
 
     try:
-        with spinner("Exporting users and workspace roles", silent=porcelain) as sp:
+        with spinner("Pulling users and workspace roles", silent=porcelain) as sp:
             ctx = SupContext()
             auth = get_preset_auth(ctx)
             client = PresetClient("https://api.app.preset.io/", auth)
@@ -319,7 +319,7 @@ def export_users(
                 yaml.dump(users_list, output, default_flow_style=False, sort_keys=False)
 
             console.print(
-                f"{EMOJIS['success']} Exported {len(users_list)} users to {path}",
+                f"{EMOJIS['success']} Pulled {len(users_list)} users to {path}",
                 style=RICH_STYLES["success"],
             )
 
@@ -328,14 +328,14 @@ def export_users(
     except Exception as e:
         if not porcelain:
             console.print(
-                f"{EMOJIS['error']} Failed to export users: {e}",
+                f"{EMOJIS['error']} Failed to pull users: {e}",
                 style=RICH_STYLES["error"],
             )
         raise typer.Exit(1)
 
 
-@app.command("import")
-def import_users_cmd(
+@app.command("push")
+def push_users(
     path: Annotated[
         Path,
         typer.Argument(help="Input YAML file path"),
@@ -354,16 +354,16 @@ def import_users_cmd(
     ] = False,
 ):
     """
-    Import users via SCIM from a YAML file.
+    Push users via SCIM from a YAML file.
 
     Supports two file formats (auto-detected):
     - Simple format: basic user info (email, first_name, last_name)
     - Workspace roles format: user info + workspace role assignments
 
     Example:
-        sup user import users.yaml
-        sup user import users_workspace_roles.yaml --team "My Team"
-        sup user import --dry-run
+        sup user push users.yaml
+        sup user push users_workspace_roles.yaml --team "My Team"
+        sup user push --dry-run
     """
     import yaml
 
@@ -404,8 +404,7 @@ def import_users_cmd(
                     else "simple"
                 )
                 console.print(
-                    f"{EMOJIS['info']} Dry run: would import "
-                    f"{len(users)} users ({fmt_label} format)",
+                    f"{EMOJIS['info']} Dry run: would push {len(users)} users ({fmt_label} format)",
                     style=RICH_STYLES["info"],
                 )
                 for user in users:
@@ -415,7 +414,7 @@ def import_users_cmd(
                     )
             else:
                 for user in users:
-                    print(f"import\t{user.get('email', 'unknown')}")
+                    print(f"push\t{user.get('email', 'unknown')}")
             return
 
         ctx = SupContext()
@@ -427,17 +426,17 @@ def import_users_cmd(
         if not team_names:
             return
 
-        with spinner(f"Importing {len(users)} users", silent=porcelain):
+        with spinner(f"Pushing {len(users)} users", silent=porcelain):
             if file_format == UserFileFormat.WORKSPACE_ROLES:
                 import_users_with_workspace_roles(client, team_names, users)
             else:
                 client.import_users(team_names, users)
 
         if porcelain:
-            print(f"imported:{len(users)}")
+            print(f"pushed:{len(users)}")
         else:
             console.print(
-                f"{EMOJIS['success']} Imported {len(users)} users from {path}",
+                f"{EMOJIS['success']} Pushed {len(users)} users from {path}",
                 style=RICH_STYLES["success"],
             )
 
@@ -446,7 +445,7 @@ def import_users_cmd(
     except Exception as e:
         if not porcelain:
             console.print(
-                f"{EMOJIS['error']} Failed to import users: {e}",
+                f"{EMOJIS['error']} Failed to push users: {e}",
                 style=RICH_STYLES["error"],
             )
         raise typer.Exit(1)

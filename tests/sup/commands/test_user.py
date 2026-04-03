@@ -338,7 +338,7 @@ class TestDisplayUserDetails:
 # ---------------------------------------------------------------------------
 
 
-class TestExportUsers:
+class TestPullUsers:
     @patch(PATCH_CONVERT, return_value=EXPORT_USERS_LIST)
     @patch(PATCH_WORKSPACES)
     @patch(PATCH_MEMBERS)
@@ -348,9 +348,9 @@ class TestExportUsers:
     @patch(PATCH_CONTEXT)
     def test_default_yaml_file(self, _ctx, _auth, _c, _ft, _m, _w, _cv):
         with runner.isolated_filesystem():
-            r = runner.invoke(app, ["export", "out.yaml"])
+            r = runner.invoke(app, ["pull", "out.yaml"])
             assert r.exit_code == 0
-            assert "Exported 2 users" in r.output
+            assert "Pulled 2 users" in r.output
             with open("out.yaml") as f:
                 assert len(yaml.safe_load(f)) == 2
 
@@ -362,7 +362,7 @@ class TestExportUsers:
     @patch(PATCH_AUTH)
     @patch(PATCH_CONTEXT)
     def test_json_output(self, _ctx, _auth, _c, _ft, _m, _w, _cv):
-        r = runner.invoke(app, ["export", "--json"])
+        r = runner.invoke(app, ["pull", "--json"])
         assert r.exit_code == 0
         assert len(json.loads(r.output)) == 2
 
@@ -374,7 +374,7 @@ class TestExportUsers:
     @patch(PATCH_AUTH)
     @patch(PATCH_CONTEXT)
     def test_yaml_stdout(self, _ctx, _auth, _c, _ft, _m, _w, _cv):
-        r = runner.invoke(app, ["export", "--yaml"])
+        r = runner.invoke(app, ["pull", "--yaml"])
         assert r.exit_code == 0
         assert len(yaml.safe_load(r.output)) == 2
 
@@ -386,7 +386,7 @@ class TestExportUsers:
     @patch(PATCH_AUTH)
     @patch(PATCH_CONTEXT)
     def test_porcelain_output(self, _ctx, _auth, _c, _ft, _m, _w, _cv):
-        r = runner.invoke(app, ["export", "--porcelain"])
+        r = runner.invoke(app, ["pull", "--porcelain"])
         assert r.exit_code == 0
         assert "a@b.com\tA\tB" in r.output
         assert "c@d.com\tC\tD" in r.output
@@ -396,7 +396,7 @@ class TestExportUsers:
     @patch(PATCH_AUTH)
     @patch(PATCH_CONTEXT)
     def test_no_teams(self, _ctx, _auth, _c, _ft):
-        r = runner.invoke(app, ["export"])
+        r = runner.invoke(app, ["pull"])
         assert r.exit_code == 0
         assert "No teams" in r.output
 
@@ -405,7 +405,7 @@ class TestExportUsers:
     @patch(PATCH_AUTH)
     @patch(PATCH_CONTEXT)
     def test_no_teams_porcelain(self, _ctx, _auth, _c, _ft):
-        r = runner.invoke(app, ["export", "--porcelain"])
+        r = runner.invoke(app, ["pull", "--porcelain"])
         assert r.exit_code == 0
         assert "No teams" not in r.output
 
@@ -414,18 +414,18 @@ class TestExportUsers:
     @patch(PATCH_AUTH)
     @patch(PATCH_CONTEXT)
     def test_error(self, _ctx, _auth, _c, _ft):
-        r = runner.invoke(app, ["export"])
+        r = runner.invoke(app, ["pull"])
         assert r.exit_code == 1
-        assert "Failed to export" in r.output
+        assert "Failed to pull" in r.output
 
     @patch(PATCH_FILTERED, side_effect=RuntimeError("boom"))
     @patch(PATCH_PRESET_CLIENT)
     @patch(PATCH_AUTH)
     @patch(PATCH_CONTEXT)
     def test_error_porcelain(self, _ctx, _auth, _c, _ft):
-        r = runner.invoke(app, ["export", "--porcelain"])
+        r = runner.invoke(app, ["pull", "--porcelain"])
         assert r.exit_code == 1
-        assert "Failed to export" not in r.output
+        assert "Failed to pull" not in r.output
 
     @patch(PATCH_CONVERT, return_value=EXPORT_USERS_LIST)
     @patch(PATCH_WORKSPACES)
@@ -442,7 +442,7 @@ class TestExportUsers:
     @patch(PATCH_CONTEXT)
     def test_multiple_teams(self, _ctx, _auth, _c, _ft, _m, _w, _cv):
         with runner.isolated_filesystem():
-            r = runner.invoke(app, ["export", "out.yaml"])
+            r = runner.invoke(app, ["pull", "out.yaml"])
             assert r.exit_code == 0
 
     @patch(PATCH_CONVERT, return_value=EXPORT_USERS_LIST)
@@ -454,7 +454,7 @@ class TestExportUsers:
     @patch(PATCH_CONTEXT)
     def test_team_filter(self, _ctx, _auth, _c, _ft, _m, _w, _cv):
         with runner.isolated_filesystem():
-            r = runner.invoke(app, ["export", "out.yaml", "--team", "T1"])
+            r = runner.invoke(app, ["pull", "out.yaml", "--team", "T1"])
             assert r.exit_code == 0
 
 
@@ -463,7 +463,7 @@ class TestExportUsers:
 # ---------------------------------------------------------------------------
 
 
-class TestImportUsers:
+class TestPushUsers:
     @patch(PATCH_PRESET_CLIENT)
     @patch(PATCH_AUTH)
     @patch(PATCH_CONTEXT)
@@ -472,7 +472,7 @@ class TestImportUsers:
         with runner.isolated_filesystem():
             with open("u.yaml", "w") as f:
                 yaml.dump(SIMPLE_USERS, f)
-            r = runner.invoke(app, ["import", "u.yaml"])
+            r = runner.invoke(app, ["push", "u.yaml"])
         assert r.exit_code == 0
         MC.return_value.import_users.assert_called_once()
 
@@ -485,7 +485,7 @@ class TestImportUsers:
         with runner.isolated_filesystem():
             with open("u.yaml", "w") as f:
                 yaml.dump(WS_ROLES_USERS, f)
-            r = runner.invoke(app, ["import", "u.yaml"])
+            r = runner.invoke(app, ["push", "u.yaml"])
         assert r.exit_code == 0
         mock_iw.assert_called_once()
 
@@ -493,7 +493,7 @@ class TestImportUsers:
         with runner.isolated_filesystem():
             with open("u.yaml", "w") as f:
                 yaml.dump(SIMPLE_USERS, f)
-            r = runner.invoke(app, ["import", "u.yaml", "--dry-run"])
+            r = runner.invoke(app, ["push", "u.yaml", "--dry-run"])
         assert r.exit_code == 0
         assert "Dry run" in r.output
         assert "u1@x.com" in r.output
@@ -502,19 +502,19 @@ class TestImportUsers:
         with runner.isolated_filesystem():
             with open("u.yaml", "w") as f:
                 yaml.dump(SIMPLE_USERS, f)
-            r = runner.invoke(app, ["import", "u.yaml", "--dry-run", "--porcelain"])
+            r = runner.invoke(app, ["push", "u.yaml", "--dry-run", "--porcelain"])
         assert r.exit_code == 0
-        assert "import\tu1@x.com" in r.output
+        assert "push\tu1@x.com" in r.output
 
     def test_file_not_found(self):
         with runner.isolated_filesystem():
-            r = runner.invoke(app, ["import", "missing.yaml"])
+            r = runner.invoke(app, ["push", "missing.yaml"])
         assert r.exit_code == 1
         assert "File not found" in r.output
 
     def test_file_not_found_porcelain(self):
         with runner.isolated_filesystem():
-            r = runner.invoke(app, ["import", "missing.yaml", "--porcelain"])
+            r = runner.invoke(app, ["push", "missing.yaml", "--porcelain"])
         assert r.exit_code == 1
         assert "File not found" not in r.output
 
@@ -522,7 +522,7 @@ class TestImportUsers:
         with runner.isolated_filesystem():
             with open("u.yaml", "w") as f:
                 f.write("")
-            r = runner.invoke(app, ["import", "u.yaml"])
+            r = runner.invoke(app, ["push", "u.yaml"])
         assert r.exit_code == 0
         assert "No users" in r.output
 
@@ -530,7 +530,7 @@ class TestImportUsers:
         with runner.isolated_filesystem():
             with open("u.yaml", "w") as f:
                 f.write("")
-            r = runner.invoke(app, ["import", "u.yaml", "--porcelain"])
+            r = runner.invoke(app, ["push", "u.yaml", "--porcelain"])
         assert r.exit_code == 0
 
     @patch(PATCH_PRESET_CLIENT)
@@ -541,7 +541,7 @@ class TestImportUsers:
         with runner.isolated_filesystem():
             with open("u.yaml", "w") as f:
                 yaml.dump(SIMPLE_USERS, f)
-            r = runner.invoke(app, ["import", "u.yaml"])
+            r = runner.invoke(app, ["push", "u.yaml"])
         assert r.exit_code == 0
 
     @patch(PATCH_PRESET_CLIENT)
@@ -552,9 +552,9 @@ class TestImportUsers:
         with runner.isolated_filesystem():
             with open("u.yaml", "w") as f:
                 yaml.dump(SIMPLE_USERS, f)
-            r = runner.invoke(app, ["import", "u.yaml", "--porcelain"])
+            r = runner.invoke(app, ["push", "u.yaml", "--porcelain"])
         assert r.exit_code == 0
-        assert "imported:1" in r.output
+        assert "pushed:1" in r.output
 
     @patch(PATCH_PRESET_CLIENT)
     @patch(PATCH_AUTH)
@@ -565,9 +565,9 @@ class TestImportUsers:
         with runner.isolated_filesystem():
             with open("u.yaml", "w") as f:
                 yaml.dump(SIMPLE_USERS, f)
-            r = runner.invoke(app, ["import", "u.yaml"])
+            r = runner.invoke(app, ["push", "u.yaml"])
         assert r.exit_code == 1
-        assert "Failed to import" in r.output
+        assert "Failed to push" in r.output
 
     @patch(PATCH_PRESET_CLIENT)
     @patch(PATCH_AUTH)
@@ -578,9 +578,9 @@ class TestImportUsers:
         with runner.isolated_filesystem():
             with open("u.yaml", "w") as f:
                 yaml.dump(SIMPLE_USERS, f)
-            r = runner.invoke(app, ["import", "u.yaml", "--porcelain"])
+            r = runner.invoke(app, ["push", "u.yaml", "--porcelain"])
         assert r.exit_code == 1
-        assert "Failed to import" not in r.output
+        assert "Failed to push" not in r.output
 
 
 # ---------------------------------------------------------------------------
@@ -721,7 +721,7 @@ class TestResolveTeams:
         with runner.isolated_filesystem():
             with open("u.yaml", "w") as f:
                 yaml.dump(SIMPLE_USERS, f)
-            r = runner.invoke(app, ["import", "u.yaml", "--team", "NoSuch"])
+            r = runner.invoke(app, ["push", "u.yaml", "--team", "NoSuch"])
         assert r.exit_code == 0
 
     @patch(PATCH_PRESET_CLIENT)
@@ -792,7 +792,7 @@ class TestResolveTeams:
         MC.return_value.invite_users.assert_called_once_with(["t1"], ["u1@x.com"])
 
 
-class TestExportEdgeCases:
+class TestPullEdgeCases:
     """Cover remaining branches in export_users."""
 
     @patch(PATCH_CONVERT, return_value=EXPORT_USERS_LIST)
@@ -810,7 +810,7 @@ class TestExportEdgeCases:
 
         mock_members.side_effect = populate_user_data
         with runner.isolated_filesystem():
-            r = runner.invoke(app, ["export", "out.yaml"])
+            r = runner.invoke(app, ["pull", "out.yaml"])
             assert r.exit_code == 0
 
     @patch(PATCH_FILTERED)
@@ -822,5 +822,5 @@ class TestExportEdgeCases:
         import typer as _typer
 
         mock_ft.side_effect = _typer.Exit(1)
-        r = runner.invoke(app, ["export"])
+        r = runner.invoke(app, ["pull"])
         assert r.exit_code == 1

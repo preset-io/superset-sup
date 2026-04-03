@@ -14,6 +14,7 @@ import typer
 # Removed: from rich.console import Console
 from typing_extensions import Annotated
 
+from sup.commands.template_params import DisableJinjaOption, LoadEnvOption, TemplateOptions
 from sup.config.sync import SyncConfig, validate_sync_folder
 from sup.output.console import console
 from sup.output.styles import EMOJIS, RICH_STYLES
@@ -692,6 +693,254 @@ def execute_push(
                 )
             raise
 
+@app.command("native")
+def sync_native(
+    directory: Annotated[
+        str,
+        typer.Argument(help="Directory containing asset YAML files"),
+    ],
+    workspace_id: Annotated[
+        Optional[int],
+        typer.Option(
+            "--workspace-id",
+            "-w",
+            help="Target workspace ID (defaults to configured target)",
+        ),
+    ] = None,
+    overwrite: Annotated[
+        bool,
+        typer.Option("--overwrite", help="Overwrite existing resources"),
+    ] = False,
+    template_options: TemplateOptions = None,
+    load_env: LoadEnvOption = False,
+    disable_jinja_templating: DisableJinjaOption = False,
+    continue_on_error: Annotated[
+        bool,
+        typer.Option(
+            "--continue-on-error",
+            "-c",
+            help="Continue pushing even if some assets fail",
+        ),
+    ] = False,
+    split: Annotated[
+        bool,
+        typer.Option(
+            "--split",
+            "-s",
+            help="Push assets individually instead of as a bundle",
+        ),
+    ] = False,
+    asset_type: Annotated[
+        Optional[str],
+        typer.Option(
+            "--asset-type",
+            help="Push only specific asset type (database, dataset, chart, dashboard)",
+        ),
+    ] = None,
+    db_password: Annotated[
+        Optional[List[str]],
+        typer.Option(
+            "--db-password",
+            help="Database password (uuid=password, repeatable)",
+        ),
+    ] = None,
+    disallow_edits: Annotated[
+        bool,
+        typer.Option(
+            "--disallow-edits",
+            help="Mark pushed assets as externally managed",
+        ),
+    ] = False,
+    external_url_prefix: Annotated[
+        str,
+        typer.Option(
+            "--external-url-prefix",
+            help="Base URL for external resources",
+        ),
+    ] = "",
+    force: Annotated[
+        bool,
+        typer.Option(
+            "--force",
+            "-f",
+            help="Skip confirmation prompts",
+        ),
+    ] = False,
+    porcelain: Annotated[
+        bool,
+        typer.Option("--porcelain", help="Machine-readable output"),
+    ] = False,
+):
+    """
+    Push assets from a directory of YAML files (native sync).
+
+    Full-featured push with Jinja2 templating support, equivalent to
+    the legacy `preset-cli superset sync native` / `import-assets` command.
+
+    Supports pushing databases, datasets, charts, and dashboards from
+    YAML files with optional Jinja2 template processing.
+
+    Examples:
+        sup sync native ./assets                           # Push all assets
+        sup sync native ./assets --overwrite               # Overwrite existing
+        sup sync native ./assets --asset-type chart        # Push only charts
+        sup sync native ./assets --split --continue-on-error  # Individual push
+        sup sync native ./assets --option env=prod         # With template vars
+        sup sync native ./assets --load-env                # With env vars
+    """
+    import click
+
+    from preset_cli.cli.superset.sync.native.command import ResourceType, native
+    from sup.auth.preset import SupPresetAuth
+    from sup.clients.preset import SupPresetClient
+    from sup.config.settings import SupContext
+
+    try:
+        # Verify directory exists
+        dir_path = Path(directory)
+        if not dir_path.exists():
+            console.print(
+                f"{EMOJIS['error']} Directory not found: {directory}",
+                style=RICH_STYLES["error"],
+            )
+            raise typer.Exit(1)
+        elif not dir_path.is_dir():
+            console.print(
+                f"{EMOJIS['error']} Path is not a directory: {directory}",
+                style=RICH_STYLES["error"],
+            )
+            raise typer.Exit(1)
+
+        # Resolve asset type enum if specified
+        resource_type = None
+        if asset_type:
+            type_map = {
+                "database": ResourceType.DATABASE,
+                "dataset": ResourceType.DATASET,
+                "chart": ResourceType.CHART,
+                "dashboard": ResourceType.DASHBOARD,
+            }
+            resource_type = type_map.get(asset_type.lower())
+            if resource_type is None:
+                console.print(
+                    f"{EMOJIS['error']} Invalid asset type: {asset_type}. "
+                    "Use: database, dataset, chart, dashboard",
+                    style=RICH_STYLES["error"],
+                )
+                raise typer.Exit(1)
+
+        ctx = SupContext()
+
+        # Get target workspace
+        target_workspace_id = ctx.get_target_workspace_id(cli_override=workspace_id)
+        if not target_workspace_id:
+            # Fall back to source workspace
+            target_workspace_id = ctx.get_workspace_id()
+
+        if not target_workspace_id:
+            console.print(
+                f"{EMOJIS['error']} No workspace configured",
+                style=RICH_STYLES["error"],
+            )
+            console.print(
+                "Run [bold]sup workspace use <ID>[/] or pass --workspace-id",
+                style=RICH_STYLES["info"],
+            )
+            raise typer.Exit(1)
+
+        # Safety confirmation
+        if not force and not porcelain:
+            console.print(
+                f"{EMOJIS['warning']} Push Operation",
+                style=RICH_STYLES["warning"],
+            )
+            console.print(f"Directory: [cyan]{directory}[/cyan]")
+            console.print(f"Target workspace: [cyan]{target_workspace_id}[/cyan]")
+            if asset_type:
+                console.print(f"Asset type: [cyan]{asset_type}[/cyan]")
+            if overwrite:
+                console.print("[bold yellow]Overwrite mode enabled[/bold yellow]")
+
+            if not typer.confirm("Continue with push?"):
+                console.print(
+                    f"{EMOJIS['info']} Push cancelled",
+                    style=RICH_STYLES["info"],
+                )
+                raise typer.Exit(0)
+
+        # Resolve target workspace URL
+        preset_client = SupPresetClient.from_context(ctx, silent=True)
+        workspaces = preset_client.get_all_workspaces(silent=True)
+
+        target_workspace = None
+        for ws in workspaces:
+            if ws.get("id") == target_workspace_id:
+                target_workspace = ws
+                break
+
+        if not target_workspace:
+            console.print(
+                f"{EMOJIS['error']} Workspace {target_workspace_id} not found",
+                style=RICH_STYLES["error"],
+            )
+            raise typer.Exit(1)
+
+        target_hostname = target_workspace.get("hostname")
+        if not target_hostname:
+            console.print(
+                f"{EMOJIS['error']} No hostname for workspace {target_workspace_id}",
+                style=RICH_STYLES["error"],
+            )
+            raise typer.Exit(1)
+
+        workspace_url = f"https://{target_hostname}/"
+        auth = SupPresetAuth.from_sup_config(ctx, silent=True)
+
+        if not porcelain:
+            console.print(
+                f"{EMOJIS['info']} Pushing assets from {directory}...",
+                style=RICH_STYLES["info"],
+            )
+
+        # Create mock Click context and invoke native()
+        push_command = click.Command("push")
+        mock_ctx = click.Context(push_command)
+        mock_ctx.obj = {
+            "AUTH": auth,
+            "INSTANCE": workspace_url,
+        }
+
+        with mock_ctx:
+            mock_ctx.invoke(
+                native,
+                directory=directory,
+                option=template_options or (),
+                asset_type=resource_type,
+                overwrite=overwrite,
+                disable_jinja_templating=disable_jinja_templating,
+                disallow_edits=disallow_edits,
+                external_url_prefix=external_url_prefix,
+                load_env=load_env,
+                split=split,
+                continue_on_error=continue_on_error,
+                db_password=tuple(db_password) if db_password else (),
+            )
+
+        if not porcelain:
+            console.print(
+                f"{EMOJIS['success']} Push completed successfully",
+                style=RICH_STYLES["success"],
+            )
+
+    except typer.Exit:
+        raise
+    except Exception as e:
+        if not porcelain:
+            console.print(
+                f"{EMOJIS['error']} Failed to push assets: {e}",
+                style=RICH_STYLES["error"],
+            )
+        raise typer.Exit(1)
 
 if __name__ == "__main__":
     app()

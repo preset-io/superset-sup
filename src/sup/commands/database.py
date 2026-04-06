@@ -11,6 +11,7 @@ import typer
 # Removed: from rich.console import Console
 from typing_extensions import Annotated
 
+from sup.lib import escape_jinja
 from sup.output.console import console
 from sup.output.styles import EMOJIS, RICH_STYLES
 
@@ -176,6 +177,167 @@ def database_info(
         if not porcelain:
             console.print(
                 f"{EMOJIS['error']} Failed to get database info: {e}",
+                style=RICH_STYLES["error"],
+            )
+        raise typer.Exit(1)
+
+
+@app.command("pull")
+def pull_databases(
+    assets_folder: Annotated[
+        Optional[str],
+        typer.Argument(
+            help="Assets folder to pull database definitions to",
+        ),
+    ] = None,
+    id_filter: Annotated[
+        Optional[int],
+        typer.Option("--id", help="Pull specific database by ID"),
+    ] = None,
+    ids_filter: Annotated[
+        Optional[str],
+        typer.Option("--ids", help="Pull multiple databases by IDs (comma-separated)"),
+    ] = None,
+    workspace_id: Annotated[
+        Optional[int],
+        typer.Option("--workspace-id", "-w", help="Workspace ID"),
+    ] = None,
+    overwrite: Annotated[
+        bool,
+        typer.Option("--overwrite", help="Overwrite existing files"),
+    ] = False,
+    disable_jinja_escaping: Annotated[
+        bool,
+        typer.Option(
+            "--disable-jinja-escaping",
+            help="Export raw YAML without escaping {{ }} templates",
+        ),
+    ] = False,
+    force_unix_eol: Annotated[
+        bool,
+        typer.Option("--force-unix-eol", help="Force Unix end-of-line characters"),
+    ] = False,
+    porcelain: Annotated[
+        bool,
+        typer.Option("--porcelain", help="Machine-readable output"),
+    ] = False,
+):
+    """
+    Pull database configurations from Superset workspace to local filesystem.
+
+    Downloads database connection configurations as YAML files.
+
+    Examples:
+        sup database pull                    # Pull all databases
+        sup database pull --id=1             # Pull specific database
+        sup database pull --ids=1,2,3        # Pull multiple databases
+    """
+    from pathlib import Path
+    from zipfile import ZipFile
+
+    from sup.clients.superset import SupSupersetClient
+    from sup.config.settings import SupContext
+    from sup.output.spinners import data_spinner
+
+    ctx = SupContext()
+    resolved_assets_folder = ctx.get_assets_folder(cli_override=assets_folder)
+
+    if not porcelain:
+        console.print(
+            f"{EMOJIS['export']} Exporting databases to {resolved_assets_folder}...",
+            style=RICH_STYLES["info"],
+        )
+
+    try:
+        output_path = Path(resolved_assets_folder)
+        if not output_path.exists():
+            output_path.mkdir(parents=True, exist_ok=True)
+        elif not output_path.is_dir():
+            console.print(
+                f"{EMOJIS['error']} Path is not a directory: {resolved_assets_folder}",
+                style=RICH_STYLES["error"],
+            )
+            raise typer.Exit(1)
+
+        client = SupSupersetClient.from_context(ctx, workspace_id)
+
+        with data_spinner("databases to export", silent=porcelain) as sp:
+            databases = client.get_databases(silent=True)
+
+            # Client-side filtering
+            if id_filter:
+                databases = [d for d in databases if d.get("id") == id_filter]
+            elif ids_filter:
+                id_list = [int(x.strip()) for x in ids_filter.split(",")]
+                databases = [d for d in databases if d.get("id") in id_list]
+
+            database_ids = [db["id"] for db in databases]
+
+            if sp:
+                sp.text = f"Found {len(database_ids)} databases to export"
+
+        if not database_ids:
+            console.print(
+                f"{EMOJIS['warning']} No databases match your filters",
+                style=RICH_STYLES["warning"],
+            )
+            return
+
+        if not porcelain:
+            console.print(
+                f"{EMOJIS['info']} Exporting {len(database_ids)} databases...",
+                style=RICH_STYLES["info"],
+            )
+
+        zip_buffer = client.client.export_zip("database", database_ids)
+
+        def remove_root(file_name: str) -> str:
+            parts = Path(file_name).parts
+            return str(Path(*parts[1:])) if len(parts) > 1 else file_name
+
+        with ZipFile(zip_buffer) as bundle:
+            contents = {
+                remove_root(file_name): bundle.read(file_name).decode()
+                for file_name in bundle.namelist()
+            }
+
+        files_written = 0
+        for file_name, file_contents in contents.items():
+            target = output_path / file_name
+            if target.exists() and not overwrite:
+                if not porcelain:
+                    console.print(
+                        f"{EMOJIS['warning']} File exists, skipping: {target}",
+                        style=RICH_STYLES["warning"],
+                    )
+                continue
+
+            if not target.parent.exists():
+                target.parent.mkdir(parents=True, exist_ok=True)
+
+            if not disable_jinja_escaping:
+                file_contents = escape_jinja(file_contents)
+
+            newline = "\n" if force_unix_eol else None
+            with open(target, "w", encoding="utf-8", newline=newline) as output:
+                output.write(file_contents)
+
+            files_written += 1
+
+        if not porcelain:
+            console.print(
+                f"{EMOJIS['success']} Exported {files_written} files to {resolved_assets_folder}",
+                style=RICH_STYLES["success"],
+            )
+        else:
+            print(f"{files_written}\t{resolved_assets_folder}")
+
+    except typer.Exit:
+        raise
+    except Exception as e:
+        if not porcelain:
+            console.print(
+                f"{EMOJIS['error']} Failed to export databases: {e}",
                 style=RICH_STYLES["error"],
             )
         raise typer.Exit(1)

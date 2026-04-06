@@ -13,6 +13,7 @@ from rich.panel import Panel
 from rich.table import Table
 from typing_extensions import Annotated
 
+from sup.lib import escape_jinja
 from sup.output.console import console
 from sup.output.formatters import display_porcelain_list
 from sup.output.styles import COLORS, EMOJIS, RICH_STYLES
@@ -336,6 +337,17 @@ def pull_dashboards(
             help="Pull dashboards only, without related charts, datasets, and databases",
         ),
     ] = False,
+    disable_jinja_escaping: Annotated[
+        bool,
+        typer.Option(
+            "--disable-jinja-escaping",
+            help="Export raw YAML without escaping {{ }} templates",
+        ),
+    ] = False,
+    force_unix_eol: Annotated[
+        bool,
+        typer.Option("--force-unix-eol", help="Force Unix end-of-line characters"),
+    ] = False,
     porcelain: Annotated[
         bool,
         typer.Option("--porcelain", help="Machine-readable output (no decorations)"),
@@ -471,8 +483,13 @@ def pull_dashboards(
             if not target.parent.exists():
                 target.parent.mkdir(parents=True, exist_ok=True)
 
-            # Write file
-            with open(target, "w", encoding="utf-8") as output:
+            # Handle Jinja2 escaping
+            if not disable_jinja_escaping:
+                file_contents = escape_jinja(file_contents)
+
+            # Write file with proper line endings
+            newline = "\n" if force_unix_eol else None
+            with open(target, "w", encoding="utf-8", newline=newline) as output:
                 output.write(file_contents)
 
             files_written += 1

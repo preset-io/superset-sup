@@ -391,12 +391,59 @@ def sync_dbt_cloud(
             console.print(f"📝 Will write exposures to: {exposures_path}")
 
     if dry_run:
-        if not porcelain:
+        masked_token = f"****{token[-4:]}" if len(token) >= 4 else "****"
+        if porcelain:
+            print(f"token:{masked_token}")
+            if account_id:
+                print(f"account_id:{account_id}")
+            if project_id:
+                print(f"project_id:{project_id}")
+            if job_id:
+                print(f"job_id:{job_id}")
+            if workspace_id:
+                print(f"workspace_id:{workspace_id}")
+            if select:
+                print(f"select:{','.join(select)}")
+            if exclude:
+                print(f"exclude:{','.join(exclude)}")
+            print(f"exposures:{exposures_path or 'no'}")
+            print(f"import_db:{'yes' if database_id or database_name else 'no'}")
+            print(f"disallow_edits:{'yes' if disallow_edits else 'no'}")
+            print(f"exposures_only:{'yes' if exposures_only else 'no'}")
+            print(f"preserve_metadata:{'yes' if preserve_metadata else 'no'}")
+            print(f"merge_metadata:{'yes' if merge_metadata else 'no'}")
+        else:
             console.print(
                 f"{EMOJIS['info']} DRY RUN - No changes will be made",
                 style=RICH_STYLES["info"],
             )
-        # TODO: Implement dry run preview
+            console.print()
+            console.print("[bold bright_white]Sync Configuration Summary[/bold bright_white]")
+            console.print(f"  Token: {masked_token}")
+            if account_id:
+                console.print(f"  Account ID: {account_id}")
+            if project_id:
+                console.print(f"  Project ID: {project_id}")
+            if job_id:
+                console.print(f"  Job ID: {job_id}")
+            if workspace_id:
+                console.print(f"  Target workspace: {workspace_id}")
+            if select:
+                console.print(f"  Select: {', '.join(select)}")
+            if exclude:
+                console.print(f"  Exclude: {', '.join(exclude)}")
+            if exposures_path:
+                console.print(f"  Exposures: {exposures_path}")
+            else:
+                console.print("  Exposures: not configured")
+            if database_id:
+                console.print(f"  Database ID: {database_id}")
+            if database_name:
+                console.print(f"  Database name: {database_name}")
+            console.print(f"  Disallow edits: {'yes' if disallow_edits else 'no'}")
+            console.print(f"  Exposures only: {'yes' if exposures_only else 'no'}")
+            console.print(f"  Preserve metadata: {'yes' if preserve_metadata else 'no'}")
+            console.print(f"  Merge metadata: {'yes' if merge_metadata else 'no'}")
         return
 
     try:

@@ -800,4 +800,3 @@ class TestPullDatasets:
         result = runner.invoke(app, ["pull", "--porcelain"])
         assert result.exit_code == 0
         assert (datasets_dir / "sales.yaml").read_text() == "old"
-

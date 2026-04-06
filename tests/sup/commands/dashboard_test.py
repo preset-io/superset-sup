@@ -805,4 +805,3 @@ class TestPullDashboards:
         result = runner.invoke(app, ["pull", "--porcelain"])
         assert result.exit_code == 0
         assert (dashboards_dir / "Sales.yaml").read_text() == "old"
-

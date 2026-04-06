@@ -43,6 +43,12 @@ export default defineConfig({
           ],
         },
         {
+          label: 'Reference',
+          items: [
+            { label: 'Feature Parity', link: '/feature-parity' },
+          ],
+        },
+        {
           label: 'Guides',
           items: [
             { label: 'Cross-Workspace Sync', link: '/guides/cross-workspace' },

@@ -13,7 +13,7 @@ from rich.panel import Panel
 from rich.table import Table
 from typing_extensions import Annotated
 
-from sup.lib import escape_jinja
+from sup.commands.template_params import DisableJinjaOption, LoadEnvOption, TemplateOptions
 from sup.output.console import console
 from sup.output.formatters import display_porcelain_list
 from sup.output.styles import COLORS, EMOJIS, RICH_STYLES
@@ -337,17 +337,6 @@ def pull_dashboards(
             help="Pull dashboards only, without related charts, datasets, and databases",
         ),
     ] = False,
-    disable_jinja_escaping: Annotated[
-        bool,
-        typer.Option(
-            "--disable-jinja-escaping",
-            help="Export raw YAML without escaping {{ }} templates",
-        ),
-    ] = False,
-    force_unix_eol: Annotated[
-        bool,
-        typer.Option("--force-unix-eol", help="Force Unix end-of-line characters"),
-    ] = False,
     porcelain: Annotated[
         bool,
         typer.Option("--porcelain", help="Machine-readable output (no decorations)"),
@@ -483,13 +472,8 @@ def pull_dashboards(
             if not target.parent.exists():
                 target.parent.mkdir(parents=True, exist_ok=True)
 
-            # Handle Jinja2 escaping
-            if not disable_jinja_escaping:
-                file_contents = escape_jinja(file_contents)
-
-            # Write file with proper line endings
-            newline = "\n" if force_unix_eol else None
-            with open(target, "w", encoding="utf-8", newline=newline) as output:
+            # Write file
+            with open(target, "w", encoding="utf-8") as output:
                 output.write(file_contents)
 
             files_written += 1
@@ -506,6 +490,91 @@ def pull_dashboards(
         if not porcelain:
             console.print(
                 f"{EMOJIS['error']} Failed to export dashboards: {e}",
+                style=RICH_STYLES["error"],
+            )
+        raise typer.Exit(1)
+
+
+@app.command("push")
+def push_dashboards(
+    assets_folder: Annotated[
+        Optional[str],
+        typer.Argument(
+            help="Assets folder to push dashboard definitions from (defaults to configured folder)",
+        ),
+    ] = None,
+    workspace_id: Annotated[
+        Optional[int],
+        typer.Option(
+            "--workspace-id",
+            "-w",
+            help="Workspace ID (defaults to configured workspace)",
+        ),
+    ] = None,
+    overwrite: Annotated[
+        bool,
+        typer.Option("--overwrite", help="Overwrite existing dashboards"),
+    ] = False,
+    template_options: TemplateOptions = None,
+    load_env: LoadEnvOption = False,
+    disable_jinja_templating: DisableJinjaOption = False,
+    continue_on_error: Annotated[
+        bool,
+        typer.Option(
+            "--continue-on-error",
+            help="Continue importing even if some dashboards fail",
+        ),
+    ] = False,
+    force: Annotated[
+        bool,
+        typer.Option(
+            "--force",
+            "-f",
+            help="Skip confirmation prompts",
+        ),
+    ] = False,
+    porcelain: Annotated[
+        bool,
+        typer.Option("--porcelain", help="Machine-readable output"),
+    ] = False,
+):
+    """
+    Push dashboard definitions from local filesystem to Superset workspace.
+
+    Reads dashboard configurations from YAML files and creates/updates dashboards
+    in the workspace. Dependencies (charts, datasets, databases) are pushed first.
+
+    Examples:
+        sup dashboard push                               # Push to configured target
+        sup dashboard push ./backup                      # Push from specific folder
+        sup dashboard push --workspace-id=456            # Push to specific workspace
+        sup dashboard push --overwrite --force            # Overwrite without confirmation
+        sup dashboard push --continue-on-error           # Skip failures, continue
+        sup dashboard push --option env=prod --load-env  # Template with variables
+    """
+    from preset_cli.cli.superset.sync.native.command import ResourceType
+    from sup.commands.push_helper import push_assets
+
+    try:
+        push_assets(
+            asset_type_enum=ResourceType.DASHBOARD,
+            asset_label="dashboards",
+            assets_folder=assets_folder,
+            workspace_id=workspace_id,
+            overwrite=overwrite,
+            template_options=template_options,
+            load_env=load_env,
+            disable_jinja_templating=disable_jinja_templating,
+            continue_on_error=continue_on_error,
+            force=force,
+            porcelain=porcelain,
+        )
+    except typer.Exit:
+        raise
+    except Exception as e:
+        if not porcelain:
+            console.print(
+                f"{EMOJIS['error']} Failed to import dashboards: {e}",
                 style=RICH_STYLES["error"],
             )
         raise typer.Exit(1)

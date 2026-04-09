@@ -172,7 +172,7 @@ app.add_typer(
 )
 app.add_typer(sync.app, name="sync", rich_help_panel="Synchronize Assets Across Workspaces")
 app.add_typer(dbt.app, name="dbt", rich_help_panel="Integrations & Metadata")
-app.add_typer(theme.app, name="theme", help="Test themes and colors", hidden=True)
+app.add_typer(theme.app, name="theme", help="Manage themes", rich_help_panel="Manage Assets")
 
 
 def version_callback(value: bool):

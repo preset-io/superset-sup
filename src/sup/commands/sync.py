@@ -246,7 +246,7 @@ def create_sync(
         assets_folder.mkdir(exist_ok=True)
 
         # Create subdirectories for assets
-        for asset_type in ["charts", "dashboards", "datasets", "databases"]:
+        for asset_type in ["charts", "dashboards", "datasets", "databases", "themes"]:
             (assets_folder / asset_type).mkdir(exist_ok=True)
 
         # Save configuration
@@ -363,7 +363,7 @@ def display_sync_summary(
     # Asset selection summary
     assets = sync_config.source.assets
     asset_summary = []
-    for asset_type in ["charts", "dashboards", "datasets", "databases"]:
+    for asset_type in ["charts", "dashboards", "datasets", "databases", "themes"]:
         asset_config = getattr(assets, asset_type)
         if asset_config:
             summary = f"{asset_type}: {asset_config.selection}"
@@ -394,7 +394,7 @@ def execute_pull(sync_config: SyncConfig, sync_path: Path, dry_run: bool, porcel
         # Show what would be pulled for each asset type
         asset_summary = []
         assets = sync_config.source.assets
-        for asset_type in ["databases", "datasets", "charts", "dashboards"]:
+        for asset_type in ["databases", "datasets", "charts", "dashboards", "themes"]:
             asset_config = getattr(assets, asset_type)
             if asset_config:
                 summary = f"{asset_type}: {asset_config.selection}"
@@ -428,7 +428,7 @@ def execute_pull(sync_config: SyncConfig, sync_path: Path, dry_run: bool, porcel
         assets = sync_config.source.assets
         total_files = 0
 
-        for asset_type in ["databases", "datasets", "charts", "dashboards"]:
+        for asset_type in ["databases", "datasets", "charts", "dashboards", "themes"]:
             asset_config = getattr(assets, asset_type)
             if not asset_config:
                 continue
@@ -439,7 +439,10 @@ def execute_pull(sync_config: SyncConfig, sync_path: Path, dry_run: bool, porcel
             # Get asset IDs based on selection
             if asset_config.selection == "all":
                 # Get all assets of this type
-                resources = client.client.get_resources(asset_type.rstrip("s"))  # Remove plural
+                if asset_type == "themes":
+                    resources = client.client.get_resources("theme")
+                else:
+                    resources = client.client.get_resources(asset_type.rstrip("s"))  # Remove plural
                 requested_ids = set(resource["id"] for resource in resources)
             elif asset_config.selection == "ids":
                 requested_ids = set(asset_config.ids or [])
@@ -456,17 +459,35 @@ def execute_pull(sync_config: SyncConfig, sync_path: Path, dry_run: bool, porcel
                     console.print(f"     No {asset_type} to pull")
                 continue
 
-            # Use the legacy export_resource function with overwrite=True
-            export_resource(
-                resource_name=asset_type.rstrip("s"),  # Remove plural: charts -> chart
-                requested_ids=requested_ids,
-                root=assets_path,
-                client=client.client,  # Use underlying SupersetClient
-                overwrite=True,  # Always overwrite in sync
-                disable_jinja_escaping=False,
-                skip_related=not asset_config.include_dependencies,
-                force_unix_eol=False,
-            )
+            if asset_type == "themes":
+                # Themes use export_zip directly (no legacy export_resource support)
+                from pathlib import Path as _Path
+                from zipfile import ZipFile as _ZipFile
+
+                zip_buffer = client.client.export_zip("theme", list(requested_ids))
+
+                def _remove_root(file_name: str) -> str:
+                    parts = _Path(file_name).parts
+                    return str(_Path(*parts[1:])) if len(parts) > 1 else file_name
+
+                with _ZipFile(zip_buffer) as bundle:
+                    for name in bundle.namelist():
+                        rel = _remove_root(name)
+                        target = assets_path / rel
+                        target.parent.mkdir(parents=True, exist_ok=True)
+                        target.write_bytes(bundle.read(name))
+            else:
+                # Use the legacy export_resource function with overwrite=True
+                export_resource(
+                    resource_name=asset_type.rstrip("s"),  # Remove plural: charts -> chart
+                    requested_ids=requested_ids,
+                    root=assets_path,
+                    client=client.client,  # Use underlying SupersetClient
+                    overwrite=True,  # Always overwrite in sync
+                    disable_jinja_escaping=False,
+                    skip_related=not asset_config.include_dependencies,
+                    force_unix_eol=False,
+                )
 
             total_files += len(requested_ids)
 

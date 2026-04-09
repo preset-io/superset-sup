@@ -591,6 +591,53 @@ class SupSupersetClient:
             )
             raise
 
+    def get_themes(
+        self,
+        silent: bool = False,
+        limit: Optional[int] = None,
+        page: int = 0,
+        text_search: Optional[str] = None,
+    ) -> List[Dict[str, Any]]:
+        """Get themes with pagination and optional search."""
+        try:
+            import prison
+
+            from preset_cli.lib import validate_response
+
+            query_params: Dict[str, Any] = {
+                "filters": [],
+                "page": page,
+                "page_size": limit or 100,
+            }
+            if text_search:
+                query_params["filters"].append(
+                    {
+                        "col": "theme_name",
+                        "opr": "ThemeAllText",
+                        "value": text_search,
+                    }
+                )
+
+            query = prison.dumps(query_params)
+            url = self.client.baseurl / "api/v1/theme/" % {"q": query}
+            response = self.client.session.get(url)
+            validate_response(response)
+
+            themes = response.json()["result"]
+            if not silent:
+                console.print(
+                    f"Found {len(themes)} themes",
+                    style=RICH_STYLES["dim"],
+                )
+            return themes
+        except Exception as e:
+            if not silent:
+                console.print(
+                    f"{EMOJIS['error']} Failed to fetch themes: {e}",
+                    style=RICH_STYLES["error"],
+                )
+            return []
+
     def display_users_table(self, users: List[Dict[str, Any]]) -> None:
         """Display users in a beautiful Rich table."""
         if not users:

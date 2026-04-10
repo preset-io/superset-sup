@@ -204,8 +204,7 @@ def export_themes(
 
         with ZipFile(zip_buffer) as bundle:
             contents = {
-                _remove_root(name): bundle.read(name).decode()
-                for name in bundle.namelist()
+                _remove_root(name): bundle.read(name).decode() for name in bundle.namelist()
             }
 
         files_written = 0
@@ -272,6 +271,7 @@ def import_themes(
         sup theme import ./assets/ -f
     """
     import io
+
     import yaml as yaml_lib
 
     ctx = SupContext()

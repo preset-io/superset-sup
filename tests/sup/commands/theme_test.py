@@ -1,14 +1,12 @@
 """
 Tests for sup theme commands: list, export, import.
 """
-import io
+
 import json
 from io import BytesIO
-from pathlib import Path
 from unittest.mock import MagicMock, patch
 from zipfile import ZipFile
 
-import pytest
 import yaml
 from typer.testing import CliRunner
 

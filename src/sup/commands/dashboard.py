@@ -359,6 +359,7 @@ def pull_dashboards(
 
     from sup.clients.superset import SupSupersetClient
     from sup.config.settings import SupContext
+    from sup.lib import remove_root
     from sup.output.spinners import data_spinner
 
     # Resolve assets folder using config default
@@ -441,11 +442,6 @@ def pull_dashboards(
         zip_buffer = client.client.export_zip("dashboard", dashboard_ids)
 
         # Process ZIP contents
-        def remove_root(file_name: str) -> str:
-            """Remove root directory from file path"""
-            parts = Path(file_name).parts
-            return str(Path(*parts[1:])) if len(parts) > 1 else file_name
-
         with ZipFile(zip_buffer) as bundle:
             contents = {
                 remove_root(file_name): bundle.read(file_name).decode()

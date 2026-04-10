@@ -1,5 +1,5 @@
 """
-Tests for sup theme commands: list, export, import.
+Tests for sup theme commands: list, pull, push.
 """
 
 import json
@@ -71,8 +71,8 @@ def test_list_themes(tmp_path):
     mock_client.workspace_url = "https://example.preset.io/"
 
     with (
-        patch("sup.commands.theme.SupContext"),
-        patch("sup.commands.theme.SupSupersetClient") as MockClient,
+        patch("sup.config.settings.SupContext"),
+        patch("sup.clients.superset.SupSupersetClient") as MockClient,
     ):
         MockClient.from_context.return_value = mock_client
         result = runner.invoke(app, ["list"])
@@ -89,8 +89,8 @@ def test_list_themes_json(tmp_path):
     mock_client.workspace_url = "https://example.preset.io/"
 
     with (
-        patch("sup.commands.theme.SupContext"),
-        patch("sup.commands.theme.SupSupersetClient") as MockClient,
+        patch("sup.config.settings.SupContext"),
+        patch("sup.clients.superset.SupSupersetClient") as MockClient,
     ):
         MockClient.from_context.return_value = mock_client
         result = runner.invoke(app, ["list", "--json"])
@@ -108,8 +108,8 @@ def test_list_themes_porcelain(tmp_path):
     mock_client.workspace_url = "https://example.preset.io/"
 
     with (
-        patch("sup.commands.theme.SupContext"),
-        patch("sup.commands.theme.SupSupersetClient") as MockClient,
+        patch("sup.config.settings.SupContext"),
+        patch("sup.clients.superset.SupSupersetClient") as MockClient,
     ):
         MockClient.from_context.return_value = mock_client
         result = runner.invoke(app, ["list", "--porcelain"])
@@ -124,8 +124,8 @@ def test_list_themes_filter_by_id():
     mock_client.workspace_url = "https://example.preset.io/"
 
     with (
-        patch("sup.commands.theme.SupContext"),
-        patch("sup.commands.theme.SupSupersetClient") as MockClient,
+        patch("sup.config.settings.SupContext"),
+        patch("sup.clients.superset.SupSupersetClient") as MockClient,
     ):
         MockClient.from_context.return_value = mock_client
         result = runner.invoke(app, ["list", "--id=1", "--json"])
@@ -143,8 +143,8 @@ def test_list_themes_filter_by_ids():
     mock_client.workspace_url = "https://example.preset.io/"
 
     with (
-        patch("sup.commands.theme.SupContext"),
-        patch("sup.commands.theme.SupSupersetClient") as MockClient,
+        patch("sup.config.settings.SupContext"),
+        patch("sup.clients.superset.SupSupersetClient") as MockClient,
     ):
         MockClient.from_context.return_value = mock_client
         result = runner.invoke(app, ["list", "--ids=1,2", "--json"])
@@ -157,8 +157,8 @@ def test_list_themes_filter_by_ids():
 def test_list_themes_error_exits_nonzero():
     """list exits with code 1 on error."""
     with (
-        patch("sup.commands.theme.SupContext"),
-        patch("sup.commands.theme.SupSupersetClient") as MockClient,
+        patch("sup.config.settings.SupContext"),
+        patch("sup.clients.superset.SupSupersetClient") as MockClient,
     ):
         MockClient.from_context.side_effect = RuntimeError("auth failed")
         result = runner.invoke(app, ["list"])
@@ -167,25 +167,25 @@ def test_list_themes_error_exits_nonzero():
 
 
 # ---------------------------------------------------------------------------
-# sup theme export
+# sup theme pull
 # ---------------------------------------------------------------------------
 
 
-def test_export_themes_creates_yaml_files(tmp_path):
-    """export writes theme YAML files to the output directory."""
+def test_pull_themes_creates_yaml_files(tmp_path):
+    """pull writes theme YAML files to the output directory."""
     mock_client = MagicMock()
     mock_client.get_themes.return_value = [THEME_1, THEME_2]
     mock_client.client.export_zip.return_value = _make_theme_zip([THEME_1, THEME_2])
 
     with (
-        patch("sup.commands.theme.SupContext") as MockCtx,
-        patch("sup.commands.theme.SupSupersetClient") as MockClient,
+        patch("sup.config.settings.SupContext") as MockCtx,
+        patch("sup.clients.superset.SupSupersetClient") as MockClient,
     ):
         ctx_instance = MockCtx.return_value
         ctx_instance.get_assets_folder.return_value = str(tmp_path)
         MockClient.from_context.return_value = mock_client
 
-        result = runner.invoke(app, ["export", "--output", str(tmp_path), "--overwrite"])
+        result = runner.invoke(app, ["pull", "--output", str(tmp_path), "--overwrite"])
 
     assert result.exit_code == 0
     yaml_files = list(tmp_path.rglob("*.yaml"))
@@ -193,48 +193,48 @@ def test_export_themes_creates_yaml_files(tmp_path):
     assert len(yaml_files) >= 1
 
 
-def test_export_themes_filter_by_id(tmp_path):
-    """export --id only exports the specified theme."""
+def test_pull_themes_filter_by_id(tmp_path):
+    """pull --id only exports the specified theme."""
     mock_client = MagicMock()
     mock_client.get_themes.return_value = [THEME_1, THEME_2]
     mock_client.client.export_zip.return_value = _make_theme_zip([THEME_1])
 
     with (
-        patch("sup.commands.theme.SupContext") as MockCtx,
-        patch("sup.commands.theme.SupSupersetClient") as MockClient,
+        patch("sup.config.settings.SupContext") as MockCtx,
+        patch("sup.clients.superset.SupSupersetClient") as MockClient,
     ):
         ctx_instance = MockCtx.return_value
         ctx_instance.get_assets_folder.return_value = str(tmp_path)
         MockClient.from_context.return_value = mock_client
 
-        result = runner.invoke(app, ["export", "--output", str(tmp_path), "--id=1", "--overwrite"])
+        result = runner.invoke(app, ["pull", "--output", str(tmp_path), "--id=1", "--overwrite"])
 
     assert result.exit_code == 0
     # export_zip should have been called with only ID 1
     mock_client.client.export_zip.assert_called_once_with("theme", [1])
 
 
-def test_export_themes_no_match(tmp_path):
-    """export with a filter that matches nothing warns and exits cleanly."""
+def test_pull_themes_no_match(tmp_path):
+    """pull with a filter that matches nothing warns and exits cleanly."""
     mock_client = MagicMock()
     mock_client.get_themes.return_value = []
 
     with (
-        patch("sup.commands.theme.SupContext") as MockCtx,
-        patch("sup.commands.theme.SupSupersetClient") as MockClient,
+        patch("sup.config.settings.SupContext") as MockCtx,
+        patch("sup.clients.superset.SupSupersetClient") as MockClient,
     ):
         ctx_instance = MockCtx.return_value
         ctx_instance.get_assets_folder.return_value = str(tmp_path)
         MockClient.from_context.return_value = mock_client
 
-        result = runner.invoke(app, ["export", "--output", str(tmp_path), "--id=999"])
+        result = runner.invoke(app, ["pull", "--output", str(tmp_path), "--id=999"])
 
     assert result.exit_code == 0
     mock_client.client.export_zip.assert_not_called()
 
 
-def test_export_themes_skips_existing_without_overwrite(tmp_path):
-    """export skips existing files when --overwrite is not set."""
+def test_pull_themes_skips_existing_without_overwrite(tmp_path):
+    """pull skips existing files when --overwrite is not set."""
     themes_dir = tmp_path / "themes"
     themes_dir.mkdir()
     existing = themes_dir / "Dark_Theme.yaml"
@@ -245,42 +245,66 @@ def test_export_themes_skips_existing_without_overwrite(tmp_path):
     mock_client.client.export_zip.return_value = _make_theme_zip([THEME_1])
 
     with (
-        patch("sup.commands.theme.SupContext") as MockCtx,
-        patch("sup.commands.theme.SupSupersetClient") as MockClient,
+        patch("sup.config.settings.SupContext") as MockCtx,
+        patch("sup.clients.superset.SupSupersetClient") as MockClient,
     ):
         ctx_instance = MockCtx.return_value
         ctx_instance.get_assets_folder.return_value = str(tmp_path)
         MockClient.from_context.return_value = mock_client
 
-        result = runner.invoke(app, ["export", "--output", str(tmp_path)])
+        result = runner.invoke(app, ["pull", "--output", str(tmp_path)])
 
     assert result.exit_code == 0
     # Original file should be unchanged
     assert existing.read_text() == "existing content"
 
 
-def test_export_themes_error_exits_nonzero(tmp_path):
-    """export exits with code 1 on error."""
+def test_pull_themes_error_exits_nonzero(tmp_path):
+    """pull exits with code 1 on error."""
     with (
-        patch("sup.commands.theme.SupContext") as MockCtx,
-        patch("sup.commands.theme.SupSupersetClient") as MockClient,
+        patch("sup.config.settings.SupContext") as MockCtx,
+        patch("sup.clients.superset.SupSupersetClient") as MockClient,
     ):
         ctx_instance = MockCtx.return_value
         ctx_instance.get_assets_folder.return_value = str(tmp_path)
         MockClient.from_context.side_effect = RuntimeError("connection error")
 
-        result = runner.invoke(app, ["export", "--output", str(tmp_path)])
+        result = runner.invoke(app, ["pull", "--output", str(tmp_path)])
+
+    assert result.exit_code == 1
+
+
+def test_pull_themes_path_traversal_blocked(tmp_path):
+    """pull rejects ZIP entries that escape the output directory."""
+    buf = BytesIO()
+    with ZipFile(buf, "w") as zf:
+        zf.writestr("bundle/../../../etc/passwd", "evil")
+    buf.seek(0)
+
+    mock_client = MagicMock()
+    mock_client.get_themes.return_value = [THEME_1]
+    mock_client.client.export_zip.return_value = buf
+
+    with (
+        patch("sup.config.settings.SupContext") as MockCtx,
+        patch("sup.clients.superset.SupSupersetClient") as MockClient,
+    ):
+        ctx_instance = MockCtx.return_value
+        ctx_instance.get_assets_folder.return_value = str(tmp_path)
+        MockClient.from_context.return_value = mock_client
+
+        result = runner.invoke(app, ["pull", "--output", str(tmp_path), "--overwrite"])
 
     assert result.exit_code == 1
 
 
 # ---------------------------------------------------------------------------
-# sup theme import
+# sup theme push
 # ---------------------------------------------------------------------------
 
 
-def test_import_themes_from_yaml_file(tmp_path):
-    """import accepts a single YAML file."""
+def test_push_themes_from_yaml_file(tmp_path):
+    """push accepts a single YAML file."""
     theme_file = tmp_path / "my_theme.yaml"
     theme_file.write_text(
         yaml.safe_dump(
@@ -296,11 +320,11 @@ def test_import_themes_from_yaml_file(tmp_path):
     mock_client.client.import_zip.return_value = True
 
     with (
-        patch("sup.commands.theme.SupContext"),
-        patch("sup.commands.theme.SupSupersetClient") as MockClient,
+        patch("sup.config.settings.SupContext"),
+        patch("sup.clients.superset.SupSupersetClient") as MockClient,
     ):
         MockClient.from_context.return_value = mock_client
-        result = runner.invoke(app, ["import", str(theme_file)])
+        result = runner.invoke(app, ["push", str(theme_file)])
 
     assert result.exit_code == 0
     mock_client.client.import_zip.assert_called_once()
@@ -308,8 +332,8 @@ def test_import_themes_from_yaml_file(tmp_path):
     assert call_args[0][0] == "theme"
 
 
-def test_import_themes_from_directory(tmp_path):
-    """import discovers YAML files under themes/ subdirectory."""
+def test_push_themes_from_directory(tmp_path):
+    """push discovers YAML files under themes/ subdirectory."""
     themes_dir = tmp_path / "themes"
     themes_dir.mkdir()
     (themes_dir / "theme_a.yaml").write_text(
@@ -323,11 +347,11 @@ def test_import_themes_from_directory(tmp_path):
     mock_client.client.import_zip.return_value = True
 
     with (
-        patch("sup.commands.theme.SupContext"),
-        patch("sup.commands.theme.SupSupersetClient") as MockClient,
+        patch("sup.config.settings.SupContext"),
+        patch("sup.clients.superset.SupSupersetClient") as MockClient,
     ):
         MockClient.from_context.return_value = mock_client
-        result = runner.invoke(app, ["import", str(tmp_path)])
+        result = runner.invoke(app, ["push", str(tmp_path)])
 
     assert result.exit_code == 0
     mock_client.client.import_zip.assert_called_once()
@@ -341,8 +365,8 @@ def test_import_themes_from_directory(tmp_path):
     assert len(theme_files) == 2
 
 
-def test_import_themes_with_overwrite(tmp_path):
-    """import --overwrite passes overwrite=True to import_zip."""
+def test_push_themes_with_overwrite(tmp_path):
+    """push --overwrite passes overwrite=True to import_zip."""
     theme_file = tmp_path / "theme.yaml"
     theme_file.write_text(yaml.safe_dump({"theme_name": "T", "json_data": "{}"}))
 
@@ -350,62 +374,62 @@ def test_import_themes_with_overwrite(tmp_path):
     mock_client.client.import_zip.return_value = True
 
     with (
-        patch("sup.commands.theme.SupContext"),
-        patch("sup.commands.theme.SupSupersetClient") as MockClient,
+        patch("sup.config.settings.SupContext"),
+        patch("sup.clients.superset.SupSupersetClient") as MockClient,
     ):
         MockClient.from_context.return_value = mock_client
-        result = runner.invoke(app, ["import", str(theme_file), "--overwrite"])
+        result = runner.invoke(app, ["push", str(theme_file), "--overwrite"])
 
     assert result.exit_code == 0
     call_kwargs = mock_client.client.import_zip.call_args[1]
     assert call_kwargs.get("overwrite") is True
 
 
-def test_import_themes_path_not_found(tmp_path):
-    """import exits with code 1 when path does not exist."""
+def test_push_themes_path_not_found(tmp_path):
+    """push exits with code 1 when path does not exist."""
     with (
-        patch("sup.commands.theme.SupContext"),
-        patch("sup.commands.theme.SupSupersetClient"),
+        patch("sup.config.settings.SupContext"),
+        patch("sup.clients.superset.SupSupersetClient"),
     ):
-        result = runner.invoke(app, ["import", str(tmp_path / "nonexistent.yaml")])
+        result = runner.invoke(app, ["push", str(tmp_path / "nonexistent.yaml")])
 
     assert result.exit_code == 1
 
 
-def test_import_themes_non_yaml_file(tmp_path):
-    """import exits with code 1 when a non-YAML file is given."""
+def test_push_themes_non_yaml_file(tmp_path):
+    """push exits with code 1 when a non-YAML file is given."""
     bad_file = tmp_path / "theme.json"
     bad_file.write_text("{}")
 
     with (
-        patch("sup.commands.theme.SupContext"),
-        patch("sup.commands.theme.SupSupersetClient"),
+        patch("sup.config.settings.SupContext"),
+        patch("sup.clients.superset.SupSupersetClient"),
     ):
-        result = runner.invoke(app, ["import", str(bad_file)])
+        result = runner.invoke(app, ["push", str(bad_file)])
 
     assert result.exit_code == 1
 
 
-def test_import_themes_empty_directory(tmp_path):
-    """import exits cleanly with a warning when no YAML files are found."""
+def test_push_themes_empty_directory(tmp_path):
+    """push exits cleanly with a warning when no YAML files are found."""
     empty_dir = tmp_path / "empty"
     empty_dir.mkdir()
 
     mock_client = MagicMock()
 
     with (
-        patch("sup.commands.theme.SupContext"),
-        patch("sup.commands.theme.SupSupersetClient") as MockClient,
+        patch("sup.config.settings.SupContext"),
+        patch("sup.clients.superset.SupSupersetClient") as MockClient,
     ):
         MockClient.from_context.return_value = mock_client
-        result = runner.invoke(app, ["import", str(empty_dir)])
+        result = runner.invoke(app, ["push", str(empty_dir)])
 
     assert result.exit_code == 0
     mock_client.client.import_zip.assert_not_called()
 
 
-def test_import_themes_error_exits_nonzero(tmp_path):
-    """import exits with code 1 when import_zip raises an exception."""
+def test_push_themes_error_exits_nonzero(tmp_path):
+    """push exits with code 1 when import_zip raises an exception."""
     theme_file = tmp_path / "theme.yaml"
     theme_file.write_text(yaml.safe_dump({"theme_name": "T", "json_data": "{}"}))
 
@@ -413,11 +437,11 @@ def test_import_themes_error_exits_nonzero(tmp_path):
     mock_client.client.import_zip.side_effect = RuntimeError("server error")
 
     with (
-        patch("sup.commands.theme.SupContext"),
-        patch("sup.commands.theme.SupSupersetClient") as MockClient,
+        patch("sup.config.settings.SupContext"),
+        patch("sup.clients.superset.SupSupersetClient") as MockClient,
     ):
         MockClient.from_context.return_value = mock_client
-        result = runner.invoke(app, ["import", str(theme_file)])
+        result = runner.invoke(app, ["push", str(theme_file)])
 
     assert result.exit_code == 1
 
@@ -454,3 +478,34 @@ def test_asset_types_themes_default_none():
 
     assets = AssetTypes()
     assert assets.themes is None
+
+
+# ---------------------------------------------------------------------------
+# shared utilities
+# ---------------------------------------------------------------------------
+
+
+def test_remove_root_strips_first_component():
+    """remove_root strips the first path component."""
+    from sup.lib import remove_root
+
+    assert remove_root("bundle/themes/dark.yaml") == "themes/dark.yaml"
+    assert remove_root("single") == "single"
+
+
+def test_safe_extract_path_allows_valid_path(tmp_path):
+    """safe_extract_path allows paths within base."""
+    from sup.lib import safe_extract_path
+
+    result = safe_extract_path(tmp_path, "themes/dark.yaml")
+    assert result == (tmp_path / "themes" / "dark.yaml").resolve()
+
+
+def test_safe_extract_path_blocks_traversal(tmp_path):
+    """safe_extract_path rejects paths that escape base."""
+    import pytest
+
+    from sup.lib import safe_extract_path
+
+    with pytest.raises(ValueError, match="Path traversal detected"):
+        safe_extract_path(tmp_path, "../../etc/passwd")

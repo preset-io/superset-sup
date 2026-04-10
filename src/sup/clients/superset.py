@@ -604,32 +604,48 @@ class SupSupersetClient:
 
             from preset_cli.lib import validate_response
 
-            query_params: Dict[str, Any] = {
-                "filters": [],
-                "page": page,
-                "page_size": limit or 100,
-            }
-            if text_search:
-                query_params["filters"].append(
-                    {
-                        "col": "theme_name",
-                        "opr": "ThemeAllText",
-                        "value": text_search,
-                    }
-                )
+            page_size = limit or 100
+            all_themes: List[Dict[str, Any]] = []
+            current_page = page
 
-            query = prison.dumps(query_params)
-            url = self.client.baseurl / "api/v1/theme/" % {"q": query}
-            response = self.client.session.get(url)
-            validate_response(response)
+            while True:
+                query_params: Dict[str, Any] = {
+                    "filters": [],
+                    "order_column": "changed_on_delta_humanized",
+                    "order_direction": "desc",
+                    "page": current_page,
+                    "page_size": page_size,
+                }
+                if text_search:
+                    query_params["filters"].append(
+                        {
+                            "col": "theme_name",
+                            "opr": "ThemeAllText",
+                            "value": text_search,
+                        }
+                    )
 
-            themes = response.json()["result"]
+                query = prison.dumps(query_params)
+                url = self.client.baseurl / "api/v1/theme/" % {"q": query}
+                response = self.client.session.get(url)
+                validate_response(response)
+
+                batch = response.json()["result"]
+                all_themes.extend(batch)
+
+                # Stop if we got fewer results than page size (last page)
+                # or if a specific limit was requested
+                if len(batch) < page_size or limit:
+                    break
+
+                current_page += 1
+
             if not silent:
                 console.print(
-                    f"Found {len(themes)} themes",
+                    f"Found {len(all_themes)} themes",
                     style=RICH_STYLES["dim"],
                 )
-            return themes
+            return all_themes
         except Exception as e:
             if not silent:
                 console.print(

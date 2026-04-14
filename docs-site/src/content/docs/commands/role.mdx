@@ -1,0 +1,32 @@
+---
+title: "sup role"
+description: "Manage roles and permissions"
+---
+
+Manage roles and permissions
+
+## Usage
+
+```bash
+sup role [COMMAND] [OPTIONS]
+```
+
+## Subcommands
+
+| Command | Description |
+|---------|-------------|
+| `sup role pull` | Pull roles and permissions to a YAML file |
+| `sup role push` | Push roles and permissions from a YAML file |
+| `sup role sync` | Sync team, workspace, and data access roles from a YAML file |
+
+## Examples
+
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+
+<Tabs>
+  <TabItem label="Basic usage">
+    ```bash
+    sup role
+    ```
+  </TabItem>
+</Tabs>

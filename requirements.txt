@@ -26,7 +26,7 @@ idna==3.3
 jinja2==3.1.1
 log-symbols==0.0.14
 markupsafe==2.1.1
-marshmallow==3.17.0
+marshmallow==3.26.2
 multidict==6.0.2
 numpy==1.22.3
 packaging==21.3

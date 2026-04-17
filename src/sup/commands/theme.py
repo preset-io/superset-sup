@@ -85,7 +85,7 @@ def list_themes(
             ctx = SupContext()
             client = SupSupersetClient.from_context(ctx, workspace_id)
 
-            page = (page_filter - 1) if page_filter else 0
+            page = (page_filter - 1) if page_filter is not None else 0
             themes = client.get_themes(
                 silent=True,
                 limit=page_size_filter or limit_filter,
@@ -96,7 +96,12 @@ def list_themes(
             if id_filter:
                 themes = [t for t in themes if t.get("id") == id_filter]
             elif ids_filter:
-                id_list = [int(x.strip()) for x in ids_filter.split(",")]
+                try:
+                    id_list = [int(x.strip()) for x in ids_filter.split(",") if x.strip()]
+                except ValueError:
+                    raise ValueError(
+                        f"Invalid --ids value {ids_filter!r}: expected comma-separated integers"
+                    )
                 themes = [t for t in themes if t.get("id") in id_list]
 
             if mine_filter:
@@ -220,7 +225,12 @@ def pull_themes(
             if id_filter:
                 themes = [t for t in themes if t.get("id") == id_filter]
             elif ids_filter:
-                id_list = [int(x.strip()) for x in ids_filter.split(",")]
+                try:
+                    id_list = [int(x.strip()) for x in ids_filter.split(",") if x.strip()]
+                except ValueError:
+                    raise ValueError(
+                        f"Invalid --ids value {ids_filter!r}: expected comma-separated integers"
+                    )
                 themes = [t for t in themes if t.get("id") in id_list]
 
             if sp:
@@ -373,6 +383,17 @@ def push_themes(
         client = SupSupersetClient.from_context(ctx, workspace_id)
 
         # Build a ZIP bundle from the YAML files (matching Superset's expected format)
+        # Detect duplicate filenames before building the ZIP
+        seen_names: Dict[str, Path] = {}
+        for yaml_file in yaml_files:
+            if yaml_file.name in seen_names:
+                raise ValueError(
+                    f"Duplicate theme filename {yaml_file.name!r}: "
+                    f"{seen_names[yaml_file.name]} and {yaml_file}. "
+                    "Rename one of the files before pushing."
+                )
+            seen_names[yaml_file.name] = yaml_file
+
         buf = io.BytesIO()
         with ZipFile(buf, "w") as bundle:
             for yaml_file in yaml_files:

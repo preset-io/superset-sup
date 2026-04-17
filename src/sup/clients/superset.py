@@ -638,8 +638,11 @@ class SupSupersetClient:
                 batch = response.json()["result"]
                 all_themes.extend(batch)
 
-                # Stop when we reach the last page (fewer results than page_size)
+                # Stop when we reach the last page (fewer results than page_size),
+                # or when we already have enough results to satisfy the limit.
                 if len(batch) < page_size:
+                    break
+                if limit is not None and len(all_themes) >= limit:
                     break
 
                 current_page += 1

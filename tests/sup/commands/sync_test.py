@@ -1580,6 +1580,38 @@ class TestThemeSyncPull:
         with pytest.raises(Exception):
             execute_pull(cfg, tmp_path, dry_run=False, porcelain=False)
 
+    @patch("sup.config.settings.SupContext")
+    @patch("sup.clients.superset.SupSupersetClient")
+    @patch("preset_cli.cli.superset.export.export_resource")
+    def test_theme_pull_non_utf8_raises(
+        self, mock_export, mock_client_cls, mock_ctx_cls, tmp_path
+    ):
+        """Non-UTF-8 content in a theme ZIP entry raises ValueError."""
+        import io
+        from zipfile import ZipFile
+
+        buf = io.BytesIO()
+        with ZipFile(buf, "w") as zf:
+            zf.writestr("bundle/themes/bad.yaml", b"\xff\xfe not valid utf-8")
+        buf.seek(0)
+
+        mock_client = MagicMock()
+        mock_client.client.get_resources.return_value = [{"id": 1}]
+        mock_client.client.export_zip.return_value = buf
+        mock_client_cls.from_context.return_value = mock_client
+
+        assets = MagicMock()
+        assets.charts = None
+        assets.dashboards = None
+        assets.datasets = None
+        assets.databases = None
+        assets.themes = _make_asset_selection(selection="all")
+        cfg = _make_sync_config(assets=assets)
+        cfg.assets_folder.return_value = tmp_path / "assets"
+
+        with pytest.raises(ValueError, match="Non-UTF-8 content in theme export"):
+            execute_pull(cfg, tmp_path, dry_run=False, porcelain=False)
+
     @patch("sup.commands.sync.console")
     def test_theme_pull_dry_run(self, mock_console):
         """Dry run with themes shows preview."""

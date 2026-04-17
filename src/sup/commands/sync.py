@@ -467,10 +467,20 @@ def execute_pull(sync_config: SyncConfig, sync_path: Path, dry_run: bool, porcel
                 resolved_base = assets_path.resolve()
                 with _ZipFile(zip_buffer) as bundle:
                     for name in bundle.namelist():
+                        if name.endswith("/"):
+                            continue  # skip directory entries
                         rel = remove_root(name)
                         target = safe_extract_path(resolved_base, rel)
                         target.parent.mkdir(parents=True, exist_ok=True)
-                        target.write_bytes(bundle.read(name))
+                        try:
+                            content = bundle.read(name).decode("utf-8")
+                        except UnicodeDecodeError as exc:
+                            raise ValueError(
+                                f"Non-UTF-8 content in theme export: {name}"
+                            ) from exc
+                        target.write_text(
+                            content, encoding="utf-8", newline=""
+                        )
             else:
                 # Use the legacy export_resource function with overwrite=True
                 export_resource(
@@ -591,6 +601,7 @@ def execute_push(
                         continue
 
                     # Skip theme files — push doesn't support themes yet
+                    # TODO(theme-push): remove when theme sync push is implemented
                     if "themes" in relative_path.parts:
                         continue
 

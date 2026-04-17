@@ -134,7 +134,7 @@ def list_themes(
                 yaml.safe_dump(themes, default_flow_style=False, indent=2),
             )
         else:
-            _display_themes_table(themes, workspace_hostname=client.workspace_url)
+            _display_themes_table(themes)
 
     except Exception as e:
         if not porcelain:
@@ -320,6 +320,7 @@ def push_themes(
         sup theme push ./assets/themes/ --overwrite
         sup theme push ./assets/ --force
     """
+    import datetime
     import io
 
     import yaml
@@ -382,8 +383,6 @@ def push_themes(
                 bundle.writestr(arc_name, yaml_file.read_text(encoding="utf-8"))
 
             # Write metadata required by Superset's import dispatcher
-            import datetime
-
             metadata = yaml.safe_dump(
                 {
                     "version": "1.0.0",
@@ -424,7 +423,6 @@ def push_themes(
 
 def _display_themes_table(
     themes: List[Dict[str, Any]],
-    workspace_hostname: Optional[str] = None,
 ) -> None:
     """Display themes in a Rich table."""
     if not themes:

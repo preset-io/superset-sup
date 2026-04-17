@@ -20,8 +20,15 @@ def remove_root(file_name: str) -> str:
     Superset export ZIPs wrap everything under a ``bundle/`` root directory.
     This helper removes that prefix so files land in the desired output
     directory without the extra nesting.
+
+    Raises ``ValueError`` for absolute paths, which should never appear in a
+    well-formed Superset export ZIP and would otherwise silently produce
+    unexpected output paths.
     """
-    parts = Path(file_name).parts
+    p = Path(file_name)
+    if p.is_absolute():
+        raise ValueError(f"Absolute path in ZIP entry is not allowed: {file_name!r}")
+    parts = p.parts
     return str(Path(*parts[1:])) if len(parts) > 1 else file_name
 
 

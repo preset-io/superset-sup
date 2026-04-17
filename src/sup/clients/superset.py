@@ -598,13 +598,18 @@ class SupSupersetClient:
         page: int = 0,
         text_search: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
-        """Get themes with pagination and optional search."""
+        """Get themes with pagination and optional search.
+
+        ``limit`` caps the total number of results returned; it does not
+        change the per-page fetch size.  Pass ``page`` to start from a
+        specific page (0-indexed).
+        """
         try:
             import prison
 
             from preset_cli.lib import validate_response
 
-            page_size = limit or 100
+            page_size = 100
             all_themes: List[Dict[str, Any]] = []
             current_page = page
 
@@ -633,12 +638,14 @@ class SupSupersetClient:
                 batch = response.json()["result"]
                 all_themes.extend(batch)
 
-                # Stop if we got fewer results than page size (last page)
-                # or if a specific limit was requested
-                if len(batch) < page_size or limit:
+                # Stop when we reach the last page (fewer results than page_size)
+                if len(batch) < page_size:
                     break
 
                 current_page += 1
+
+            if limit is not None:
+                all_themes = all_themes[:limit]
 
             if not silent:
                 console.print(

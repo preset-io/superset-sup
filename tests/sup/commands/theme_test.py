@@ -70,12 +70,10 @@ def test_list_themes(tmp_path):
     mock_client.get_themes.return_value = [THEME_1, THEME_2]
     mock_client.workspace_url = "https://example.preset.io/"
 
-    with (
-        patch("sup.config.settings.SupContext"),
-        patch("sup.clients.superset.SupSupersetClient") as MockClient,
-    ):
-        MockClient.from_context.return_value = mock_client
-        result = runner.invoke(app, ["list"])
+    with patch("sup.config.settings.SupContext"):
+        with patch("sup.clients.superset.SupSupersetClient") as MockClient:
+            MockClient.from_context.return_value = mock_client
+            result = runner.invoke(app, ["list"])
 
     assert result.exit_code == 0
     assert "Dark Theme" in result.output
@@ -88,12 +86,10 @@ def test_list_themes_json(tmp_path):
     mock_client.get_themes.return_value = [THEME_1]
     mock_client.workspace_url = "https://example.preset.io/"
 
-    with (
-        patch("sup.config.settings.SupContext"),
-        patch("sup.clients.superset.SupSupersetClient") as MockClient,
-    ):
-        MockClient.from_context.return_value = mock_client
-        result = runner.invoke(app, ["list", "--json"])
+    with patch("sup.config.settings.SupContext"):
+        with patch("sup.clients.superset.SupSupersetClient") as MockClient:
+            MockClient.from_context.return_value = mock_client
+            result = runner.invoke(app, ["list", "--json"])
 
     assert result.exit_code == 0
     parsed = json.loads(result.output)
@@ -107,12 +103,10 @@ def test_list_themes_porcelain(tmp_path):
     mock_client.get_themes.return_value = [THEME_1, THEME_2]
     mock_client.workspace_url = "https://example.preset.io/"
 
-    with (
-        patch("sup.config.settings.SupContext"),
-        patch("sup.clients.superset.SupSupersetClient") as MockClient,
-    ):
-        MockClient.from_context.return_value = mock_client
-        result = runner.invoke(app, ["list", "--porcelain"])
+    with patch("sup.config.settings.SupContext"):
+        with patch("sup.clients.superset.SupSupersetClient") as MockClient:
+            MockClient.from_context.return_value = mock_client
+            result = runner.invoke(app, ["list", "--porcelain"])
 
     assert result.exit_code == 0
 
@@ -123,12 +117,10 @@ def test_list_themes_filter_by_id():
     mock_client.get_themes.return_value = [THEME_1, THEME_2]
     mock_client.workspace_url = "https://example.preset.io/"
 
-    with (
-        patch("sup.config.settings.SupContext"),
-        patch("sup.clients.superset.SupSupersetClient") as MockClient,
-    ):
-        MockClient.from_context.return_value = mock_client
-        result = runner.invoke(app, ["list", "--id=1", "--json"])
+    with patch("sup.config.settings.SupContext"):
+        with patch("sup.clients.superset.SupSupersetClient") as MockClient:
+            MockClient.from_context.return_value = mock_client
+            result = runner.invoke(app, ["list", "--id=1", "--json"])
 
     assert result.exit_code == 0
     parsed = json.loads(result.output)
@@ -142,12 +134,10 @@ def test_list_themes_filter_by_ids():
     mock_client.get_themes.return_value = [THEME_1, THEME_2]
     mock_client.workspace_url = "https://example.preset.io/"
 
-    with (
-        patch("sup.config.settings.SupContext"),
-        patch("sup.clients.superset.SupSupersetClient") as MockClient,
-    ):
-        MockClient.from_context.return_value = mock_client
-        result = runner.invoke(app, ["list", "--ids=1,2", "--json"])
+    with patch("sup.config.settings.SupContext"):
+        with patch("sup.clients.superset.SupSupersetClient") as MockClient:
+            MockClient.from_context.return_value = mock_client
+            result = runner.invoke(app, ["list", "--ids=1,2", "--json"])
 
     assert result.exit_code == 0
     parsed = json.loads(result.output)
@@ -156,12 +146,10 @@ def test_list_themes_filter_by_ids():
 
 def test_list_themes_error_exits_nonzero():
     """list exits with code 1 on error."""
-    with (
-        patch("sup.config.settings.SupContext"),
-        patch("sup.clients.superset.SupSupersetClient") as MockClient,
-    ):
-        MockClient.from_context.side_effect = RuntimeError("auth failed")
-        result = runner.invoke(app, ["list"])
+    with patch("sup.config.settings.SupContext"):
+        with patch("sup.clients.superset.SupSupersetClient") as MockClient:
+            MockClient.from_context.side_effect = RuntimeError("auth failed")
+            result = runner.invoke(app, ["list"])
 
     assert result.exit_code == 1
 
@@ -177,15 +165,13 @@ def test_pull_themes_creates_yaml_files(tmp_path):
     mock_client.get_themes.return_value = [THEME_1, THEME_2]
     mock_client.client.export_zip.return_value = _make_theme_zip([THEME_1, THEME_2])
 
-    with (
-        patch("sup.config.settings.SupContext") as MockCtx,
-        patch("sup.clients.superset.SupSupersetClient") as MockClient,
-    ):
-        ctx_instance = MockCtx.return_value
-        ctx_instance.get_assets_folder.return_value = str(tmp_path)
-        MockClient.from_context.return_value = mock_client
+    with patch("sup.config.settings.SupContext") as MockCtx:
+        with patch("sup.clients.superset.SupSupersetClient") as MockClient:
+            ctx_instance = MockCtx.return_value
+            ctx_instance.get_assets_folder.return_value = str(tmp_path)
+            MockClient.from_context.return_value = mock_client
 
-        result = runner.invoke(app, ["pull", "--output", str(tmp_path), "--overwrite"])
+            result = runner.invoke(app, ["pull", "--output", str(tmp_path), "--overwrite"])
 
     assert result.exit_code == 0
     yaml_files = list(tmp_path.rglob("*.yaml"))
@@ -199,15 +185,15 @@ def test_pull_themes_filter_by_id(tmp_path):
     mock_client.get_themes.return_value = [THEME_1, THEME_2]
     mock_client.client.export_zip.return_value = _make_theme_zip([THEME_1])
 
-    with (
-        patch("sup.config.settings.SupContext") as MockCtx,
-        patch("sup.clients.superset.SupSupersetClient") as MockClient,
-    ):
-        ctx_instance = MockCtx.return_value
-        ctx_instance.get_assets_folder.return_value = str(tmp_path)
-        MockClient.from_context.return_value = mock_client
+    with patch("sup.config.settings.SupContext") as MockCtx:
+        with patch("sup.clients.superset.SupSupersetClient") as MockClient:
+            ctx_instance = MockCtx.return_value
+            ctx_instance.get_assets_folder.return_value = str(tmp_path)
+            MockClient.from_context.return_value = mock_client
 
-        result = runner.invoke(app, ["pull", "--output", str(tmp_path), "--id=1", "--overwrite"])
+            result = runner.invoke(
+                app, ["pull", "--output", str(tmp_path), "--id=1", "--overwrite"]
+            )
 
     assert result.exit_code == 0
     # export_zip should have been called with only ID 1
@@ -219,15 +205,13 @@ def test_pull_themes_no_match(tmp_path):
     mock_client = MagicMock()
     mock_client.get_themes.return_value = []
 
-    with (
-        patch("sup.config.settings.SupContext") as MockCtx,
-        patch("sup.clients.superset.SupSupersetClient") as MockClient,
-    ):
-        ctx_instance = MockCtx.return_value
-        ctx_instance.get_assets_folder.return_value = str(tmp_path)
-        MockClient.from_context.return_value = mock_client
+    with patch("sup.config.settings.SupContext") as MockCtx:
+        with patch("sup.clients.superset.SupSupersetClient") as MockClient:
+            ctx_instance = MockCtx.return_value
+            ctx_instance.get_assets_folder.return_value = str(tmp_path)
+            MockClient.from_context.return_value = mock_client
 
-        result = runner.invoke(app, ["pull", "--output", str(tmp_path), "--id=999"])
+            result = runner.invoke(app, ["pull", "--output", str(tmp_path), "--id=999"])
 
     assert result.exit_code == 0
     mock_client.client.export_zip.assert_not_called()
@@ -244,15 +228,13 @@ def test_pull_themes_skips_existing_without_overwrite(tmp_path):
     mock_client.get_themes.return_value = [THEME_1]
     mock_client.client.export_zip.return_value = _make_theme_zip([THEME_1])
 
-    with (
-        patch("sup.config.settings.SupContext") as MockCtx,
-        patch("sup.clients.superset.SupSupersetClient") as MockClient,
-    ):
-        ctx_instance = MockCtx.return_value
-        ctx_instance.get_assets_folder.return_value = str(tmp_path)
-        MockClient.from_context.return_value = mock_client
+    with patch("sup.config.settings.SupContext") as MockCtx:
+        with patch("sup.clients.superset.SupSupersetClient") as MockClient:
+            ctx_instance = MockCtx.return_value
+            ctx_instance.get_assets_folder.return_value = str(tmp_path)
+            MockClient.from_context.return_value = mock_client
 
-        result = runner.invoke(app, ["pull", "--output", str(tmp_path)])
+            result = runner.invoke(app, ["pull", "--output", str(tmp_path)])
 
     assert result.exit_code == 0
     # Original file should be unchanged
@@ -261,15 +243,13 @@ def test_pull_themes_skips_existing_without_overwrite(tmp_path):
 
 def test_pull_themes_error_exits_nonzero(tmp_path):
     """pull exits with code 1 on error."""
-    with (
-        patch("sup.config.settings.SupContext") as MockCtx,
-        patch("sup.clients.superset.SupSupersetClient") as MockClient,
-    ):
-        ctx_instance = MockCtx.return_value
-        ctx_instance.get_assets_folder.return_value = str(tmp_path)
-        MockClient.from_context.side_effect = RuntimeError("connection error")
+    with patch("sup.config.settings.SupContext") as MockCtx:
+        with patch("sup.clients.superset.SupSupersetClient") as MockClient:
+            ctx_instance = MockCtx.return_value
+            ctx_instance.get_assets_folder.return_value = str(tmp_path)
+            MockClient.from_context.side_effect = RuntimeError("connection error")
 
-        result = runner.invoke(app, ["pull", "--output", str(tmp_path)])
+            result = runner.invoke(app, ["pull", "--output", str(tmp_path)])
 
     assert result.exit_code == 1
 
@@ -285,15 +265,13 @@ def test_pull_themes_path_traversal_blocked(tmp_path):
     mock_client.get_themes.return_value = [THEME_1]
     mock_client.client.export_zip.return_value = buf
 
-    with (
-        patch("sup.config.settings.SupContext") as MockCtx,
-        patch("sup.clients.superset.SupSupersetClient") as MockClient,
-    ):
-        ctx_instance = MockCtx.return_value
-        ctx_instance.get_assets_folder.return_value = str(tmp_path)
-        MockClient.from_context.return_value = mock_client
+    with patch("sup.config.settings.SupContext") as MockCtx:
+        with patch("sup.clients.superset.SupSupersetClient") as MockClient:
+            ctx_instance = MockCtx.return_value
+            ctx_instance.get_assets_folder.return_value = str(tmp_path)
+            MockClient.from_context.return_value = mock_client
 
-        result = runner.invoke(app, ["pull", "--output", str(tmp_path), "--overwrite"])
+            result = runner.invoke(app, ["pull", "--output", str(tmp_path), "--overwrite"])
 
     assert result.exit_code == 1
 
@@ -319,12 +297,10 @@ def test_push_themes_from_yaml_file(tmp_path):
     mock_client = MagicMock()
     mock_client.client.import_zip.return_value = True
 
-    with (
-        patch("sup.config.settings.SupContext"),
-        patch("sup.clients.superset.SupSupersetClient") as MockClient,
-    ):
-        MockClient.from_context.return_value = mock_client
-        result = runner.invoke(app, ["push", str(theme_file)])
+    with patch("sup.config.settings.SupContext"):
+        with patch("sup.clients.superset.SupSupersetClient") as MockClient:
+            MockClient.from_context.return_value = mock_client
+            result = runner.invoke(app, ["push", str(theme_file)])
 
     assert result.exit_code == 0
     mock_client.client.import_zip.assert_called_once()
@@ -346,12 +322,10 @@ def test_push_themes_from_directory(tmp_path):
     mock_client = MagicMock()
     mock_client.client.import_zip.return_value = True
 
-    with (
-        patch("sup.config.settings.SupContext"),
-        patch("sup.clients.superset.SupSupersetClient") as MockClient,
-    ):
-        MockClient.from_context.return_value = mock_client
-        result = runner.invoke(app, ["push", str(tmp_path)])
+    with patch("sup.config.settings.SupContext"):
+        with patch("sup.clients.superset.SupSupersetClient") as MockClient:
+            MockClient.from_context.return_value = mock_client
+            result = runner.invoke(app, ["push", str(tmp_path)])
 
     assert result.exit_code == 0
     mock_client.client.import_zip.assert_called_once()
@@ -373,12 +347,10 @@ def test_push_themes_with_overwrite(tmp_path):
     mock_client = MagicMock()
     mock_client.client.import_zip.return_value = True
 
-    with (
-        patch("sup.config.settings.SupContext"),
-        patch("sup.clients.superset.SupSupersetClient") as MockClient,
-    ):
-        MockClient.from_context.return_value = mock_client
-        result = runner.invoke(app, ["push", str(theme_file), "--overwrite"])
+    with patch("sup.config.settings.SupContext"):
+        with patch("sup.clients.superset.SupSupersetClient") as MockClient:
+            MockClient.from_context.return_value = mock_client
+            result = runner.invoke(app, ["push", str(theme_file), "--overwrite"])
 
     assert result.exit_code == 0
     call_kwargs = mock_client.client.import_zip.call_args[1]
@@ -387,11 +359,9 @@ def test_push_themes_with_overwrite(tmp_path):
 
 def test_push_themes_path_not_found(tmp_path):
     """push exits with code 1 when path does not exist."""
-    with (
-        patch("sup.config.settings.SupContext"),
-        patch("sup.clients.superset.SupSupersetClient"),
-    ):
-        result = runner.invoke(app, ["push", str(tmp_path / "nonexistent.yaml")])
+    with patch("sup.config.settings.SupContext"):
+        with patch("sup.clients.superset.SupSupersetClient"):
+            result = runner.invoke(app, ["push", str(tmp_path / "nonexistent.yaml")])
 
     assert result.exit_code == 1
 
@@ -401,11 +371,9 @@ def test_push_themes_non_yaml_file(tmp_path):
     bad_file = tmp_path / "theme.json"
     bad_file.write_text("{}")
 
-    with (
-        patch("sup.config.settings.SupContext"),
-        patch("sup.clients.superset.SupSupersetClient"),
-    ):
-        result = runner.invoke(app, ["push", str(bad_file)])
+    with patch("sup.config.settings.SupContext"):
+        with patch("sup.clients.superset.SupSupersetClient"):
+            result = runner.invoke(app, ["push", str(bad_file)])
 
     assert result.exit_code == 1
 
@@ -417,12 +385,10 @@ def test_push_themes_empty_directory(tmp_path):
 
     mock_client = MagicMock()
 
-    with (
-        patch("sup.config.settings.SupContext"),
-        patch("sup.clients.superset.SupSupersetClient") as MockClient,
-    ):
-        MockClient.from_context.return_value = mock_client
-        result = runner.invoke(app, ["push", str(empty_dir)])
+    with patch("sup.config.settings.SupContext"):
+        with patch("sup.clients.superset.SupSupersetClient") as MockClient:
+            MockClient.from_context.return_value = mock_client
+            result = runner.invoke(app, ["push", str(empty_dir)])
 
     assert result.exit_code == 0
     mock_client.client.import_zip.assert_not_called()
@@ -436,12 +402,10 @@ def test_push_themes_error_exits_nonzero(tmp_path):
     mock_client = MagicMock()
     mock_client.client.import_zip.side_effect = RuntimeError("server error")
 
-    with (
-        patch("sup.config.settings.SupContext"),
-        patch("sup.clients.superset.SupSupersetClient") as MockClient,
-    ):
-        MockClient.from_context.return_value = mock_client
-        result = runner.invoke(app, ["push", str(theme_file)])
+    with patch("sup.config.settings.SupContext"):
+        with patch("sup.clients.superset.SupSupersetClient") as MockClient:
+            MockClient.from_context.return_value = mock_client
+            result = runner.invoke(app, ["push", str(theme_file)])
 
     assert result.exit_code == 1
 

@@ -112,11 +112,11 @@ def list_themes(
                 except Exception:
                     pass
 
-            if limit_filter and not page_size_filter:
-                themes = themes[:limit_filter]
-
             if offset_filter:
                 themes = themes[offset_filter:]
+
+            if limit_filter and not page_size_filter:
+                themes = themes[:limit_filter]
 
             if sp:
                 sp.text = f"Found {len(themes)} themes"
@@ -166,10 +166,6 @@ def pull_themes(
     overwrite: Annotated[
         bool,
         typer.Option("--overwrite", help="Overwrite existing files"),
-    ] = False,
-    force: Annotated[
-        bool,
-        typer.Option("--force", "-f", help="Skip confirmation prompts"),
     ] = False,
     workspace_id: Annotated[
         Optional[int],
@@ -248,7 +244,13 @@ def pull_themes(
         zip_buffer = client.client.export_zip("theme", theme_ids)
 
         with ZipFile(zip_buffer) as bundle:
-            contents = {remove_root(name): bundle.read(name).decode() for name in bundle.namelist()}
+            try:
+                contents = {
+                    remove_root(name): bundle.read(name).decode("utf-8")
+                    for name in bundle.namelist()
+                }
+            except UnicodeDecodeError as exc:
+                raise ValueError(f"Non-UTF-8 content in theme export: {exc}") from exc
 
         files_written = 0
         resolved_base = output_path.resolve()
@@ -296,10 +298,6 @@ def push_themes(
         bool,
         typer.Option("--overwrite", help="Overwrite existing themes"),
     ] = False,
-    force: Annotated[
-        bool,
-        typer.Option("--force", "-f", help="Skip confirmation prompts"),
-    ] = False,
     workspace_id: Annotated[
         Optional[int],
         typer.Option("--workspace-id", "-w", help="Workspace ID"),
@@ -318,7 +316,7 @@ def push_themes(
     Examples:
         sup theme push ./assets/themes/my_theme.yaml
         sup theme push ./assets/themes/ --overwrite
-        sup theme push ./assets/ --force
+        sup theme push ./assets/
     """
     import datetime
     import io

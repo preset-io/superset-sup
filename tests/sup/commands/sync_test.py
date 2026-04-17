@@ -1583,9 +1583,7 @@ class TestThemeSyncPull:
     @patch("sup.config.settings.SupContext")
     @patch("sup.clients.superset.SupSupersetClient")
     @patch("preset_cli.cli.superset.export.export_resource")
-    def test_theme_pull_non_utf8_raises(
-        self, mock_export, mock_client_cls, mock_ctx_cls, tmp_path
-    ):
+    def test_theme_pull_non_utf8_raises(self, mock_export, mock_client_cls, mock_ctx_cls, tmp_path):
         """Non-UTF-8 content in a theme ZIP entry raises ValueError."""
         import io
         from zipfile import ZipFile

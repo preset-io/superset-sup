@@ -475,12 +475,8 @@ def execute_pull(sync_config: SyncConfig, sync_path: Path, dry_run: bool, porcel
                         try:
                             content = bundle.read(name).decode("utf-8")
                         except UnicodeDecodeError as exc:
-                            raise ValueError(
-                                f"Non-UTF-8 content in theme export: {name}"
-                            ) from exc
-                        target.write_text(
-                            content, encoding="utf-8", newline=""
-                        )
+                            raise ValueError(f"Non-UTF-8 content in theme export: {name}") from exc
+                        target.write_text(content, encoding="utf-8", newline="")
             else:
                 # Use the legacy export_resource function with overwrite=True
                 export_resource(

@@ -318,9 +318,7 @@ SAVED_QUERY_TABLE_CONFIG = (
         "changed_on",
         "Modified",
         style="dim",
-        transform_func=lambda changed_on, _: (
-            changed_on.split("T")[0] if changed_on else "Unknown"
-        ),
+        transform_func=lambda changed_on, _: changed_on.split("T")[0] if changed_on else "Unknown",
     )
 )
 

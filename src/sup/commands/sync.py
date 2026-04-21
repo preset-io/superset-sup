@@ -246,7 +246,7 @@ def create_sync(
         assets_folder.mkdir(exist_ok=True)
 
         # Create subdirectories for assets
-        for asset_type in ["charts", "dashboards", "datasets", "databases"]:
+        for asset_type in ["charts", "dashboards", "datasets", "databases", "themes"]:
             (assets_folder / asset_type).mkdir(exist_ok=True)
 
         # Save configuration
@@ -363,7 +363,7 @@ def display_sync_summary(
     # Asset selection summary
     assets = sync_config.source.assets
     asset_summary = []
-    for asset_type in ["charts", "dashboards", "datasets", "databases"]:
+    for asset_type in ["charts", "dashboards", "datasets", "databases", "themes"]:
         asset_config = getattr(assets, asset_type)
         if asset_config:
             summary = f"{asset_type}: {asset_config.selection}"
@@ -394,7 +394,7 @@ def execute_pull(sync_config: SyncConfig, sync_path: Path, dry_run: bool, porcel
         # Show what would be pulled for each asset type
         asset_summary = []
         assets = sync_config.source.assets
-        for asset_type in ["databases", "datasets", "charts", "dashboards"]:
+        for asset_type in ["databases", "datasets", "charts", "dashboards", "themes"]:
             asset_config = getattr(assets, asset_type)
             if asset_config:
                 summary = f"{asset_type}: {asset_config.selection}"
@@ -428,7 +428,7 @@ def execute_pull(sync_config: SyncConfig, sync_path: Path, dry_run: bool, porcel
         assets = sync_config.source.assets
         total_files = 0
 
-        for asset_type in ["databases", "datasets", "charts", "dashboards"]:
+        for asset_type in ["databases", "datasets", "charts", "dashboards", "themes"]:
             asset_config = getattr(assets, asset_type)
             if not asset_config:
                 continue
@@ -456,17 +456,46 @@ def execute_pull(sync_config: SyncConfig, sync_path: Path, dry_run: bool, porcel
                     console.print(f"     No {asset_type} to pull")
                 continue
 
-            # Use the legacy export_resource function with overwrite=True
-            export_resource(
-                resource_name=asset_type.rstrip("s"),  # Remove plural: charts -> chart
-                requested_ids=requested_ids,
-                root=assets_path,
-                client=client.client,  # Use underlying SupersetClient
-                overwrite=True,  # Always overwrite in sync
-                disable_jinja_escaping=False,
-                skip_related=not asset_config.include_dependencies,
-                force_unix_eol=False,
-            )
+            if asset_type == "themes":
+                # Themes use export_zip directly (no legacy export_resource support)
+                from zipfile import ZipFile as _ZipFile
+
+                from sup.lib import remove_root, safe_extract_path
+
+                zip_buffer = client.client.export_zip("theme", list(requested_ids))
+
+                resolved_base = assets_path.resolve()
+                with _ZipFile(zip_buffer) as bundle:
+                    for name in bundle.namelist():
+                        if name.endswith("/"):
+                            continue  # skip directory entries
+                        rel = remove_root(name)
+                        # Only extract theme YAML files — skip metadata.yaml and
+                        # any other bundle-level files to avoid collisions with
+                        # metadata written by other asset types in the same sync run.
+                        from pathlib import Path as _Path
+
+                        if not _Path(rel).parts or _Path(rel).parts[0] != "themes":
+                            continue
+                        target = safe_extract_path(resolved_base, rel)
+                        target.parent.mkdir(parents=True, exist_ok=True)
+                        try:
+                            content = bundle.read(name).decode("utf-8")
+                        except UnicodeDecodeError as exc:
+                            raise ValueError(f"Non-UTF-8 content in theme export: {name}") from exc
+                        target.write_text(content, encoding="utf-8", newline="")
+            else:
+                # Use the legacy export_resource function with overwrite=True
+                export_resource(
+                    resource_name=asset_type.rstrip("s"),  # Remove plural: charts -> chart
+                    requested_ids=requested_ids,
+                    root=assets_path,
+                    client=client.client,  # Use underlying SupersetClient
+                    overwrite=True,  # Always overwrite in sync
+                    disable_jinja_escaping=False,
+                    skip_related=not asset_config.include_dependencies,
+                    force_unix_eol=False,
+                )
 
             total_files += len(requested_ids)
 
@@ -493,6 +522,7 @@ def execute_push(
     porcelain: bool,
 ) -> None:
     """Execute push operations to target workspaces."""
+    import logging
     from pathlib import Path as PathlibPath
 
     import yaml
@@ -507,6 +537,18 @@ def execute_push(
     )
     from sup.clients.superset import SupSupersetClient
     from sup.config.settings import SupContext
+
+    _logger = logging.getLogger(__name__)
+
+    # Warn if themes are configured — push doesn't support them yet
+    if sync_config.source.assets.themes:
+        msg = "Theme sync is pull-only for now; themes will be skipped during push."
+        _logger.warning(msg)
+        if not porcelain:
+            console.print(
+                f"{EMOJIS['warning']} {msg}",
+                style=RICH_STYLES["warning"],
+            )
 
     for target in targets:
         name_display = f" ({target.name})" if target.name else ""
@@ -559,6 +601,11 @@ def execute_push(
                 elif is_yaml_config(relative_path):
                     # Skip metadata.yaml and tags.yaml - they'll be generated by import_resources
                     if path_name.name in ("metadata.yaml", "tags.yaml"):
+                        continue
+
+                    # Skip theme files — push doesn't support themes yet
+                    # TODO(theme-push): remove when theme sync push is implemented
+                    if "themes" in relative_path.parts:
                         continue
 
                     # Render YAML with Jinja context

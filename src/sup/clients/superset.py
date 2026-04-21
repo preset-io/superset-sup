@@ -591,6 +591,79 @@ class SupSupersetClient:
             )
             raise
 
+    def get_themes(
+        self,
+        silent: bool = False,
+        limit: Optional[int] = None,
+        page: int = 0,
+        page_size: int = 100,
+        text_search: Optional[str] = None,
+    ) -> List[Dict[str, Any]]:
+        """Get themes with pagination and optional search.
+
+        ``limit`` caps the total number of results returned across all pages.
+        ``page_size`` controls how many results are requested per API call
+        (default 100).  Pass ``page`` to start from a specific page (0-indexed).
+        """
+        try:
+            import prison
+
+            from preset_cli.lib import validate_response
+
+            all_themes: List[Dict[str, Any]] = []
+            current_page = page
+
+            while True:
+                query_params: Dict[str, Any] = {
+                    "filters": [],
+                    "order_column": "changed_on_delta_humanized",
+                    "order_direction": "desc",
+                    "page": current_page,
+                    "page_size": page_size,
+                }
+                if text_search:
+                    query_params["filters"].append(
+                        {
+                            "col": "theme_name",
+                            "opr": "ThemeAllText",
+                            "value": text_search,
+                        }
+                    )
+
+                query = prison.dumps(query_params)
+                url = self.client.baseurl / "api/v1/theme/" % {"q": query}
+                response = self.client.session.get(url)
+                validate_response(response)
+
+                batch = response.json()["result"]
+                all_themes.extend(batch)
+
+                # Stop when we reach the last page (fewer results than page_size),
+                # or when we already have enough results to satisfy the limit.
+                if len(batch) < page_size:
+                    break
+                if limit is not None and len(all_themes) >= limit:
+                    break
+
+                current_page += 1
+
+            if limit is not None:
+                all_themes = all_themes[:limit]
+
+            if not silent:
+                console.print(
+                    f"Found {len(all_themes)} themes",
+                    style=RICH_STYLES["dim"],
+                )
+            return all_themes
+        except Exception as e:
+            if not silent:
+                console.print(
+                    f"{EMOJIS['error']} Failed to fetch themes: {e}",
+                    style=RICH_STYLES["error"],
+                )
+            return []
+
     def display_users_table(self, users: List[Dict[str, Any]]) -> None:
         """Display users in a beautiful Rich table."""
         if not users:

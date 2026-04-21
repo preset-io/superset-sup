@@ -53,6 +53,7 @@ def _make_sync_config(
         assets.dashboards = None
         assets.datasets = None
         assets.databases = None
+        assets.themes = None
     cfg.source.assets = assets
     cfg.targets = targets or [_make_target()]
     cfg.target_defaults = target_defaults or MagicMock()
@@ -465,6 +466,7 @@ class TestDisplaySyncSummary:
         assets.dashboards = None
         assets.datasets = None
         assets.databases = None
+        assets.themes = None
         cfg = _make_sync_config(assets=assets)
         targets = [_make_target(name="staging")]
         display_sync_summary(cfg, targets, False, False, False, Path("/tmp/s"))
@@ -487,6 +489,7 @@ class TestDisplaySyncSummary:
         assets.dashboards = None
         assets.datasets = None
         assets.databases = None
+        assets.themes = None
         cfg = _make_sync_config(assets=assets)
         display_sync_summary(cfg, [], False, False, False, Path("/tmp/s"))
         calls = [str(c) for c in mock_console.print.call_args_list]
@@ -506,6 +509,7 @@ class TestExecutePull:
         assets.dashboards = None
         assets.datasets = None
         assets.databases = None
+        assets.themes = None
         cfg = _make_sync_config(assets=assets)
 
         execute_pull(cfg, Path("/tmp/s"), dry_run=True, porcelain=False)
@@ -520,6 +524,7 @@ class TestExecutePull:
         assets.dashboards = None
         assets.datasets = None
         assets.databases = None
+        assets.themes = None
         cfg = _make_sync_config(assets=assets)
 
         execute_pull(cfg, Path("/tmp/s"), dry_run=True, porcelain=False)
@@ -534,6 +539,7 @@ class TestExecutePull:
         assets.dashboards = None
         assets.datasets = None
         assets.databases = None
+        assets.themes = None
         cfg = _make_sync_config(assets=assets)
 
         execute_pull(cfg, Path("/tmp/s"), dry_run=True, porcelain=True)
@@ -553,6 +559,7 @@ class TestExecutePull:
         assets.dashboards = None
         assets.datasets = None
         assets.databases = None
+        assets.themes = None
         cfg = _make_sync_config(assets=assets)
         cfg.assets_folder.return_value = tmp_path / "assets"
 
@@ -573,6 +580,7 @@ class TestExecutePull:
         assets.dashboards = None
         assets.datasets = None
         assets.databases = None
+        assets.themes = None
         cfg = _make_sync_config(assets=assets)
         cfg.assets_folder.return_value = tmp_path / "assets"
 
@@ -595,6 +603,7 @@ class TestExecutePull:
         assets.dashboards = None
         assets.datasets = None
         assets.databases = None
+        assets.themes = None
         cfg = _make_sync_config(assets=assets)
         cfg.assets_folder.return_value = tmp_path / "assets"
 
@@ -614,6 +623,7 @@ class TestExecutePull:
         assets.dashboards = None
         assets.datasets = None
         assets.databases = None
+        assets.themes = None
         cfg = _make_sync_config(assets=assets)
         cfg.assets_folder.return_value = tmp_path / "assets"
 
@@ -633,6 +643,7 @@ class TestExecutePull:
         assets.dashboards = None
         assets.datasets = None
         assets.databases = None
+        assets.themes = None
         cfg = _make_sync_config(assets=assets)
         cfg.assets_folder.return_value = tmp_path / "assets"
 
@@ -652,6 +663,7 @@ class TestExecutePull:
         assets.dashboards = None
         assets.datasets = None
         assets.databases = None
+        assets.themes = None
         cfg = _make_sync_config(assets=assets)
         cfg.assets_folder.return_value = tmp_path / "assets"
 
@@ -668,6 +680,7 @@ class TestExecutePull:
         assets.dashboards = None
         assets.datasets = None
         assets.databases = None
+        assets.themes = None
         cfg = _make_sync_config(assets=assets)
         cfg.assets_folder.return_value = tmp_path / "assets"
 
@@ -684,6 +697,7 @@ class TestExecutePull:
         assets.dashboards = None
         assets.datasets = None
         assets.databases = None
+        assets.themes = None
         cfg = _make_sync_config(assets=assets)
         cfg.assets_folder.return_value = tmp_path / "assets"
 
@@ -705,6 +719,7 @@ class TestExecutePull:
         assets.dashboards = None
         assets.datasets = None
         assets.databases = None
+        assets.themes = None
         cfg = _make_sync_config(assets=assets)
         cfg.assets_folder.return_value = tmp_path / "assets"
 
@@ -730,6 +745,7 @@ class TestExecutePull:
         assets.dashboards = None
         assets.datasets = None
         assets.databases = None
+        assets.themes = None
         cfg = _make_sync_config(assets=assets)
         cfg.assets_folder.return_value = tmp_path / "assets"
 
@@ -744,6 +760,7 @@ class TestExecutePull:
         assets.dashboards = None
         assets.datasets = None
         assets.databases = None
+        assets.themes = None
         cfg = _make_sync_config(assets=assets)
 
         execute_pull(cfg, Path("/tmp/s"), dry_run=True, porcelain=False)
@@ -1422,3 +1439,252 @@ class TestExecutePush:
         # Verify stdout/stderr are restored
         assert sys.stdout is original_stdout
         assert sys.stderr is original_stderr
+
+
+# ---------------------------------------------------------------------------
+# Theme sync pull path
+# ---------------------------------------------------------------------------
+
+
+class TestThemeSyncPull:
+    """Tests for the theme-specific branch in execute_pull."""
+
+    @staticmethod
+    def _make_theme_zip(themes):
+        """Build a minimal Superset theme export ZIP."""
+        import io
+        from zipfile import ZipFile
+
+        import yaml
+
+        buf = io.BytesIO()
+        with ZipFile(buf, "w") as zf:
+            for t in themes:
+                name = t["theme_name"].replace(" ", "_")
+                zf.writestr(
+                    f"bundle/themes/{name}.yaml",
+                    yaml.safe_dump({"theme_name": t["theme_name"]}),
+                )
+            zf.writestr("bundle/metadata.yaml", yaml.safe_dump({"version": "1.0.0"}))
+        buf.seek(0)
+        return buf
+
+    @patch("sup.config.settings.SupContext")
+    @patch("sup.clients.superset.SupSupersetClient")
+    @patch("preset_cli.cli.superset.export.export_resource")
+    def test_theme_pull_all(self, mock_export, mock_client_cls, mock_ctx_cls, tmp_path):
+        """Themes with selection=all are pulled via export_zip."""
+        mock_client = MagicMock()
+        mock_client.client.get_resources.return_value = [{"id": 10}, {"id": 20}]
+        mock_client.client.export_zip.return_value = self._make_theme_zip(
+            [{"theme_name": "Dark"}, {"theme_name": "Light"}]
+        )
+        mock_client_cls.from_context.return_value = mock_client
+
+        assets = MagicMock()
+        assets.charts = None
+        assets.dashboards = None
+        assets.datasets = None
+        assets.databases = None
+        assets.themes = _make_asset_selection(selection="all")
+        cfg = _make_sync_config(assets=assets)
+        cfg.assets_folder.return_value = tmp_path / "assets"
+
+        execute_pull(cfg, tmp_path, dry_run=False, porcelain=False)
+
+        # Should NOT use export_resource for themes
+        mock_export.assert_not_called()
+        # Should use export_zip instead
+        mock_client.client.export_zip.assert_called_once_with("theme", [10, 20])
+        # Verify files were written
+        themes_dir = tmp_path / "assets" / "themes"
+        assert themes_dir.exists()
+        assert (themes_dir / "Dark.yaml").exists()
+        assert (themes_dir / "Light.yaml").exists()
+
+    @patch("sup.config.settings.SupContext")
+    @patch("sup.clients.superset.SupSupersetClient")
+    @patch("preset_cli.cli.superset.export.export_resource")
+    def test_theme_pull_ids(self, mock_export, mock_client_cls, mock_ctx_cls, tmp_path):
+        """Themes with selection=ids passes the correct IDs to export_zip."""
+        mock_client = MagicMock()
+        mock_client.client.export_zip.return_value = self._make_theme_zip(
+            [{"theme_name": "Custom"}]
+        )
+        mock_client_cls.from_context.return_value = mock_client
+
+        assets = MagicMock()
+        assets.charts = None
+        assets.dashboards = None
+        assets.datasets = None
+        assets.databases = None
+        assets.themes = _make_asset_selection(selection="ids", ids=[5])
+        cfg = _make_sync_config(assets=assets)
+        cfg.assets_folder.return_value = tmp_path / "assets"
+
+        execute_pull(cfg, tmp_path, dry_run=False, porcelain=False)
+
+        mock_client.client.export_zip.assert_called_once_with("theme", [5])
+
+    @patch("sup.config.settings.SupContext")
+    @patch("sup.clients.superset.SupSupersetClient")
+    @patch("preset_cli.cli.superset.export.export_resource")
+    def test_theme_pull_empty_ids(self, mock_export, mock_client_cls, mock_ctx_cls, tmp_path):
+        """Themes with empty ID list skips export_zip."""
+        mock_client = MagicMock()
+        mock_client.client.get_resources.return_value = []
+        mock_client_cls.from_context.return_value = mock_client
+
+        assets = MagicMock()
+        assets.charts = None
+        assets.dashboards = None
+        assets.datasets = None
+        assets.databases = None
+        assets.themes = _make_asset_selection(selection="all")
+        cfg = _make_sync_config(assets=assets)
+        cfg.assets_folder.return_value = tmp_path / "assets"
+
+        execute_pull(cfg, tmp_path, dry_run=False, porcelain=False)
+
+        mock_client.client.export_zip.assert_not_called()
+
+    @patch("sup.config.settings.SupContext")
+    @patch("sup.clients.superset.SupSupersetClient")
+    @patch("preset_cli.cli.superset.export.export_resource")
+    def test_theme_pull_path_traversal_blocked(
+        self, mock_export, mock_client_cls, mock_ctx_cls, tmp_path
+    ):
+        """Themes with path-traversal ZIP entries (rooted under themes/) raise ValueError.
+
+        The entry must pass the themes/-prefix filter to reach safe_extract_path.
+        Non-themes entries are silently skipped rather than raising.
+        """
+        import io
+        from zipfile import ZipFile
+
+        buf = io.BytesIO()
+        with ZipFile(buf, "w") as zf:
+            # Must be rooted under bundle/themes/ to pass the filter;
+            # the traversal then escapes the assets directory.
+            zf.writestr("bundle/themes/../../../etc/passwd", "evil")
+        buf.seek(0)
+
+        mock_client = MagicMock()
+        mock_client.client.get_resources.return_value = [{"id": 1}]
+        mock_client.client.export_zip.return_value = buf
+        mock_client_cls.from_context.return_value = mock_client
+
+        assets = MagicMock()
+        assets.charts = None
+        assets.dashboards = None
+        assets.datasets = None
+        assets.databases = None
+        assets.themes = _make_asset_selection(selection="all")
+        cfg = _make_sync_config(assets=assets)
+        cfg.assets_folder.return_value = tmp_path / "assets"
+
+        with pytest.raises(ValueError, match="Path traversal detected"):
+            execute_pull(cfg, tmp_path, dry_run=False, porcelain=False)
+
+    @patch("sup.config.settings.SupContext")
+    @patch("sup.clients.superset.SupSupersetClient")
+    @patch("preset_cli.cli.superset.export.export_resource")
+    def test_theme_pull_non_utf8_raises(self, mock_export, mock_client_cls, mock_ctx_cls, tmp_path):
+        """Non-UTF-8 content in a theme ZIP entry raises ValueError."""
+        import io
+        from zipfile import ZipFile
+
+        buf = io.BytesIO()
+        with ZipFile(buf, "w") as zf:
+            zf.writestr("bundle/themes/bad.yaml", b"\xff\xfe not valid utf-8")
+        buf.seek(0)
+
+        mock_client = MagicMock()
+        mock_client.client.get_resources.return_value = [{"id": 1}]
+        mock_client.client.export_zip.return_value = buf
+        mock_client_cls.from_context.return_value = mock_client
+
+        assets = MagicMock()
+        assets.charts = None
+        assets.dashboards = None
+        assets.datasets = None
+        assets.databases = None
+        assets.themes = _make_asset_selection(selection="all")
+        cfg = _make_sync_config(assets=assets)
+        cfg.assets_folder.return_value = tmp_path / "assets"
+
+        with pytest.raises(ValueError, match="Non-UTF-8 content in theme export"):
+            execute_pull(cfg, tmp_path, dry_run=False, porcelain=False)
+
+    @patch("sup.commands.sync.console")
+    def test_theme_pull_dry_run(self, mock_console):
+        """Dry run with themes shows preview."""
+        assets = MagicMock()
+        assets.charts = None
+        assets.dashboards = None
+        assets.datasets = None
+        assets.databases = None
+        assets.themes = _make_asset_selection(selection="all")
+        cfg = _make_sync_config(assets=assets)
+
+        execute_pull(cfg, Path("/tmp/s"), dry_run=True, porcelain=False)
+        calls = [str(c) for c in mock_console.print.call_args_list]
+        assert any("themes" in c for c in calls)
+
+    @patch("sup.commands.sync.console")
+    def test_push_warns_about_themes(self, mock_console):
+        """execute_push warns when themes are configured."""
+        assets = MagicMock()
+        assets.charts = None
+        assets.dashboards = None
+        assets.datasets = None
+        assets.databases = None
+        assets.themes = _make_asset_selection(selection="all")
+        cfg = _make_sync_config(assets=assets)
+        target = _make_target()
+
+        execute_push(cfg, [target], Path("/tmp/s"), dry_run=True, porcelain=False)
+        calls = [str(c) for c in mock_console.print.call_args_list]
+        assert any("pull-only" in c for c in calls)
+
+    @patch("preset_cli.cli.superset.sync.native.command.raise_helper")
+    @patch("preset_cli.cli.superset.sync.native.command.load_user_modules")
+    @patch("preset_cli.cli.superset.sync.native.command.render_yaml")
+    @patch("preset_cli.cli.superset.sync.native.command.is_yaml_config")
+    @patch("preset_cli.cli.superset.sync.native.command.import_resources_individually")
+    @patch("preset_cli.cli.superset.sync.native.command.ResourceType")
+    @patch("sup.clients.superset.SupSupersetClient")
+    @patch("sup.config.settings.SupContext")
+    def test_push_skips_theme_yaml_files(
+        self,
+        mock_ctx,
+        mock_client_cls,
+        mock_rt,
+        mock_import,
+        mock_is_yaml,
+        mock_render,
+        mock_load,
+        mock_raise,
+        tmp_path,
+    ):
+        """Theme YAML files in assets/themes/ are skipped during push."""
+        mock_client = MagicMock()
+        mock_client.client.baseurl = "https://test.preset.io"
+        mock_client_cls.from_context.return_value = mock_client
+
+        assets = tmp_path / "assets"
+        themes_dir = assets / "themes"
+        themes_dir.mkdir(parents=True)
+        (themes_dir / "dark.yaml").write_text("theme_name: Dark")
+
+        cfg = _make_sync_config()
+        cfg.assets_folder.return_value = assets
+        target = _make_target()
+
+        mock_is_yaml.return_value = True
+        mock_render.return_value = {"theme_name": "Dark"}
+        mock_rt.ASSET.metadata_type = "assets"
+
+        execute_push(cfg, [target], tmp_path, dry_run=False, porcelain=False)
+        # Theme files should be skipped, so import should not be called
+        mock_import.assert_not_called()

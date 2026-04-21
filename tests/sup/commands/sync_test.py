@@ -1554,13 +1554,19 @@ class TestThemeSyncPull:
     def test_theme_pull_path_traversal_blocked(
         self, mock_export, mock_client_cls, mock_ctx_cls, tmp_path
     ):
-        """Themes with path-traversal ZIP entries raise ValueError."""
+        """Themes with path-traversal ZIP entries (rooted under themes/) raise ValueError.
+
+        The entry must pass the themes/-prefix filter to reach safe_extract_path.
+        Non-themes entries are silently skipped rather than raising.
+        """
         import io
         from zipfile import ZipFile
 
         buf = io.BytesIO()
         with ZipFile(buf, "w") as zf:
-            zf.writestr("bundle/../../../etc/passwd", "evil")
+            # Must be rooted under bundle/themes/ to pass the filter;
+            # the traversal then escapes the assets directory.
+            zf.writestr("bundle/themes/../../../etc/passwd", "evil")
         buf.seek(0)
 
         mock_client = MagicMock()
@@ -1577,7 +1583,7 @@ class TestThemeSyncPull:
         cfg = _make_sync_config(assets=assets)
         cfg.assets_folder.return_value = tmp_path / "assets"
 
-        with pytest.raises(Exception):
+        with pytest.raises(ValueError, match="Path traversal detected"):
             execute_pull(cfg, tmp_path, dry_run=False, porcelain=False)
 
     @patch("sup.config.settings.SupContext")

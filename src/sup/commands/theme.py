@@ -88,9 +88,10 @@ def list_themes(
             if page_filter is not None and page_filter < 1:
                 raise ValueError("--page must be >= 1 (page numbers are 1-based)")
             page = (page_filter - 1) if page_filter is not None else 0
+            # Fetch without a limit cap so that --offset + --limit can be applied
+            # correctly client-side. page_size still controls the per-API-call count.
             themes = client.get_themes(
                 silent=True,
-                limit=limit_filter,
                 page=page,
                 page_size=page_size_filter or 100,
                 text_search=search_filter,
@@ -120,10 +121,11 @@ def list_themes(
                 except Exception:
                     pass
 
-            if offset_filter:
+            # Apply offset then limit client-side so both work correctly together
+            if offset_filter is not None:
                 themes = themes[offset_filter:]
 
-            if limit_filter and not page_size_filter:
+            if limit_filter is not None:
                 themes = themes[:limit_filter]
 
             if sp:

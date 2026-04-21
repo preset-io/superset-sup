@@ -596,20 +596,20 @@ class SupSupersetClient:
         silent: bool = False,
         limit: Optional[int] = None,
         page: int = 0,
+        page_size: int = 100,
         text_search: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
         """Get themes with pagination and optional search.
 
-        ``limit`` caps the total number of results returned; it does not
-        change the per-page fetch size.  Pass ``page`` to start from a
-        specific page (0-indexed).
+        ``limit`` caps the total number of results returned across all pages.
+        ``page_size`` controls how many results are requested per API call
+        (default 100).  Pass ``page`` to start from a specific page (0-indexed).
         """
         try:
             import prison
 
             from preset_cli.lib import validate_response
 
-            page_size = 100
             all_themes: List[Dict[str, Any]] = []
             current_page = page
 

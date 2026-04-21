@@ -85,11 +85,14 @@ def list_themes(
             ctx = SupContext()
             client = SupSupersetClient.from_context(ctx, workspace_id)
 
+            if page_filter is not None and page_filter < 1:
+                raise ValueError("--page must be >= 1 (page numbers are 1-based)")
             page = (page_filter - 1) if page_filter is not None else 0
             themes = client.get_themes(
                 silent=True,
-                limit=page_size_filter or limit_filter,
+                limit=limit_filter,
                 page=page,
+                page_size=page_size_filter or 100,
                 text_search=search_filter,
             )
 
@@ -258,6 +261,7 @@ def pull_themes(
                 contents = {
                     remove_root(name): bundle.read(name).decode("utf-8")
                     for name in bundle.namelist()
+                    if not name.endswith("/")  # skip directory entries
                 }
             except UnicodeDecodeError as exc:
                 raise ValueError(f"Non-UTF-8 content in theme export: {exc}") from exc

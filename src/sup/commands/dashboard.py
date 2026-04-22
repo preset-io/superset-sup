@@ -671,6 +671,7 @@ def push_dashboards(
     """
     from pathlib import Path
 
+    from preset_cli.cli.superset.lib import get_import_summary
     from preset_cli.cli.superset.sync.native.command import ResourceType, native
     from sup.config.settings import SupContext
 
@@ -927,17 +928,34 @@ def push_dashboards(
                 db_password=(),
             )
 
+        summary = get_import_summary()
         if not porcelain:
-            console.print(
-                f"{EMOJIS['success']} Dashboard import completed successfully",
-                style=RICH_STYLES["success"],
-            )
+            failed_entries = summary["failed"]
+            if failed_entries:
+                console.print(
+                    f"{EMOJIS['warning']} Dashboard import completed with "
+                    f"{len(failed_entries)} failure(s) "
+                    f"({len(summary['succeeded'])} succeeded):",
+                    style=RICH_STYLES["warning"],
+                )
+                for entry in failed_entries:
+                    try:
+                        path_str = str(Path(entry.get("path", "")).relative_to("bundle"))
+                    except ValueError:
+                        path_str = entry.get("path", "")
+                    error_msg = entry.get("error", "")
+                    line = f"  \u2717 {path_str}"
+                    if error_msg:
+                        line += f"\n    {error_msg}"
+                    console.print(line, style=RICH_STYLES["error"])
+            else:
+                console.print(
+                    f"{EMOJIS['success']} Dashboard import completed successfully",
+                    style=RICH_STYLES["success"],
+                )
 
-        # Clean up temporary directory
-        if temp_dir:
-            import shutil
-
-            shutil.rmtree(temp_dir, ignore_errors=True)
+        if summary["has_failures"]:
+            raise typer.Exit(1)
 
     except typer.Exit:
         # Re-raise typer exits (our own error handling)
@@ -949,6 +967,11 @@ def push_dashboards(
                 style=RICH_STYLES["error"],
             )
         raise typer.Exit(1)
+    finally:
+        if temp_dir:
+            import shutil
+
+            shutil.rmtree(temp_dir, ignore_errors=True)
 
 
 if __name__ == "__main__":

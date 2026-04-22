@@ -1377,6 +1377,7 @@ def test_native_split_continue(  # pylint: disable=too-many-locals
             "path": "bundle/dashboards/dashboard_deleted_chart.yaml",
             "uuid": "6",
             "status": "FAILED",
+            "error": "KeyError: None",
         },
         {
             "path": "bundle/dashboards/dashboard_deleted_dataset.yaml",
@@ -1550,6 +1551,53 @@ def test_import_resources_individually_checkpoint(
     assert not Path("progress.log").exists()
 
 
+def test_import_resources_individually_continue_prints_non_superset_errors(
+    mocker: MockerFixture,
+    fs: FakeFilesystem,  # pylint: disable=unused-argument
+) -> None:
+    """
+    Non-SupersetError exceptions during ``continue_on_error`` must be echoed
+    immediately (they are not printed by ``import_resources``) and stored in
+    the ``error`` field of the log entry.
+    """
+    client = mocker.MagicMock()
+    mocker.patch("preset_cli.cli.superset.lib.LOG_FILE_PATH", Path("progress.log"))
+    configs = {
+        Path("bundle/datasets/missing_dep.yaml"): {
+            "name": "broken",
+            "uuid": "uuid-broken",
+            "database_uuid": "db-uuid",
+        },
+    }
+    mocker.patch(
+        "preset_cli.cli.superset.sync.native.command.import_resources",
+        side_effect=KeyError("db-uuid"),
+    )
+
+    echo_calls: list[str] = []
+    mocker.patch(
+        "preset_cli.cli.superset.sync.native.command.click.echo",
+        side_effect=lambda msg="", **kw: echo_calls.append(str(msg)),
+    )
+
+    import_resources_individually(
+        configs,
+        client,
+        True,
+        ResourceType.ASSET,
+        continue_on_error=True,
+    )
+
+    assert any("missing_dep.yaml" in call for call in echo_calls), (
+        "Expected non-SupersetError failure to be echoed"
+    )
+    with open("progress.log", encoding="utf-8") as log:
+        content = yaml.load(log, Loader=yaml.SafeLoader)
+    failed = [e for e in content["assets"] if e["status"] == "FAILED"]
+    assert len(failed) == 1
+    assert "KeyError" in failed[0]["error"]
+
+
 def test_import_resources_individually_continue(
     mocker: MockerFixture,
     fs: FakeFilesystem,  # pylint: disable=unused-argument
@@ -1601,6 +1649,7 @@ def test_import_resources_individually_continue(
                 "path": "bundle/databases/gsheets_two.yaml",
                 "uuid": "uuid2",
                 "status": "FAILED",
+                "error": "Exception: An error occurred!",
             },
             {
                 "path": "bundle/databases/psql.yaml",

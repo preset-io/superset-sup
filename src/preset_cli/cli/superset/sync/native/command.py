@@ -386,10 +386,30 @@ def import_resources_individually(  # pylint: disable=too-many-locals
 
                     contents = {str(k): yaml.dump(v) for k, v in asset_configs.items()}
                     import_resources(contents, client, overwrite, asset_type)
-                except Exception:  # pylint: disable=broad-except
+                except Exception as ex:  # pylint: disable=broad-except
                     if not continue_on_error:
                         raise
+                    # SupersetError messages are already printed by import_resources
+                    # before re-raising.  All other exception types are silent by
+                    # default — surface them here so the operator can see why an
+                    # asset failed without having to dig through progress.log.
+                    if not isinstance(ex, SupersetError):
+                        click.echo(
+                            click.style(
+                                f"Failed to import {path.relative_to('bundle')}: "
+                                f"{type(ex).__name__}: {ex}",
+                                fg="bright_yellow",
+                            ),
+                        )
+                    # SupersetError.errors contains the actual messages; str() is empty.
+                    if isinstance(ex, SupersetError):
+                        error_detail = "; ".join(
+                            e["message"] for e in ex.errors if "message" in e
+                        )
+                    else:
+                        error_detail = str(ex)
                     asset_log["status"] = "FAILED"
+                    asset_log["error"] = f"{type(ex).__name__}: {error_detail}"
 
                 logs[LogType.ASSETS].append(asset_log)
                 assets_to_skip.add(path)

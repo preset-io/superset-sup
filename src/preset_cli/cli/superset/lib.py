@@ -63,6 +63,34 @@ def write_logs_to_file(log_file: IO[str], logs: Dict[LogType, Any]) -> None:
     log_file.truncate()
 
 
+def get_import_summary() -> Dict[str, Any]:
+    """
+    Read progress.log and return a summary of the last import operation.
+
+    When all assets succeed, preset-cli deletes progress.log, so the absence
+    of the file means a fully clean run.  When any asset fails with
+    ``continue_on_error=True``, the file persists and contains both SUCCESS
+    and FAILED entries.
+
+    Returns a dict with:
+        has_failures: bool
+        succeeded: list of asset path strings
+        failed: list of full log-entry dicts (path, uuid, status, optional error)
+    """
+    if not LOG_FILE_PATH.exists():
+        return {"has_failures": False, "succeeded": [], "failed": []}
+
+    with open(LOG_FILE_PATH, "r", encoding="utf-8") as log_file:
+        logs = yaml.load(log_file, Loader=yaml.SafeLoader) or {}
+
+    assets = logs.get("assets", [])
+    return {
+        "has_failures": any(e.get("status") == "FAILED" for e in assets),
+        "succeeded": [e["path"] for e in assets if e.get("status") == "SUCCESS"],
+        "failed": [e for e in assets if e.get("status") == "FAILED"],
+    }
+
+
 def clean_logs(log_type: LogType, logs: Dict[LogType, Any]) -> None:
     """
     Cleans the progress log file for the specific log type.

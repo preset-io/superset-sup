@@ -359,7 +359,7 @@ def pull_dashboards(
 
     from sup.clients.superset import SupSupersetClient
     from sup.config.settings import SupContext
-    from sup.lib import remove_root
+    from sup.lib import remove_root, safe_extract_path
     from sup.output.spinners import data_spinner
 
     # Resolve assets folder using config default
@@ -442,10 +442,12 @@ def pull_dashboards(
         zip_buffer = client.client.export_zip("dashboard", dashboard_ids)
 
         # Process ZIP contents
+        resolved_base = output_path.resolve()
         with ZipFile(zip_buffer) as bundle:
             contents = {
                 remove_root(file_name): bundle.read(file_name).decode()
                 for file_name in bundle.namelist()
+                if not file_name.endswith("/")  # skip directory entries
             }
 
         # Save files to filesystem
@@ -455,7 +457,7 @@ def pull_dashboards(
             if not should_include_dependencies and not file_name.startswith("dashboard"):
                 continue
 
-            target = output_path / file_name
+            target = safe_extract_path(resolved_base, file_name)
             if target.exists() and not overwrite:
                 if not porcelain:
                     console.print(

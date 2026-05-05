@@ -409,9 +409,12 @@ def execute_pull(sync_config: SyncConfig, sync_path: Path, dry_run: bool, porcel
         return
 
     # Import the export functionality from legacy CLI
+    from zipfile import ZipFile as _ZipFile
+
     from preset_cli.cli.superset.export import export_resource
     from sup.clients.superset import SupSupersetClient
     from sup.config.settings import SupContext
+    from sup.lib import remove_root, safe_extract_path
 
     try:
         # Get current context and client
@@ -458,10 +461,6 @@ def execute_pull(sync_config: SyncConfig, sync_path: Path, dry_run: bool, porcel
 
             if asset_type == "themes":
                 # Themes use export_zip directly (no legacy export_resource support)
-                from zipfile import ZipFile as _ZipFile
-
-                from sup.lib import remove_root, safe_extract_path
-
                 zip_buffer = client.client.export_zip("theme", list(requested_ids))
 
                 resolved_base = assets_path.resolve()
@@ -473,9 +472,7 @@ def execute_pull(sync_config: SyncConfig, sync_path: Path, dry_run: bool, porcel
                         # Only extract theme YAML files — skip metadata.yaml and
                         # any other bundle-level files to avoid collisions with
                         # metadata written by other asset types in the same sync run.
-                        from pathlib import Path as _Path
-
-                        if not _Path(rel).parts or _Path(rel).parts[0] != "themes":
+                        if not Path(rel).parts or Path(rel).parts[0] != "themes":
                             continue
                         target = safe_extract_path(resolved_base, rel)
                         target.parent.mkdir(parents=True, exist_ok=True)

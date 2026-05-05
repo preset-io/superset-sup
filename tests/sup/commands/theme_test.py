@@ -154,6 +154,38 @@ def test_list_themes_error_exits_nonzero():
     assert result.exit_code == 1
 
 
+def test_list_themes_yaml():
+    """list --yaml returns YAML output."""
+    mock_client = MagicMock()
+    mock_client.get_themes.return_value = [THEME_1]
+    mock_client.workspace_url = "https://example.preset.io/"
+
+    with patch("sup.config.settings.SupContext"):
+        with patch("sup.clients.superset.SupSupersetClient") as MockClient:
+            MockClient.from_context.return_value = mock_client
+            result = runner.invoke(app, ["list", "--yaml"])
+
+    assert result.exit_code == 0
+    parsed = yaml.safe_load(result.output)
+    assert isinstance(parsed, list)
+    assert parsed[0]["theme_name"] == "Dark Theme"
+
+
+def test_list_themes_mine_warns_on_failure():
+    """list --mine shows a warning when current-user lookup fails."""
+    mock_client = MagicMock()
+    mock_client.get_themes.return_value = [THEME_1, THEME_2]
+    mock_client.client.get_me.side_effect = RuntimeError("not authorized")
+
+    with patch("sup.config.settings.SupContext"):
+        with patch("sup.clients.superset.SupSupersetClient") as MockClient:
+            MockClient.from_context.return_value = mock_client
+            result = runner.invoke(app, ["list", "--mine"])
+
+    assert result.exit_code == 0
+    assert "Could not determine current user" in result.output
+
+
 # ---------------------------------------------------------------------------
 # sup theme pull
 # ---------------------------------------------------------------------------
@@ -175,8 +207,9 @@ def test_pull_themes_creates_yaml_files(tmp_path):
 
     assert result.exit_code == 0
     yaml_files = list(tmp_path.rglob("*.yaml"))
-    # Should have theme files (and optionally metadata)
-    assert len(yaml_files) >= 1
+    assert len(yaml_files) == 2
+    # metadata.yaml must NOT be written to the output directory
+    assert not (tmp_path / "metadata.yaml").exists()
 
 
 def test_pull_themes_filter_by_id(tmp_path):
@@ -255,10 +288,11 @@ def test_pull_themes_error_exits_nonzero(tmp_path):
 
 
 def test_pull_themes_path_traversal_blocked(tmp_path):
-    """pull rejects ZIP entries that escape the output directory."""
+    """pull rejects ZIP entries that escape the output directory via themes/ namespace."""
     buf = BytesIO()
     with ZipFile(buf, "w") as zf:
-        zf.writestr("bundle/../../../etc/passwd", "evil")
+        # Entry passes the themes/ filter but then attempts to escape the base dir
+        zf.writestr("bundle/themes/../../../etc/passwd", "evil")
     buf.seek(0)
 
     mock_client = MagicMock()

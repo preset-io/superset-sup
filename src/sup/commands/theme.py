@@ -95,6 +95,7 @@ def list_themes(
                 page=page,
                 page_size=page_size_filter or 100,
                 text_search=search_filter,
+                single_page=page_filter is not None,
             )
 
             if id_filter:
@@ -119,7 +120,12 @@ def list_themes(
                             if t.get("changed_by", {}).get("id") == current_user_id
                         ]
                 except Exception:
-                    pass
+                    if not porcelain:
+                        console.print(
+                            f"{EMOJIS['warning']} Could not determine current user;"
+                            " showing all themes",
+                            style=RICH_STYLES["warning"],
+                        )
 
             # Apply offset then limit client-side so both work correctly together
             if offset_filter is not None:
@@ -264,6 +270,7 @@ def pull_themes(
                     remove_root(name): bundle.read(name).decode("utf-8")
                     for name in bundle.namelist()
                     if not name.endswith("/")  # skip directory entries
+                    and remove_root(name).startswith("themes/")  # skip metadata.yaml
                 }
             except UnicodeDecodeError as exc:
                 raise ValueError(f"Non-UTF-8 content in theme export: {exc}") from exc

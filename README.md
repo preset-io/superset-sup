@@ -310,4 +310,4 @@ sup workspace use 123
 sup chart pull --mine
 ```
 
-<small>Apache, Apache Superset, Superset, and the Superset logo are trademarks of the Apache Software Foundation.</small>
+<small>Apache, Apache Superset, Superset, and the Superset logo are trademarks of the [Apache Software Foundation](https://www.apache.org/foundation/marks/).</small>

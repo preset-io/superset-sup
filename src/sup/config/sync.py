@@ -55,8 +55,12 @@ class AssetTypes(BaseModel):
         default=None,
         description="Database selection configuration",
     )
+    themes: Optional[AssetSelection] = Field(
+        default=None,
+        description="Theme selection configuration",
+    )
 
-    @validator("charts", "dashboards", "datasets", "databases", pre=True)
+    @validator("charts", "dashboards", "datasets", "databases", "themes", pre=True)
     def convert_none_to_default(cls, v):
         """Convert None to default AssetSelection for convenience."""
         if v is None:

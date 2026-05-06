@@ -1,4 +1,4 @@
-# 'sup! - Probably the Best Unofficial Apache Superset CLI 🚀
+# 'sup! - Probably the Best Unofficial [Apache Superset™](https://superset.apache.org) CLI 🚀
 
 <img width="453" height="162" alt="Image" src="https://github.com/user-attachments/assets/76433889-e9f9-4813-bfe3-9fd1e4bbe75f" />
 
@@ -309,3 +309,5 @@ preset-cli --workspaces=https://workspace.preset.io/ superset export
 sup workspace use 123
 sup chart pull --mine
 ```
+
+<small>Apache, Apache Superset, Superset, and the Superset logo are trademarks of the [Apache Software Foundation](https://www.apache.org/foundation/marks/).</small>

@@ -5,6 +5,11 @@ Changelog
 Next
 ====
 
+Version 0.1.4 - 2026-05-06
+===========================
+
+- Added theme management commands: ``sup theme pull``, ``sup theme push``, and ``sup theme sync`` for git-like theme lifecycle across workspaces (`#49 <https://github.com/preset-io/superset-sup/pull/49>`_).
+
 Version 0.1.3 - 2026-04-14
 ===========================
 

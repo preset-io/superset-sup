@@ -79,6 +79,17 @@ class SupPresetClient:
 
         return all_workspaces
 
+    def get_workspace_hostname(
+        self,
+        workspace_id: int,
+        silent: bool = False,
+    ) -> Optional[str]:
+        """Resolve the hostname for a workspace id, or None if not found."""
+        for workspace in self.get_all_workspaces(silent=silent):
+            if workspace.get("id") == workspace_id:
+                return workspace.get("hostname")
+        return None
+
     def display_workspaces_table(self, workspaces: List[Dict[str, Any]]) -> None:
         """Display workspaces in a beautiful Rich table."""
         if not workspaces:

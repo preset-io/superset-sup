@@ -223,22 +223,17 @@ def use_workspace(
             style=RICH_STYLES["info"],
         )
 
-        # Get workspace details to cache hostname
-        workspaces = client.get_all_workspaces(silent=True)
-        workspace_obj = None
-        for ws in workspaces:
-            if ws.get("id") == workspace_id:
-                workspace_obj = ws
-                break
-
-        if not workspace_obj:
+        # Resolve and cache the hostname (shared with `config set workspace-id`).
+        # `workspace use` validates the id exists, so treat an unresolved
+        # hostname as a hard error rather than the lenient offline fallback.
+        hostname = client.get_workspace_hostname(workspace_id, silent=True)
+        if not hostname:
             console.print(
                 f"{EMOJIS['error']} Workspace {workspace_id} not found",
                 style=RICH_STYLES["error"],
             )
             raise typer.Exit(1)
 
-        hostname = workspace_obj.get("hostname")
         ctx.set_workspace_context(workspace_id, hostname=hostname, persist=persist)
 
         if persist:

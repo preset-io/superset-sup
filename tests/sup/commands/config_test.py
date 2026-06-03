@@ -112,11 +112,12 @@ def _make_ctx():
 
 
 def test_set_workspace_id():
+    # config set resolves the hostname alongside the id via the shared helper.
     ctx = _make_ctx()
     with patch(CONSOLE_PATH), patch(CTX_PATH, return_value=ctx):
         result = runner.invoke(app, ["set", "workspace-id", "42"])
         assert result.exit_code == 0
-        ctx.set_workspace_context.assert_called_once_with(42, persist=False)
+        ctx.resolve_and_set_workspace.assert_called_once_with(42, persist=False)
 
 
 def test_set_workspace_id_global():
@@ -124,7 +125,7 @@ def test_set_workspace_id_global():
     with patch(CONSOLE_PATH), patch(CTX_PATH, return_value=ctx):
         result = runner.invoke(app, ["set", "workspace-id", "42", "--global"])
         assert result.exit_code == 0
-        ctx.set_workspace_context.assert_called_once_with(42, persist=True)
+        ctx.resolve_and_set_workspace.assert_called_once_with(42, persist=True)
 
 
 def test_set_target_workspace_id():
@@ -262,7 +263,7 @@ def test_set_value_error():
 
 def test_set_generic_exception():
     ctx = _make_ctx()
-    ctx.set_workspace_context.side_effect = RuntimeError("fail")
+    ctx.resolve_and_set_workspace.side_effect = RuntimeError("fail")
     with patch(CONSOLE_PATH), patch(CTX_PATH, return_value=ctx):
         result = runner.invoke(app, ["set", "workspace-id", "42"])
         assert result.exit_code == 1

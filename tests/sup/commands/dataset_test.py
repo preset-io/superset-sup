@@ -53,7 +53,7 @@ SAMPLE_DATASETS = [
     {
         "id": 1,
         "table_name": "sales",
-        "database": {"database_name": "main_db"},
+        "database": {"id": 1, "database_name": "main_db"},
         "schema": "public",
         "kind": "physical",
         "columns": [{"column_name": "id", "type": "INT", "description": ""}],
@@ -62,7 +62,7 @@ SAMPLE_DATASETS = [
     {
         "id": 2,
         "table_name": "users",
-        "database": {"database_name": "main_db"},
+        "database": {"id": 2, "database_name": "main_db"},
         "schema": "public",
         "kind": "physical",
         "columns": [],
@@ -174,6 +174,111 @@ class TestListDatasets:
 
         result = runner.invoke(app, ["list", "--porcelain"])
         assert result.exit_code == 1
+
+    @patch(PATCH_SPINNER)
+    @patch(PATCH_CLIENT)
+    @patch(PATCH_CTX)
+    def test_id_filter_server_side(self, mock_ctx_cls, mock_client_cls, mock_spinner):
+        """--id is pushed to the API as an eq filter with full pagination."""
+        cm, sp = _make_spinner_mock()
+        mock_spinner.return_value = cm
+        mock_ctx_cls.return_value = MagicMock()
+        client = MagicMock()
+        mock_client_cls.from_context.return_value = client
+        client.get_datasets.return_value = [SAMPLE_DATASETS[0]]
+
+        result = runner.invoke(app, ["list", "--id", "1", "--json"])
+        assert result.exit_code == 0
+        kwargs = client.get_datasets.call_args.kwargs
+        assert kwargs["filters"] == [{"col": "id", "opr": "eq", "value": 1}]
+        assert kwargs["fetch_all"] is True
+
+    @patch(PATCH_SPINNER)
+    @patch(PATCH_CLIENT)
+    @patch(PATCH_CTX)
+    def test_ids_filter_server_side(self, mock_ctx_cls, mock_client_cls, mock_spinner):
+        """--ids is pushed to the API as an in filter over the parsed id list."""
+        cm, sp = _make_spinner_mock()
+        mock_spinner.return_value = cm
+        mock_ctx_cls.return_value = MagicMock()
+        client = MagicMock()
+        mock_client_cls.from_context.return_value = client
+        client.get_datasets.return_value = SAMPLE_DATASETS
+
+        result = runner.invoke(app, ["list", "--ids", "1,2", "--json"])
+        assert result.exit_code == 0
+        kwargs = client.get_datasets.call_args.kwargs
+        assert kwargs["filters"] == [{"col": "id", "opr": "in", "value": [1, 2]}]
+        assert kwargs["fetch_all"] is True
+
+    @patch(PATCH_SPINNER)
+    @patch(PATCH_CLIENT)
+    @patch(PATCH_CTX)
+    def test_ids_filter_invalid_value(self, mock_ctx_cls, mock_client_cls, mock_spinner):
+        """Malformed --ids fails cleanly with a readable 'Invalid ID format' message."""
+        cm, sp = _make_spinner_mock()
+        mock_spinner.return_value = cm
+        mock_ctx_cls.return_value = MagicMock()
+        client = MagicMock()
+        mock_client_cls.from_context.return_value = client
+
+        result = runner.invoke(app, ["list", "--ids", "1,abc"])
+        assert result.exit_code == 1
+        assert "Invalid ID format" in result.output
+
+    @patch(PATCH_SPINNER)
+    @patch(PATCH_CLIENT)
+    @patch(PATCH_CTX)
+    def test_database_id_filter_server_side(self, mock_ctx_cls, mock_client_cls, mock_spinner):
+        """--database-id is pushed to the API as a rel_o_m filter on `database`."""
+        cm, sp = _make_spinner_mock()
+        mock_spinner.return_value = cm
+        mock_ctx_cls.return_value = MagicMock()
+        client = MagicMock()
+        mock_client_cls.from_context.return_value = client
+        client.get_datasets.return_value = [SAMPLE_DATASETS[0]]
+
+        result = runner.invoke(app, ["list", "--database-id", "1", "--json"])
+        assert result.exit_code == 0
+        kwargs = client.get_datasets.call_args.kwargs
+        assert kwargs["filters"] == [{"col": "database", "opr": "rel_o_m", "value": 1}]
+        assert kwargs["fetch_all"] is True
+
+    @patch(PATCH_SPINNER)
+    @patch(PATCH_CLIENT)
+    @patch(PATCH_CTX)
+    def test_no_filters_single_page(self, mock_ctx_cls, mock_client_cls, mock_spinner):
+        """Without filters, no server-side filters are sent and fetch_all stays off."""
+        cm, sp = _make_spinner_mock()
+        mock_spinner.return_value = cm
+        mock_ctx_cls.return_value = MagicMock()
+        client = MagicMock()
+        mock_client_cls.from_context.return_value = client
+        client.get_datasets.return_value = SAMPLE_DATASETS
+
+        result = runner.invoke(app, ["list", "--json"])
+        assert result.exit_code == 0
+        kwargs = client.get_datasets.call_args.kwargs
+        assert kwargs["filters"] == []
+        assert kwargs["fetch_all"] is False
+
+    @patch(PATCH_SPINNER)
+    @patch(PATCH_CLIENT)
+    @patch(PATCH_CTX)
+    def test_filter_with_limit(self, mock_ctx_cls, mock_client_cls, mock_spinner):
+        """Limit is applied after server-side filtering across the full result set."""
+        cm, sp = _make_spinner_mock()
+        mock_spinner.return_value = cm
+        mock_ctx_cls.return_value = MagicMock()
+        client = MagicMock()
+        mock_client_cls.from_context.return_value = client
+        # Server returns both rows for database 99; --limit 1 should trim to one
+        client.get_datasets.return_value = SAMPLE_DATASETS
+
+        result = runner.invoke(app, ["list", "--database-id", "99", "--limit", "1", "--json"])
+        assert result.exit_code == 0
+        parsed = json.loads(result.output)
+        assert len(parsed) == 1
 
 
 # ---------------------------------------------------------------------------

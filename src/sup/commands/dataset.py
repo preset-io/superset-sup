@@ -121,19 +121,39 @@ def list_datasets(
     from sup.output.spinners import data_spinner
 
     try:
-        # No complex filtering - just simple server-side search
+        # Build server-side filters so the API returns only matching datasets,
+        # paginated in full (avoids the single-page cap that would drop matches
+        # in large workspaces). Column/operator choices verified against the API:
+        #   id eq <n> | id in [<n>...] | database rel_o_m <db_id>
+        from sup.filters.base import UniversalFilters
 
-        # Get datasets from API with spinner (using server-side filtering for performance)
+        api_filters: List[Dict[str, Any]] = []
+        if id_filter:
+            api_filters.append({"col": "id", "opr": "eq", "value": id_filter})
+        elif ids_filter:
+            id_list = UniversalFilters.parse_ids(ids_filter)
+            api_filters.append({"col": "id", "opr": "in", "value": id_list})
+
+        if database_id is not None:
+            api_filters.append({"col": "database", "opr": "rel_o_m", "value": database_id})
+
+        # Get datasets from API with spinner (server-side filtering for performance)
         with data_spinner("datasets", silent=porcelain) as sp:
             ctx = SupContext()
             client = SupSupersetClient.from_context(ctx, workspace_id)
 
-            # Use server-side filtering only - no client-side nonsense
             datasets = client.get_datasets(
                 silent=True,
                 limit=limit_filter,
                 text_search=search_filter,  # Server-side table name search
+                filters=api_filters,
+                # When filtering, fetch every page so matches aren't capped to page 1
+                fetch_all=bool(api_filters),
             )
+
+            # Apply limit after server-side filtering (page-spanning result set)
+            if api_filters and limit_filter:
+                datasets = datasets[:limit_filter]
 
             # Update spinner with results
             if sp:

@@ -216,6 +216,7 @@ class TestUseWorkspace:
         client.get_all_workspaces.return_value = [
             {"id": 42, "hostname": "ws.preset.io"},
         ]
+        client.get_workspace_hostname.return_value = "ws.preset.io"
         ctx = _make_ctx()
         with patch(CONSOLE_PATH), patch(CTX_PATH, return_value=ctx), patch(CLIENT_PATH) as mock_cls:
             mock_cls.from_context.return_value = client
@@ -230,6 +231,7 @@ class TestUseWorkspace:
         client.get_all_workspaces.return_value = [
             {"id": 42, "hostname": "ws.preset.io"},
         ]
+        client.get_workspace_hostname.return_value = "ws.preset.io"
         ctx = _make_ctx()
         with patch(CONSOLE_PATH), patch(CTX_PATH, return_value=ctx), patch(CLIENT_PATH) as mock_cls:
             mock_cls.from_context.return_value = client
@@ -244,6 +246,7 @@ class TestUseWorkspace:
         client.get_all_workspaces.return_value = [
             {"id": 99, "hostname": "other.preset.io"},
         ]
+        client.get_workspace_hostname.return_value = None
         ctx = _make_ctx()
         with patch(CONSOLE_PATH), patch(CTX_PATH, return_value=ctx), patch(CLIENT_PATH) as mock_cls:
             mock_cls.from_context.return_value = client

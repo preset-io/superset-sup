@@ -284,15 +284,48 @@ class SupContext:
         hostname: Optional[str] = None,
         persist: bool = False,
     ) -> None:
-        """Set workspace context with optional hostname caching."""
+        """Set the active workspace and its cached hostname.
+
+        `hostname` is the cache of the host for `workspace_id`. Pass it when
+        known; pass None to invalidate the cache, in which case the Superset
+        client re-resolves it on its next use. Most callers should prefer
+        `resolve_and_set_workspace`, which fills the hostname automatically.
+        """
         if persist:
             self.global_config.current_workspace_id = workspace_id
             self.global_config.save_to_file()
         else:
             self.project_state.current_workspace_id = workspace_id
-            if hostname:
-                self.project_state.current_workspace_hostname = hostname
+            self.project_state.current_workspace_hostname = hostname
             self.project_state.save_to_file()
+
+    def resolve_and_set_workspace(
+        self,
+        workspace_id: int,
+        persist: bool = False,
+    ) -> Optional[str]:
+        """Set the active workspace, resolving and caching its hostname.
+
+        Looks the hostname up from the Preset API so the id and hostname cache
+        stay in sync. If the API is unreachable, falls back to clearing the
+        cache (hostname=None) — the Superset client re-resolves it lazily on
+        next use. Returns the resolved hostname, or None on fallback.
+
+        Shared by `sup workspace use` and `sup config set workspace-id`.
+        """
+        hostname = None
+        try:
+            # Deferred import: SupPresetClient imports this module.
+            from sup.clients.preset import SupPresetClient
+
+            client = SupPresetClient.from_context(self, silent=True)
+            hostname = client.get_workspace_hostname(workspace_id, silent=True)
+        except Exception:
+            # Offline / auth failure: fall back to clear-and-defer.
+            hostname = None
+
+        self.set_workspace_context(workspace_id, hostname=hostname, persist=persist)
+        return hostname
 
     def set_database_context(self, database_id: int, persist: bool = False) -> None:
         """Set database context."""

@@ -170,7 +170,9 @@ def set_config(
 
         # Handle different config keys
         if key == "workspace-id":
-            ctx.set_workspace_context(int(value), persist=global_config)
+            # Resolve the new workspace's hostname so the id and hostname cache
+            # stay in sync (falls back to clearing the cache if offline).
+            ctx.resolve_and_set_workspace(int(value), persist=global_config)
         elif key == "target-workspace-id":
             ctx.set_target_workspace_id(int(value), persist=global_config)
         elif key == "database-id":

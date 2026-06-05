@@ -1,6 +1,7 @@
 """Tests for SupSupersetClient.get_datasets server-side filtering & pagination."""
 
-from unittest.mock import MagicMock
+from contextlib import contextmanager
+from unittest.mock import MagicMock, patch
 
 import prison
 from yarl import URL
@@ -87,3 +88,86 @@ def test_error_returns_empty_list():
     client.client = inner
 
     assert client.get_datasets(silent=True) == []
+
+
+def _ctx_for_from_context(current_workspace_id):
+    """A SupContext mock for from_context with no cached hostname.
+
+    The active workspace is ``current_workspace_id`` and the hostname cache is
+    empty, forcing from_context to resolve the hostname via the Preset API.
+    """
+    ctx = MagicMock()
+    ctx.get_workspace_id.return_value = current_workspace_id
+    ctx.get_workspace_hostname.return_value = None
+    return ctx
+
+
+@contextmanager
+def _patched_from_context(workspaces):
+    """Patch the Preset/auth/client collaborators from_context resolves through.
+
+    ``workspaces`` is the list returned by get_all_workspaces (the hostname
+    resolution source).
+    """
+    preset_client = MagicMock()
+    preset_client.get_all_workspaces.return_value = workspaces
+
+    with patch(
+        "sup.clients.preset.SupPresetClient.from_context",
+        return_value=preset_client,
+    ), patch(
+        "sup.clients.superset.SupPresetAuth.from_sup_config",
+        return_value=MagicMock(),
+    ), patch(
+        "sup.clients.superset.SupersetClient",
+        return_value=MagicMock(),
+    ):
+        yield
+
+
+def test_from_context_scoped_workspace_id_does_not_persist():
+    """A --workspace-id filter pointing elsewhere must not touch state.yml.
+
+    Regression: passing a workspace id as a filter used to overwrite the
+    persistent current workspace via set_workspace_context.
+    """
+    ctx = _ctx_for_from_context(current_workspace_id=100)
+
+    with _patched_from_context([{"id": 200, "hostname": "ws200.example.com"}]):
+        client = SupSupersetClient.from_context(ctx, workspace_id=200)
+
+    assert client.workspace_url == "https://ws200.example.com/"
+    ctx.set_workspace_context.assert_not_called()
+
+
+def test_from_context_default_workspace_caches_hostname():
+    """Without an explicit id, the active workspace's hostname is cached."""
+    ctx = _ctx_for_from_context(current_workspace_id=100)
+
+    with _patched_from_context([{"id": 100, "hostname": "ws100.example.com"}]):
+        client = SupSupersetClient.from_context(ctx)
+
+    assert client.workspace_url == "https://ws100.example.com/"
+    ctx.set_workspace_context.assert_called_once_with(
+        100,
+        hostname="ws100.example.com",
+    )
+
+
+def test_from_context_explicit_active_workspace_id_caches_hostname():
+    """An explicit id equal to the active workspace still warms the cache.
+
+    Callers such as `sup sql` pre-resolve the workspace id and pass it
+    positionally even with no --workspace-id flag; that path must keep caching
+    the active workspace's hostname rather than re-hitting the Preset API.
+    """
+    ctx = _ctx_for_from_context(current_workspace_id=100)
+
+    with _patched_from_context([{"id": 100, "hostname": "ws100.example.com"}]):
+        client = SupSupersetClient.from_context(ctx, workspace_id=100)
+
+    assert client.workspace_url == "https://ws100.example.com/"
+    ctx.set_workspace_context.assert_called_once_with(
+        100,
+        hostname="ws100.example.com",
+    )

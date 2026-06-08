@@ -32,7 +32,14 @@ class SupSupersetClient:
         ctx: SupContext,
         workspace_id: Optional[int] = None,
     ) -> "SupSupersetClient":
-        """Create Superset client from sup configuration context."""
+        """Create Superset client from sup configuration context.
+
+        When ``workspace_id`` resolves to a workspace other than the persistent
+        active one (e.g. via a ``--workspace-id`` filter flag), it scopes this
+        client only and is never written back to the persistent state. The
+        active workspace in ``.sup/state.yml`` is changed solely by
+        ``sup workspace use`` / ``sup config set workspace-id``.
+        """
         # Get workspace ID from context if not provided
         if workspace_id is None:
             workspace_id = ctx.get_workspace_id()
@@ -86,8 +93,11 @@ class SupSupersetClient:
                 )
                 raise ValueError(f"No hostname for workspace {workspace_id}")
 
-            # Cache the hostname for future use
-            ctx.set_workspace_context(workspace_id, hostname=hostname)
+            # Cache the hostname for future use, but only when this IS the
+            # persistent active workspace. A scoped --workspace-id filter that
+            # points elsewhere must not be written back to .sup/state.yml.
+            if workspace_id == current_workspace_id:
+                ctx.set_workspace_context(workspace_id, hostname=hostname)
 
         workspace_url = f"https://{hostname}/"
 

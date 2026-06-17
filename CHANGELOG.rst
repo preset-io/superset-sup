@@ -5,6 +5,14 @@ Changelog
 Next
 ====
 
+Version 0.1.5 - 2026-06-17
+===========================
+
+- Scoped the ``--workspace-id`` filter so it no longer overwrites persistent workspace state (`#56 <https://github.com/preset-io/superset-sup/pull/56>`_).
+- Kept the workspace hostname in sync when switching workspaces, clearing stale hostnames (`#55 <https://github.com/preset-io/superset-sup/pull/55>`_).
+- Applied the ``--id``, ``--ids``, and ``--database-id`` filters in ``sup dataset list`` (`#54 <https://github.com/preset-io/superset-sup/pull/54>`_).
+- Updated the README to include an Apache Superset link in the first-use experience (`#52 <https://github.com/preset-io/superset-sup/pull/52>`_).
+
 Version 0.1.4 - 2026-05-06
 ===========================
 

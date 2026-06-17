@@ -5,8 +5,9 @@
 #    pip-compile --no-annotate dev-requirements.in
 #
 -e file:.
-aiohttp==3.8.3
-aiosignal==1.2.0
+aiohappyeyeballs==2.6.1
+aiohttp==3.12.14
+aiosignal==1.4.0
 annotated-types==0.7.0
 appdirs==1.4.4
 async-timeout==4.0.2
@@ -48,6 +49,7 @@ pluggy==1.0.0
 pre-commit==2.20.0
 prison==0.2.1
 prompt-toolkit==3.0.30
+propcache==0.4.1
 py==1.11.0
 pydantic==2.12.4
 pydantic-core==2.41.5
@@ -85,7 +87,7 @@ virtualenv==20.16.3
 wcwidth==0.2.5
 websockets==10.3
 wheel==0.37.1
-yarl==1.8.1
+yarl==1.22.0
 
 # The following packages are considered to be unsafe in a requirements file:
 # pip

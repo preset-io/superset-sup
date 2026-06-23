@@ -5,6 +5,12 @@ Changelog
 Next
 ====
 
+Version 0.1.6 - 2026-06-23
+===========================
+
+- Relaxed the SQLAlchemy pin to support SQLAlchemy 2.x and switched to ``URL.create`` (`#58 <https://github.com/preset-io/superset-sup/pull/58>`_).
+- Modernized the PyPI publish workflow to use OIDC trusted publishing and refreshed action versions (`#59 <https://github.com/preset-io/superset-sup/pull/59>`_).
+
 Version 0.1.5 - 2026-06-17
 ===========================
 

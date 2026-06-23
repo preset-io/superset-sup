@@ -61,7 +61,7 @@ def build_postgres_sqlalchemy_params(target: Dict[str, Any]) -> Dict[str, Any]:
 
     return {
         "sqlalchemy_uri": str(
-            URL(
+            URL.create(
                 drivername="postgresql+psycopg2",
                 username=username,
                 password=password,
@@ -91,7 +91,7 @@ def build_redshift_sqlalchemy_params(target: Dict[str, Any]) -> Dict[str, Any]:
 
     return {
         "sqlalchemy_uri": str(
-            URL(
+            URL.create(
                 drivername="redshift+psycopg2",
                 username=username,
                 password=password,
@@ -121,7 +121,7 @@ def build_bigquery_sqlalchemy_params(target: Dict[str, Any]) -> Dict[str, Any]:
     if "priority" in query:
         query["priority"] = query["priority"].upper()
     parameters["sqlalchemy_uri"] = str(
-        URL(
+        URL.create(
             drivername="bigquery",
             host=target["project"],
             database="",
@@ -155,7 +155,7 @@ def build_snowflake_sqlalchemy_params(target: Dict[str, Any]) -> Dict[str, Any]:
 
     parameters = {
         "sqlalchemy_uri": str(
-            URL(
+            URL.create(
                 drivername="snowflake",
                 username=username,
                 password=password,

@@ -34,6 +34,11 @@ def _make_ctx(**overrides):
     ctx.get_workspace_id.return_value = overrides.get("workspace_id", 123)
     ctx.get_target_workspace_id.return_value = overrides.get("target_workspace_id", None)
     ctx.get_database_id.return_value = overrides.get("database_id", None)
+    # Preset credentials are configured: workspace commands gate on these before
+    # falling back to self-hosted guidance.
+    ctx.get_preset_credentials.return_value = overrides.get(
+        "preset_credentials", ("token", "secret")
+    )
     return ctx
 
 

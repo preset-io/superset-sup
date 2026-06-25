@@ -31,7 +31,7 @@ def list_groups(
         Optional[str],
         typer.Option(
             "--instance",
-            help="Superset instance name (self-hosted). Use 'sup instance list' to see available instances.",
+            help="Superset instance name (self-hosted). Use 'sup instance list'.",
         ),
     ] = None,
     json_output: Annotated[bool, typer.Option("--json", help="Output as JSON")] = False,
@@ -156,7 +156,7 @@ def sync_groups(
         Optional[str],
         typer.Option(
             "--instance",
-            help="Superset instance name (self-hosted). Use 'sup instance list' to see available instances.",
+            help="Superset instance name (self-hosted). Use 'sup instance list'.",
         ),
     ] = None,
     dry_run: Annotated[

@@ -174,7 +174,7 @@ def sync_dbt_core(
         Optional[str],
         typer.Option(
             "--instance",
-            help="Superset instance name (self-hosted). Use 'sup instance list' to see available instances.",
+            help="Superset instance name (self-hosted). Use 'sup instance list'.",
         ),
     ] = None,
     workspace_id: Annotated[
@@ -393,7 +393,7 @@ def sync_dbt_cloud(
         Optional[str],
         typer.Option(
             "--instance",
-            help="Superset instance name (self-hosted). Use 'sup instance list' to see available instances.",
+            help="Superset instance name (self-hosted). Use 'sup instance list'.",
         ),
     ] = None,
     workspace_id: Annotated[

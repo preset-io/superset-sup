@@ -136,7 +136,10 @@ class SupersetInstanceConfig(BaseModel):
     )
     oauth_client_secret: Optional[str] = Field(
         default=None,
-        description="OAuth2 client secret (optional for interactive flow). Use environment variables: ${ENV:SUPERSET_OAUTH_SECRET}",
+        description=(
+            "OAuth2 client secret (optional for interactive flow). "
+            "Use environment variables: ${ENV:SUPERSET_OAUTH_SECRET}"
+        ),
     )
     oauth_username: Optional[str] = Field(
         default=None,

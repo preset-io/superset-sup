@@ -62,7 +62,7 @@ class Auth:  # pylint: disable=too-few-public-methods
 
         self.session.headers.update(self.get_headers())
         r.request.headers.update(self.get_headers())
-        
+
         try:
             # Retry without triggering hooks again
             retry_response = self.session.send(r.request, verify=False)

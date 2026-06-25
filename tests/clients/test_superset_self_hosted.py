@@ -1,7 +1,8 @@
 """Tests for self-hosted Superset client path."""
 
-import pytest
 from unittest.mock import MagicMock, patch
+
+import pytest
 
 from sup.clients.superset import SupSupersetClient
 from sup.config.settings import SupContext, SupersetInstanceConfig
@@ -47,9 +48,7 @@ def test_from_context_falls_back_to_workspace(context_with_instance):
     context_with_instance.get_instance_name.return_value = None
     context_with_instance.get_workspace_id.return_value = 123
 
-    with patch.object(
-        SupSupersetClient, "_from_preset_workspace"
-    ) as mock_preset:
+    with patch.object(SupSupersetClient, "_from_preset_workspace") as mock_preset:
         mock_preset.return_value = MagicMock(is_self_hosted=False)
 
         SupSupersetClient.from_context(context_with_instance)
@@ -106,9 +105,7 @@ def test_from_context_workspace_parameter_override(context_with_instance):
     """Test workspace_id parameter overrides instance in context."""
     context_with_instance.get_instance_name.return_value = "test-instance"
 
-    with patch.object(
-        SupSupersetClient, "_from_preset_workspace"
-    ) as mock_preset:
+    with patch.object(SupSupersetClient, "_from_preset_workspace") as mock_preset:
         mock_preset.return_value = MagicMock(is_self_hosted=False)
 
         SupSupersetClient.from_context(

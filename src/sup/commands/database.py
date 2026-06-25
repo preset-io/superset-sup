@@ -24,7 +24,7 @@ def list_databases(
         Optional[str],
         typer.Option(
             "--instance",
-            help="Superset instance name (self-hosted). Use 'sup instance list' to see available instances.",
+            help="Superset instance name (self-hosted). Use 'sup instance list'.",
         ),
     ] = None,
     workspace_id: Annotated[
@@ -150,7 +150,7 @@ def database_info(
         Optional[str],
         typer.Option(
             "--instance",
-            help="Superset instance name (self-hosted). Use 'sup instance list' to see available instances.",
+            help="Superset instance name (self-hosted). Use 'sup instance list'.",
         ),
     ] = None,
     workspace_id: Annotated[

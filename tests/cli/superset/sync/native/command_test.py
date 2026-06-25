@@ -1588,9 +1588,9 @@ def test_import_resources_individually_continue_prints_non_superset_errors(
         continue_on_error=True,
     )
 
-    assert any("missing_dep.yaml" in call for call in echo_calls), (
-        "Expected non-SupersetError failure to be echoed"
-    )
+    assert any(
+        "missing_dep.yaml" in call for call in echo_calls
+    ), "Expected non-SupersetError failure to be echoed"
     with open("progress.log", encoding="utf-8") as log:
         content = yaml.load(log, Loader=yaml.SafeLoader)
     failed = [e for e in content["assets"] if e["status"] == "FAILED"]

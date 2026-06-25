@@ -99,6 +99,8 @@ def _ctx_for_from_context(current_workspace_id):
     ctx = MagicMock()
     ctx.get_workspace_id.return_value = current_workspace_id
     ctx.get_workspace_hostname.return_value = None
+    # No self-hosted instance configured: these tests exercise the Preset path.
+    ctx.get_instance_name.return_value = None
     return ctx
 
 

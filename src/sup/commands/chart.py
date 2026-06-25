@@ -101,9 +101,16 @@ def list_charts(
         typer.Option("--dataset-id", help="Filter by dataset ID"),
     ] = None,
     # Output options
+    instance: Annotated[
+        Optional[str],
+        typer.Option(
+            "--instance",
+            help="Superset instance name (self-hosted). Use 'sup instance list'.",
+        ),
+    ] = None,
     workspace_id: Annotated[
         Optional[int],
-        typer.Option("--workspace-id", "-w", help="Workspace ID"),
+        typer.Option("--workspace-id", "-w", help="Preset workspace ID"),
     ] = None,
     json_output: Annotated[bool, typer.Option("--json", help="Output as JSON")] = False,
     yaml_output: Annotated[bool, typer.Option("--yaml", help="Output as YAML")] = False,
@@ -151,16 +158,30 @@ def list_charts(
         # Get charts from API with spinner (using server-side filtering for performance)
         with data_spinner("charts", silent=porcelain) as sp:
             ctx = SupContext()
-            client = SupSupersetClient.from_context(ctx, workspace_id)
+            client = SupSupersetClient.from_context(
+                ctx, workspace_id=workspace_id, instance_name=instance
+            )
 
             # Use server-side filtering where available
             page = (filters.page - 1) if filters.page else 0
-            charts = client.get_charts(
-                silent=True,
-                limit=None,  # Get all charts for client-side filtering
-                page=page,
-                text_search=filters.search,  # Pass search term to server
-            )
+
+            # Fetch charts with proper limit handling
+            if filters.limit:
+                # User specified a limit - fetch that many
+                charts = client.get_charts(
+                    silent=True,
+                    limit=filters.limit,
+                    page=page,
+                    text_search=filters.search,
+                )
+            else:
+                # No limit specified - use default page size of 100
+                charts = client.get_charts(
+                    silent=True,
+                    limit=100,  # Reasonable default for list view
+                    page=page,
+                    text_search=filters.search,
+                )
 
             # Apply client-side filters for chart-specific options
             from sup.filters.chart import apply_chart_filters
@@ -220,9 +241,16 @@ def list_charts(
 @app.command("info")
 def chart_info(
     chart_id: Annotated[int, typer.Argument(help="Chart ID to inspect")],
+    instance: Annotated[
+        Optional[str],
+        typer.Option(
+            "--instance",
+            help="Superset instance name (self-hosted). Use 'sup instance list'.",
+        ),
+    ] = None,
     workspace_id: Annotated[
         Optional[int],
-        typer.Option("--workspace-id", "-w", help="Workspace ID"),
+        typer.Option("--workspace-id", "-w", help="Preset workspace ID"),
     ] = None,
     json_output: Annotated[bool, typer.Option("--json", "-j", help="Output as JSON")] = False,
     yaml_output: Annotated[bool, typer.Option("--yaml", "-y", help="Output as YAML")] = False,
@@ -243,7 +271,9 @@ def chart_info(
     try:
         with data_spinner(f"chart {chart_id}", silent=porcelain):
             ctx = SupContext()
-            client = SupSupersetClient.from_context(ctx, workspace_id)
+            client = SupSupersetClient.from_context(
+                ctx, workspace_id=workspace_id, instance_name=instance
+            )
             chart = client.get_chart(chart_id, silent=True)
 
         if porcelain:
@@ -858,12 +888,19 @@ def pull_charts(
         typer.Option("--limit", "-l", help="Maximum number of charts to pull"),
     ] = None,
     # Export-specific options
+    instance: Annotated[
+        Optional[str],
+        typer.Option(
+            "--instance",
+            help="Superset instance name (self-hosted). Use 'sup instance list'.",
+        ),
+    ] = None,
     workspace_id: Annotated[
         Optional[int],
         typer.Option(
             "--workspace-id",
             "-w",
-            help="Workspace ID (defaults to configured workspace)",
+            help="Preset workspace ID",
         ),
     ] = None,
     overwrite: Annotated[
@@ -987,7 +1024,9 @@ def pull_charts(
             raise typer.Exit(1)
 
         # Get charts using existing filtering logic
-        client = SupSupersetClient.from_context(ctx, workspace_id)
+        client = SupSupersetClient.from_context(
+            ctx, workspace_id=workspace_id, instance_name=instance
+        )
 
         with data_spinner("charts to export", silent=porcelain) as sp:
             # Parse filters using existing logic
@@ -1003,11 +1042,32 @@ def pull_charts(
             )
 
             # Get charts with server-side filtering only
-            charts = client.get_charts(
-                silent=True,
-                limit=None,  # Get all matching charts
-                text_search=filters.search,  # Server-side search
-            )
+            # If no limit specified in filters, fetch all charts via pagination
+            if filters.limit:
+                charts = client.get_charts(
+                    silent=True,
+                    limit=filters.limit,
+                    text_search=filters.search,
+                )
+            else:
+                # Fetch all charts via pagination
+                charts = []
+                page = 0
+                page_size = 100  # Larger page size for efficiency
+                while True:
+                    page_charts = client.get_charts(
+                        silent=True,
+                        limit=page_size,
+                        page=page,
+                        text_search=filters.search,
+                    )
+                    if not page_charts:
+                        break
+                    charts.extend(page_charts)
+                    # If we got less than page_size, we've reached the end
+                    if len(page_charts) < page_size:
+                        break
+                    page += 1
 
             # Extract IDs for export
             chart_ids = [chart["id"] for chart in charts]
@@ -1102,252 +1162,71 @@ def push_charts(
     assets_folder: Annotated[
         Optional[str],
         typer.Argument(
-            help="Assets folder to push chart definitions from (defaults to configured folder)",
+            help="Path to assets folder. Defaults to the configured folder or './assets'.",
         ),
     ] = None,
-    # Import-specific options
+    instance: Annotated[
+        Optional[str],
+        typer.Option(
+            "--instance",
+            help="Target self-hosted instance name. Use 'sup instance list'.",
+        ),
+    ] = None,
     workspace_id: Annotated[
         Optional[int],
         typer.Option(
             "--workspace-id",
             "-w",
-            help="Workspace ID (defaults to configured workspace)",
+            help="Target workspace ID (Preset). Defaults to the configured target.",
         ),
     ] = None,
     overwrite: Annotated[
         bool,
-        typer.Option("--overwrite", help="Overwrite existing charts"),
+        typer.Option("--overwrite", help="Overwrite existing charts with the same UUID"),
     ] = False,
-    # Template processing options
+    continue_on_error: Annotated[
+        bool,
+        typer.Option("--continue-on-error", help="Continue importing if some charts fail"),
+    ] = False,
     template_options: TemplateOptions = None,
     load_env: LoadEnvOption = False,
     disable_jinja_templating: DisableJinjaOption = False,
-    continue_on_error: Annotated[
-        bool,
-        typer.Option(
-            "--continue-on-error",
-            help="Continue importing even if some charts fail",
-        ),
-    ] = False,
     force: Annotated[
         bool,
-        typer.Option(
-            "--force",
-            "-f",
-            help="Skip confirmation prompts (use with caution)",
-        ),
+        typer.Option("--force", "-f", help="Skip confirmation prompts"),
     ] = False,
     porcelain: Annotated[
         bool,
-        typer.Option("--porcelain", help="Machine-readable output (no decorations)"),
+        typer.Option("--porcelain", help="Machine-readable output"),
     ] = False,
 ):
     """
-    Push chart definitions from local filesystem to Superset workspace.
+    Push charts from the local filesystem to a Superset instance or Preset workspace.
 
-    Reads chart configurations from YAML files and creates/updates charts in
-    the workspace. Automatically handles dependencies (datasets, databases)
-    when present in the assets folder.
-
-    The push processes directory structure:
-    • charts/ - Chart definition files to push
-    • datasets/ - Dataset definitions (pushed first as dependencies)
-    • databases/ - Database connections (pushed first as dependencies)
-    • metadata.yaml - Push metadata and validation
-
-    Dependencies are pushed in correct order: databases → datasets → charts
-    to ensure all required objects exist before chart creation.
-
-    By default, Jinja2 templating is enabled for parameterized assets.
-    Use --disable-jinja-templating to push raw YAML without processing.
-
-    Template Support:
-    • --option key=value: Pass template variables (can be used multiple times)
-    • --load-env: Make environment variables available as env['VAR_NAME']
-    • chart.overrides.yaml files are automatically applied
+    Dependencies (datasets, databases) are imported automatically. Targets a
+    self-hosted instance when ``--instance`` (or ``sup instance use``) is set,
+    otherwise the configured Preset workspace.
 
     Examples:
-        sup chart push                               # Push to configured target workspace
-        sup chart push ./backup                      # Push from specific folder
-        sup chart push --workspace-id=456            # Push to specific workspace
-        sup chart push --overwrite --force           # Overwrite without confirmation
-        sup chart push --continue-on-error           # Skip failed charts, continue
-        sup chart push --option env=prod --load-env  # Template with variables
+        sup chart push assets/                     # Push to the current target
+        sup chart push assets/ --instance prod     # Self-hosted instance
+        sup chart push assets/ --workspace-id 123  # Preset workspace
+        sup chart push assets/ --overwrite --force # Overwrite without prompts
     """
-    from preset_cli.cli.superset.sync.native.command import ResourceType, native
-    from sup.config.settings import SupContext
+    from preset_cli.cli.superset.sync.native.command import ResourceType
+    from sup.commands.push_helper import push_assets
 
-    # Resolve assets folder using config default
-    ctx = SupContext()
-    resolved_assets_folder = ctx.get_assets_folder(cli_override=assets_folder)
-
-    if not porcelain:
-        console.print(
-            f"{EMOJIS['import']} Importing charts from {resolved_assets_folder}...",
-            style=RICH_STYLES["info"],
-        )
-
-    try:
-        # Verify assets folder exists
-        from pathlib import Path
-
-        assets_path = Path(resolved_assets_folder)
-        if not assets_path.exists():
-            console.print(
-                f"{EMOJIS['error']} Assets folder does not exist: {resolved_assets_folder}",
-                style=RICH_STYLES["error"],
-            )
-            raise typer.Exit(1)
-        elif not assets_path.is_dir():
-            console.print(
-                f"{EMOJIS['error']} Path is not a directory: {resolved_assets_folder}",
-                style=RICH_STYLES["error"],
-            )
-            raise typer.Exit(1)
-
-        # Create a mock click context for the native() function
-        # This reuses ALL the existing import logic while providing sup UX
-        import click
-
-        from sup.auth.preset import SupPresetAuth
-
-        # Get source and target workspace context
-        source_workspace_id = ctx.get_workspace_id()
-        target_workspace_id = ctx.get_target_workspace_id(cli_override=workspace_id)
-
-        if not source_workspace_id:
-            console.print(
-                f"{EMOJIS['error']} No source workspace configured",
-                style=RICH_STYLES["error"],
-            )
-            console.print(
-                "💡 Run [bold]sup workspace list[/] and [bold]sup workspace use <ID>[/]",
-                style=RICH_STYLES["info"],
-            )
-            raise typer.Exit(1)
-
-        if not target_workspace_id:
-            console.print(
-                f"{EMOJIS['error']} No target workspace configured",
-                style=RICH_STYLES["error"],
-            )
-            console.print(
-                "💡 Set target: [bold]sup workspace set-import-target[/]",
-                style=RICH_STYLES["info"],
-            )
-            raise typer.Exit(1)
-
-        # Safety confirmation for potentially destructive imports
-        if not force and not porcelain:
-            is_cross_workspace = target_workspace_id != source_workspace_id
-
-            console.print(
-                f"{EMOJIS['warning']} Import Operation Summary",
-                style=RICH_STYLES["warning"],
-            )
-            console.print(f"📁 Assets folder: [cyan]{resolved_assets_folder}[/cyan]")
-            console.print(f"📤 Source workspace: [cyan]{source_workspace_id}[/cyan]")
-            console.print(f"📥 Target workspace: [cyan]{target_workspace_id}[/cyan]")
-
-            if is_cross_workspace:
-                console.print(
-                    "🔄 [bold]Cross-workspace import[/bold] - assets copied to different workspace",
-                    style=RICH_STYLES["info"],
-                )
-            else:
-                console.print(
-                    "⚠️  [bold]Same-workspace import[/bold] - may overwrite existing charts",
-                    style=RICH_STYLES["warning"],
-                )
-
-            if not typer.confirm("Continue with import operation?"):
-                console.print(
-                    f"{EMOJIS['info']} Import cancelled",
-                    style=RICH_STYLES["info"],
-                )
-                raise typer.Exit(0)
-
-        # Get target workspace URL (where we're importing TO)
-        # We need to resolve the hostname for the TARGET workspace, not source
-        from sup.clients.preset import SupPresetClient
-
-        preset_client = SupPresetClient.from_context(ctx, silent=True)
-        workspaces = preset_client.get_all_workspaces(silent=True)
-
-        target_workspace = None
-        for ws in workspaces:
-            if ws.get("id") == target_workspace_id:
-                target_workspace = ws
-                break
-
-        if not target_workspace:
-            console.print(
-                f"{EMOJIS['error']} Target workspace {target_workspace_id} not found",
-                style=RICH_STYLES["error"],
-            )
-            raise typer.Exit(1)
-
-        target_hostname = target_workspace.get("hostname")
-        if not target_hostname:
-            console.print(
-                f"{EMOJIS['error']} No hostname for target workspace {target_workspace_id}",
-                style=RICH_STYLES["error"],
-            )
-            raise typer.Exit(1)
-
-        workspace_url = f"https://{target_hostname}/"
-        auth = SupPresetAuth.from_sup_config(ctx, silent=True)
-
-        # Create mock click context that native() expects
-        # Use a minimal command for the context
-        import_command = click.Command("import")
-        mock_ctx = click.Context(import_command)
-        mock_ctx.obj = {
-            "AUTH": auth,
-            "INSTANCE": workspace_url,
-        }
-
-        if not porcelain:
-            console.print(
-                f"{EMOJIS['info']} Processing charts and dependencies...",
-                style=RICH_STYLES["info"],
-            )
-
-        # Call the existing native() function with chart-specific settings
-        # This gives us ALL the existing functionality: dependency resolution,
-        # Jinja2 templating, database password handling, error management, etc.
-        #
-        # NOTE: native() is decorated with @click.pass_context, so we need to
-        # manually pass the context using click's invoke() method
-        with mock_ctx:
-            mock_ctx.invoke(
-                native,
-                directory=resolved_assets_folder,
-                option=template_options or (),  # Pass custom template variables
-                asset_type=ResourceType.CHART,
-                overwrite=overwrite,
-                disable_jinja_templating=disable_jinja_templating,
-                disallow_edits=True,  # Mark as externally managed
-                external_url_prefix="",  # No external URL prefix
-                load_env=load_env,  # Load environment variables if requested
-                split=True,  # Import individually with dependency resolution
-                continue_on_error=continue_on_error,
-                db_password=(),  # No database passwords specified
-            )
-
-        if not porcelain:
-            console.print(
-                f"{EMOJIS['success']} Chart import completed successfully",
-                style=RICH_STYLES["success"],
-            )
-
-    except typer.Exit:
-        # Re-raise typer exits (our own error handling)
-        raise
-    except Exception as e:
-        if not porcelain:
-            console.print(
-                f"{EMOJIS['error']} Failed to import charts: {e}",
-                style=RICH_STYLES["error"],
-            )
-        raise typer.Exit(1)
+    push_assets(
+        asset_type_enum=ResourceType.CHART,
+        asset_label="charts",
+        assets_folder=assets_folder,
+        workspace_id=workspace_id,
+        overwrite=overwrite,
+        template_options=template_options,
+        load_env=load_env,
+        disable_jinja_templating=disable_jinja_templating,
+        continue_on_error=continue_on_error,
+        force=force,
+        porcelain=porcelain,
+        instance=instance,
+    )

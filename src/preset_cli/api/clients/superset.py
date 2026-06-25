@@ -759,6 +759,15 @@ class SupersetClient:  # pylint: disable=too-many-public-methods
         url = self.baseurl / "api/v1" / resource_name / "import/"
 
         self.session.headers.update({"Accept": "application/json"})
+
+        # Force a fresh CSRF token fetch for multipart/form-data POST requests;
+        # Superset requires a fresh CSRF token for these endpoints. Only the
+        # self-hosted OAuth/JWT auth classes expose _fetch_csrf_token.
+        fetch_csrf_token = getattr(self.auth, "_fetch_csrf_token", None)
+        if callable(fetch_csrf_token):
+            fetch_csrf_token()
+            self.session.headers.update(self.auth.get_headers())
+
         data = {"overwrite": json.dumps(overwrite)}
         _logger.debug("POST %s\n%s", url, json.dumps(data, indent=4))
         response = self.session.post(

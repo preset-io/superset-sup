@@ -59,6 +59,13 @@ def list_dashboards(
         typer.Option("--folder", help="Filter by folder path pattern"),
     ] = None,
     # Output options - same pattern as other commands
+    instance: Annotated[
+        Optional[str],
+        typer.Option(
+            "--instance",
+            help="Superset instance name (self-hosted). Use 'sup instance list'.",
+        ),
+    ] = None,
     workspace_id: Annotated[
         Optional[int],
         typer.Option("--workspace-id", "-w", help="Workspace ID"),
@@ -90,7 +97,9 @@ def list_dashboards(
         # Get dashboards with spinner
         with data_spinner("dashboards", silent=porcelain) as sp:
             ctx = SupContext()
-            client = SupSupersetClient.from_context(ctx, workspace_id)
+            client = SupSupersetClient.from_context(
+                ctx, workspace_id=workspace_id, instance_name=instance
+            )
 
             # Fetch dashboards with server-side search only
             dashboards = client.get_dashboards(
@@ -124,6 +133,14 @@ def list_dashboards(
             workspace_hostname = ctx.get_workspace_hostname()
             display_dashboards_table(dashboards, workspace_hostname)
 
+    except ValueError as e:
+        # from_context() provides helpful error messages for missing config
+        if not porcelain:
+            console.print(
+                f"{EMOJIS['error']} {e}",
+                style=RICH_STYLES["error"],
+            )
+        raise typer.Exit(1)
     except Exception as e:
         if not porcelain:
             console.print(
@@ -136,6 +153,13 @@ def list_dashboards(
 @app.command("info")
 def dashboard_info(
     dashboard_id: Annotated[int, typer.Argument(help="Dashboard ID to inspect")],
+    instance: Annotated[
+        Optional[str],
+        typer.Option(
+            "--instance",
+            help="Superset instance name (self-hosted). Use 'sup instance list'.",
+        ),
+    ] = None,
     workspace_id: Annotated[
         Optional[int],
         typer.Option("--workspace-id", "-w", help="Workspace ID"),
@@ -159,7 +183,9 @@ def dashboard_info(
     try:
         with data_spinner(f"dashboard {dashboard_id}", silent=porcelain):
             ctx = SupContext()
-            client = SupSupersetClient.from_context(ctx, workspace_id)
+            client = SupSupersetClient.from_context(
+                ctx, workspace_id=workspace_id, instance_name=instance
+            )
             dashboard = client.get_dashboard(dashboard_id, silent=True)
 
         if porcelain:
@@ -178,6 +204,14 @@ def dashboard_info(
         else:
             display_dashboard_details(dashboard)
 
+    except ValueError as e:
+        # from_context() provides helpful error messages for missing config
+        if not porcelain:
+            console.print(
+                f"{EMOJIS['error']} {e}",
+                style=RICH_STYLES["error"],
+            )
+        raise typer.Exit(1)
     except Exception as e:
         if not porcelain:
             console.print(
@@ -318,6 +352,13 @@ def pull_dashboards(
         typer.Option("--limit", "-l", help="Maximum number of dashboards to pull"),
     ] = None,
     # Pull-specific options
+    instance: Annotated[
+        Optional[str],
+        typer.Option(
+            "--instance",
+            help="Superset instance name (self-hosted). Use 'sup instance list'.",
+        ),
+    ] = None,
     workspace_id: Annotated[
         Optional[int],
         typer.Option(
@@ -385,7 +426,9 @@ def pull_dashboards(
             raise typer.Exit(1)
 
         # Get dashboards using existing API
-        client = SupSupersetClient.from_context(ctx, workspace_id)
+        client = SupSupersetClient.from_context(
+            ctx, workspace_id=workspace_id, instance_name=instance
+        )
 
         with data_spinner("dashboards to export", silent=porcelain) as sp:
             # Get dashboards (server-side filtering)
@@ -498,7 +541,14 @@ def push_dashboards(
     assets_folder: Annotated[
         Optional[str],
         typer.Argument(
-            help="Assets folder to push dashboard definitions from (defaults to configured folder)",
+            help="Path to assets folder. Defaults to the configured folder or './assets'.",
+        ),
+    ] = None,
+    instance: Annotated[
+        Optional[str],
+        typer.Option(
+            "--instance",
+            help="Target self-hosted instance name. Use 'sup instance list'.",
         ),
     ] = None,
     workspace_id: Annotated[
@@ -506,30 +556,23 @@ def push_dashboards(
         typer.Option(
             "--workspace-id",
             "-w",
-            help="Workspace ID (defaults to configured workspace)",
+            help="Target workspace ID (Preset). Defaults to the configured target.",
         ),
     ] = None,
     overwrite: Annotated[
         bool,
-        typer.Option("--overwrite", help="Overwrite existing dashboards"),
+        typer.Option("--overwrite", help="Overwrite existing dashboards with the same UUID"),
+    ] = False,
+    continue_on_error: Annotated[
+        bool,
+        typer.Option("--continue-on-error", help="Continue importing if some dashboards fail"),
     ] = False,
     template_options: TemplateOptions = None,
     load_env: LoadEnvOption = False,
     disable_jinja_templating: DisableJinjaOption = False,
-    continue_on_error: Annotated[
-        bool,
-        typer.Option(
-            "--continue-on-error",
-            help="Continue importing even if some dashboards fail",
-        ),
-    ] = False,
     force: Annotated[
         bool,
-        typer.Option(
-            "--force",
-            "-f",
-            help="Skip confirmation prompts",
-        ),
+        typer.Option("--force", "-f", help="Skip confirmation prompts"),
     ] = False,
     porcelain: Annotated[
         bool,
@@ -537,46 +580,32 @@ def push_dashboards(
     ] = False,
 ):
     """
-    Push dashboard definitions from local filesystem to Superset workspace.
+    Push dashboards from the local filesystem to a Superset instance or Preset workspace.
 
-    Reads dashboard configurations from YAML files and creates/updates dashboards
-    in the workspace. Dependencies (charts, datasets, databases) are pushed first.
+    Dependencies (datasets, databases) are imported automatically. Targets a
+    self-hosted instance when ``--instance`` (or ``sup instance use``) is set,
+    otherwise the configured Preset workspace.
 
     Examples:
-        sup dashboard push                               # Push to configured target
-        sup dashboard push ./backup                      # Push from specific folder
-        sup dashboard push --workspace-id=456            # Push to specific workspace
-        sup dashboard push --overwrite --force            # Overwrite without confirmation
-        sup dashboard push --continue-on-error           # Skip failures, continue
-        sup dashboard push --option env=prod --load-env  # Template with variables
+        sup dashboard push assets/                     # Push to the current target
+        sup dashboard push assets/ --instance prod     # Self-hosted instance
+        sup dashboard push assets/ --workspace-id 123  # Preset workspace
+        sup dashboard push assets/ --overwrite --force # Overwrite without prompts
     """
     from preset_cli.cli.superset.sync.native.command import ResourceType
     from sup.commands.push_helper import push_assets
 
-    try:
-        push_assets(
-            asset_type_enum=ResourceType.DASHBOARD,
-            asset_label="dashboards",
-            assets_folder=assets_folder,
-            workspace_id=workspace_id,
-            overwrite=overwrite,
-            template_options=template_options,
-            load_env=load_env,
-            disable_jinja_templating=disable_jinja_templating,
-            continue_on_error=continue_on_error,
-            force=force,
-            porcelain=porcelain,
-        )
-    except typer.Exit:
-        raise
-    except Exception as e:
-        if not porcelain:
-            console.print(
-                f"{EMOJIS['error']} Failed to import dashboards: {e}",
-                style=RICH_STYLES["error"],
-            )
-        raise typer.Exit(1)
-
-
-if __name__ == "__main__":
-    app()
+    push_assets(
+        asset_type_enum=ResourceType.DASHBOARD,
+        asset_label="dashboards",
+        assets_folder=assets_folder,
+        workspace_id=workspace_id,
+        overwrite=overwrite,
+        template_options=template_options,
+        load_env=load_env,
+        disable_jinja_templating=disable_jinja_templating,
+        continue_on_error=continue_on_error,
+        force=force,
+        porcelain=porcelain,
+        instance=instance,
+    )

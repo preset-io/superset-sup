@@ -5,6 +5,35 @@ Changelog
 Next
 ====
 
+- **NEW**: Full dual-path CLI support for both Preset workspaces and self-hosted Superset instances
+
+  - New ``sup instance`` command group for managing self-hosted Superset instances
+  - Added ``--instance`` parameter to all entity commands (chart, dashboard, dataset, database, query, user, sql, dbt, group, sync)
+  - Intelligent dispatcher in ``SupSupersetClient.from_context()`` routes based on explicit parameters, context, environment, or config
+  - Seamless switching between Preset and self-hosted with same commands
+  - All changes 100% backward compatible - existing Preset workflows unchanged
+
+- **NEW**: Multiple authentication methods for self-hosted Superset
+
+  - OAuth2/OIDC support (works with Keycloak, Okta, Auth0, Dex, Azure AD, Cognito)
+  - Username/password authentication
+  - JWT token-based authentication
+  - Environment variable support for secrets (``${ENV:SECRET_NAME}``)
+
+- **NEW**: Enhanced ``sup config auth`` command with dual-path setup
+
+  - Interactive setup guides users through Preset or self-hosted configuration
+  - Multiple auth method selection for self-hosted instances
+  - Credential testing before saving to config
+  - Clear error messages and helpful guidance
+
+- **IMPROVED**: Graceful degradation for missing Preset credentials
+
+  - Workspace commands show helpful guidance suggesting Preset setup or self-hosted alternative
+  - Clear actionable error messages instead of cryptic auth failures
+
+- Comprehensive self-hosted setup guide with provider-specific examples and troubleshooting
+
 Version 0.1.6 - 2026-06-23
 ===========================
 

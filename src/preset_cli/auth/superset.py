@@ -51,12 +51,16 @@ class UsernamePasswordAuth(SupersetJWTAuth):  # pylint: disable=too-few-public-m
         self.baseurl = baseurl
         self.username = username
         self.password = password
-        self.token = self.auth()
+        self.auth()
 
-    def auth(self) -> str:
+    def auth(self) -> None:
         """
-        Login to Superset using username/password and return access token.
-        Uses /api/v1/security/login endpoint.
+        Login to Superset using username/password and cache the JWT token.
+
+        Uses the /api/v1/security/login endpoint. Assigning to ``self.token``
+        (rather than returning it) keeps the base ``Auth.reauth`` flow working:
+        on a 401 it re-invokes ``auth()`` and rebuilds headers from the
+        refreshed token.
         """
         payload = {
             "username": self.username,
@@ -69,6 +73,4 @@ class UsernamePasswordAuth(SupersetJWTAuth):  # pylint: disable=too-few-public-m
             json=payload,
         )
         response.raise_for_status()
-        payload = response.json()
-
-        return payload["access_token"]
+        self.token = response.json()["access_token"]

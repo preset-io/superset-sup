@@ -403,9 +403,7 @@ def import_resources_individually(  # pylint: disable=too-many-locals
                         )
                     # SupersetError.errors contains the actual messages; str() is empty.
                     if isinstance(ex, SupersetError):
-                        error_detail = "; ".join(
-                            e["message"] for e in ex.errors if "message" in e
-                        )
+                        error_detail = "; ".join(e["message"] for e in ex.errors if "message" in e)
                     else:
                         error_detail = str(ex)
                     asset_log["status"] = "FAILED"
@@ -442,7 +440,7 @@ def get_dataset_filter_uuids(config: AssetConfig) -> Set[str]:
     """
     Extract dataset UUID for datasets that are used in dashboard filters.
     """
-    dataset_uuids = set()
+    dataset_uuids: Set[str] = set()
     # Skip if metadata key doesn't exist (empty/untitled dashboards)
     if "metadata" not in config:
         return dataset_uuids

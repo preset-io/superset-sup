@@ -170,7 +170,7 @@ class OAuthSupersetAuth(Auth):  # pylint: disable=too-few-public-methods
             )
 
         response = self.session.post(self.token_url, data=payload)
-        
+
         try:
             response.raise_for_status()
         except Exception as e:
@@ -178,10 +178,12 @@ class OAuthSupersetAuth(Auth):  # pylint: disable=too-few-public-methods
             error_detail = response.text or str(e)
             try:
                 error_data = response.json()
-                error_detail = error_data.get('error_description', error_data.get('error', error_detail))
+                error_detail = error_data.get(
+                    "error_description", error_data.get("error", error_detail)
+                )
             except (ValueError, KeyError):
                 pass
-            
+
             error_msg = (
                 f"OAuth2 token request failed: {error_detail}\n"
                 f"Token URL: {self.token_url}\n"
@@ -189,7 +191,7 @@ class OAuthSupersetAuth(Auth):  # pylint: disable=too-few-public-methods
                 f"Username: {self.username}\n"
                 f"Status: {response.status_code}"
             )
-            
+
             # Helpful hint for unresolved environment variables
             if "${ENV:" in str(self.client_secret) or "${ENV:" in str(self.password):
                 error_msg += (
@@ -198,11 +200,12 @@ class OAuthSupersetAuth(Auth):  # pylint: disable=too-few-public-methods
                     "  export SUPERSET_OAUTH_CLIENT_SECRET='your_secret'\n"
                     "  export SUPERSET_OAUTH_SERVICE_PASSWORD='your_password'"
                 )
-            
+
             raise ValueError(error_msg) from e
 
         token_data = response.json()
-        self._access_token = token_data["access_token"]
+        access_token = token_data["access_token"]
+        self._access_token = access_token
 
         # Track token expiration time if the server provides it
         if "expires_in" in token_data:
@@ -216,7 +219,7 @@ class OAuthSupersetAuth(Auth):  # pylint: disable=too-few-public-methods
                 self._token_expires,
             )
 
-        return self._access_token
+        return access_token
 
     def get_access_token(self) -> str:
         """
@@ -262,10 +265,11 @@ class OAuthSupersetAuth(Auth):  # pylint: disable=too-few-public-methods
         )
         response.raise_for_status()
 
-        self._csrf_token = response.json().get("result")
+        csrf_token = response.json().get("result")
+        self._csrf_token = csrf_token
         _logger.debug("Successfully fetched CSRF token")
 
-        return self._csrf_token
+        return csrf_token
 
     def get_csrf_token(self) -> str:
         """

@@ -73,7 +73,7 @@ class CallbackHandler(BaseHTTPRequestHandler):
                 </body>
                 </html>
                 """
-            self.wfile.write(html.encode('utf-8'))
+            self.wfile.write(html.encode("utf-8"))
         elif "error" in params:
             CallbackHandler.error = params["error"][0]
             error_desc = params.get("error_description", ["Unknown error"])[0]
@@ -90,7 +90,7 @@ class CallbackHandler(BaseHTTPRequestHandler):
                 </body>
                 </html>
                 """
-            self.wfile.write(html.encode('utf-8'))
+            self.wfile.write(html.encode("utf-8"))
         else:
             self.send_response(400)
             self.send_header("Content-type", "text/plain")
@@ -147,9 +147,7 @@ class InteractiveOAuthAuth(Auth):
 
         self.base_url = URL(base_url) if isinstance(base_url, str) else base_url
         self.authorization_url = (
-            URL(authorization_url)
-            if isinstance(authorization_url, str)
-            else authorization_url
+            URL(authorization_url) if isinstance(authorization_url, str) else authorization_url
         )
         self.token_url = URL(token_url) if isinstance(token_url, str) else token_url
         self.client_id = client_id
@@ -158,7 +156,7 @@ class InteractiveOAuthAuth(Auth):
         self.redirect_port = redirect_port
         self.redirect_uri = f"http://localhost:{redirect_port}/callback"
         self.token_type = token_type
-        
+
         # Token cache file path - store per base_url to support multiple instances
         self._token_cache_dir = Path.home() / ".sup" / "tokens"
         self._token_cache_dir.mkdir(parents=True, exist_ok=True)
@@ -184,9 +182,7 @@ class InteractiveOAuthAuth(Auth):
             Tuple of (code_verifier, code_challenge)
         """
         # Generate cryptographically random code verifier
-        code_verifier = base64.urlsafe_b64encode(secrets.token_bytes(32)).decode(
-            "utf-8"
-        )
+        code_verifier = base64.urlsafe_b64encode(secrets.token_bytes(32)).decode("utf-8")
         code_verifier = code_verifier.rstrip("=")
 
         # Create SHA256 hash of verifier
@@ -221,7 +217,7 @@ class InteractiveOAuthAuth(Auth):
         # Reset callback handler state before starting new flow
         CallbackHandler.authorization_code = None
         CallbackHandler.error = None
-        
+
         # Generate PKCE parameters
         code_verifier, code_challenge = self._generate_pkce_pair()
 
@@ -269,14 +265,11 @@ class InteractiveOAuthAuth(Auth):
 
         if CallbackHandler.error:
             raise RuntimeError(
-                f"Authentication failed: {CallbackHandler.error}. "
-                "Please try again."
+                f"Authentication failed: {CallbackHandler.error}. " "Please try again."
             )
 
         if CallbackHandler.authorization_code is None:
-            raise RuntimeError(
-                "Authentication timeout. No response received within 2 minutes."
-            )
+            raise RuntimeError("Authentication timeout. No response received within 2 minutes.")
 
         auth_code = CallbackHandler.authorization_code
         CallbackHandler.authorization_code = None  # Reset for next use
@@ -321,19 +314,20 @@ class InteractiveOAuthAuth(Auth):
         if not self._token_cache_file.exists():
             _logger.debug("No cached tokens found at %s", self._token_cache_file)
             return False
-        
+
         try:
             with open(self._token_cache_file) as f:
                 cache_data = json.load(f)
-            
+
             # Validate cache structure
-            if not all(key in cache_data for key in ["access_token", "refresh_token", "expires_at"]):
+            required_keys = ["access_token", "refresh_token", "expires_at"]
+            if not all(key in cache_data for key in required_keys):
                 _logger.warning("Invalid token cache structure, ignoring")
                 return False
-            
+
             # Parse expiration time
             expires_at = datetime.fromisoformat(cache_data["expires_at"])
-            
+
             # Check if we have a valid access token or can refresh
             if datetime.now(tz=UTC) < expires_at:
                 # Access token is still valid
@@ -350,7 +344,7 @@ class InteractiveOAuthAuth(Auth):
             else:
                 _logger.info("Cached tokens expired and no refresh token available")
                 return False
-                
+
         except (json.JSONDecodeError, KeyError, ValueError) as e:
             _logger.warning("Failed to load cached tokens: %s", e)
             return False
@@ -360,7 +354,7 @@ class InteractiveOAuthAuth(Auth):
         if not self._access_token:
             _logger.warning("No access token to cache")
             return
-        
+
         try:
             cache_data = {
                 "access_token": self._access_token,
@@ -368,20 +362,20 @@ class InteractiveOAuthAuth(Auth):
                 "expires_at": self._token_expires.isoformat() if self._token_expires else None,
                 "cached_at": datetime.now(tz=UTC).isoformat(),
             }
-            
+
             # Write atomically by writing to temp file then renaming
             temp_file = self._token_cache_file.with_suffix(".tmp")
             with open(temp_file, "w") as f:
                 json.dump(cache_data, f, indent=2)
-            
+
             # Set restrictive permissions (readable only by owner)
             temp_file.chmod(0o600)
-            
+
             # Atomic rename
             temp_file.rename(self._token_cache_file)
-            
+
             _logger.info("Cached tokens to %s", self._token_cache_file)
-            
+
         except Exception as e:
             _logger.warning("Failed to cache tokens: %s", e)
 
@@ -407,8 +401,9 @@ class InteractiveOAuthAuth(Auth):
         # First, try to load cached tokens
         if self._load_cached_tokens():
             _logger.info("Using cached access token")
+            assert self._access_token is not None  # nosec B101 - guaranteed by _load_cached_tokens
             return self._access_token
-        
+
         # If we have a refresh token (from cache or previous auth), try to refresh
         if self._refresh_token:
             try:
@@ -457,7 +452,8 @@ class InteractiveOAuthAuth(Auth):
         response.raise_for_status()
 
         token_data = response.json()
-        self._access_token = token_data["access_token"]
+        access_token = token_data["access_token"]
+        self._access_token = access_token
 
         if "refresh_token" in token_data:
             self._refresh_token = token_data["refresh_token"]
@@ -468,12 +464,12 @@ class InteractiveOAuthAuth(Auth):
 
         self._cache_tokens()
 
-        return self._access_token
+        return access_token
 
     def auth(self) -> None:
         """
         Perform authentication, fetching tokens.
-        
+
         This method is called by the base Auth class for initial auth
         and reauthorization on 401 responses.
         """
@@ -521,10 +517,11 @@ class InteractiveOAuthAuth(Auth):
         )
         response.raise_for_status()
 
-        self._csrf_token = response.json().get("result")
+        csrf_token = response.json().get("result")
+        self._csrf_token = csrf_token
         _logger.debug("Successfully fetched CSRF token")
 
-        return self._csrf_token
+        return csrf_token
 
     def get_csrf_token(self) -> str:
         """
@@ -551,7 +548,7 @@ class InteractiveOAuthAuth(Auth):
             "Authorization": f"{self.token_type} {token}",
             "X-CSRFToken": self.get_csrf_token(),
         }
-    
+
     def clear_cached_tokens(self):
         """Clear cached tokens from disk (for logout)."""
         try:
@@ -560,7 +557,7 @@ class InteractiveOAuthAuth(Auth):
                 _logger.info("Cleared cached tokens from %s", self._token_cache_file)
         except Exception as e:
             _logger.warning("Failed to clear cached tokens: %s", e)
-        
+
         # Clear in-memory tokens
         self._access_token = None
         self._refresh_token = None

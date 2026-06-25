@@ -674,6 +674,9 @@ def push_dashboards(
     from preset_cli.cli.superset.sync.native.command import ResourceType, native
     from sup.config.settings import SupContext
 
+    # Initialized before the try so the finally cleanup never hits an unbound
+    # name if an earlier statement raises.
+    temp_dir = None
     try:
         ctx = SupContext()
 
@@ -848,9 +851,8 @@ def push_dashboards(
             auth = SupPresetAuth.from_sup_config(ctx, silent=True)
 
         # Apply database UUID transformation if requested
-        temp_dir = None
         use_split_import = not auto_map_databases  # Don't use split when auto-mapping
-        
+
         try:
             if database_uuid or database_name or auto_map_databases:
                 from sup.utils.database_transform import transform_database_refs

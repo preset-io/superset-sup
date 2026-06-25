@@ -1,5 +1,7 @@
 """Tests for auth factory."""
 
+from unittest.mock import patch
+
 import pytest
 from yarl import URL
 
@@ -11,28 +13,23 @@ from sup.config.settings import SupersetInstanceConfig
 
 def test_factory_creates_username_password_auth(requests_mock):
     """Test factory creates UsernamePasswordAuth."""
-    # Mock the login endpoints
-    requests_mock.get(
-        "https://superset.example.com/login/",
-        json={"csrf_token": "test-csrf"},
-        headers={"Set-Cookie": "session=test-session"}
-    )
+    # UsernamePasswordAuth logs in via the Superset security API on construction.
     requests_mock.post(
-        "https://superset.example.com/login/",
-        json={"redirect": "/"},
-        headers={"Set-Cookie": "session=test-session"}
+        "https://superset.example.com/api/v1/security/login",
+        json={"access_token": "test-token"},
     )
-    
+
     config = SupersetInstanceConfig(
         url="https://superset.example.com",
         auth_method="username_password",
         username="admin",
         password="secret",
     )
-    
+
     auth = create_superset_auth(config)
-    
+
     assert isinstance(auth, UsernamePasswordAuth)
+    assert auth.token == "test-token"
 
 
 def test_factory_creates_jwt_auth():
@@ -42,9 +39,9 @@ def test_factory_creates_jwt_auth():
         auth_method="jwt",
         jwt_token="eyJhbGc...",
     )
-    
+
     auth = create_superset_auth(config)
-    
+
     assert isinstance(auth, SupersetJWTAuth)
 
 
@@ -59,10 +56,10 @@ def test_factory_creates_oauth_auth():
         oauth_username="service@example.com",
         oauth_password="password",
     )
-    
+
     with patch("preset_cli.auth.oauth_superset.OAuthSupersetAuth.auth"):
         auth = create_superset_auth(config)
-    
+
     assert isinstance(auth, OAuthSupersetAuth)
     assert auth.client_id == "client-123"
     assert auth.username == "service@example.com"
@@ -76,7 +73,7 @@ def test_factory_validates_username_password():
         username="admin",
         # Missing password
     )
-    
+
     with pytest.raises(ValueError, match="requires both 'username' and 'password'"):
         create_superset_auth(config)
 
@@ -88,7 +85,7 @@ def test_factory_validates_jwt():
         auth_method="jwt",
         # Missing jwt_token
     )
-    
+
     with pytest.raises(ValueError, match="requires 'jwt_token'"):
         create_superset_auth(config)
 
@@ -102,7 +99,7 @@ def test_factory_validates_oauth_complete():
         oauth_client_id="client-123",
         # Missing client_secret, username, password
     )
-    
+
     with pytest.raises(ValueError, match="Missing: client_secret"):
         create_superset_auth(config)
 
@@ -114,7 +111,7 @@ def test_factory_unknown_auth_method():
         auth_method="oauth",  # This will fail validation since not all fields provided
     )
     config.auth_method = "unknown"  # Bypass pattern validation for test
-    
+
     # Actually we can't bypass pattern validation with pydantic, so test direct call
     with pytest.raises(ValueError, match="Unknown authentication method"):
         create_superset_auth(config)
@@ -132,10 +129,10 @@ def test_factory_oauth_uses_custom_scope():
         oauth_password="pass",
         oauth_scope="custom scope",
     )
-    
+
     with patch("preset_cli.auth.oauth_superset.OAuthSupersetAuth.auth"):
         auth = create_superset_auth(config)
-    
+
     assert auth.scope == "custom scope"
 
 
@@ -151,10 +148,10 @@ def test_factory_oauth_uses_custom_token_type():
         oauth_password="pass",
         oauth_token_type="CustomToken",
     )
-    
+
     with patch("preset_cli.auth.oauth_superset.OAuthSupersetAuth.auth"):
         auth = create_superset_auth(config)
-    
+
     assert auth.token_type == "CustomToken"
 
 
@@ -169,10 +166,10 @@ def test_factory_passes_correct_urls():
         oauth_username="user",
         oauth_password="pass",
     )
-    
+
     with patch("preset_cli.auth.oauth_superset.OAuthSupersetAuth.auth"):
         auth = create_superset_auth(config)
-    
+
     assert auth.base_url == URL("https://superset.example.com/")
     assert auth.token_url == URL("https://auth.example.com/oauth2/token")
 
@@ -188,7 +185,7 @@ def test_factory_oauth_missing_token_url():
         oauth_username="user",
         oauth_password="pass",
     )
-    
+
     with pytest.raises(ValueError, match="Missing: token_url"):
         create_superset_auth(config)
 
@@ -201,16 +198,12 @@ def test_factory_oauth_missing_multiple_fields():
         oauth_token_url="https://auth.example.com/token",
         # Missing client_id, client_secret, username, password
     )
-    
+
     with pytest.raises(ValueError) as exc_info:
         create_superset_auth(config)
-    
+
     error_msg = str(exc_info.value)
     assert "client_id" in error_msg
     assert "client_secret" in error_msg
     assert "username" in error_msg
     assert "password" in error_msg
-
-
-# Import patch for mocking
-from unittest.mock import patch

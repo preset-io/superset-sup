@@ -1,8 +1,9 @@
 """
 Shared push (import) logic for sup CLI entity commands.
 
-Provides a reusable function for pushing assets to Superset workspaces
-via the legacy native() Click command, bridging Typer -> Click context.
+Provides a reusable function for pushing assets to Superset workspaces or
+self-hosted instances via the legacy native() Click command, bridging
+Typer -> Click context.
 """
 
 from pathlib import Path
@@ -27,18 +28,23 @@ def push_assets(
     continue_on_error: bool,
     force: bool,
     porcelain: bool,
+    instance: Optional[str] = None,
 ) -> None:
     """
-    Push assets from local filesystem to a Superset workspace.
+    Push assets from local filesystem to a Superset workspace or instance.
 
     This bridges Typer commands to the legacy Click-based native() import function,
     reusing all existing import logic (dependency resolution, Jinja2 templating, etc.).
+
+    Resolves the target the same way ``SupSupersetClient.from_context`` does:
+    an explicit ``instance`` (or a current instance from ``sup instance use``)
+    selects the self-hosted path; otherwise the Preset workspace path is used.
 
     Args:
         asset_type_enum: ResourceType enum value (e.g., ResourceType.CHART)
         asset_label: Human-readable label (e.g., "charts", "dashboards")
         assets_folder: Override assets folder path
-        workspace_id: Override target workspace ID
+        workspace_id: Override target workspace ID (Preset path)
         overwrite: Whether to overwrite existing assets
         template_options: Jinja2 template key=value pairs
         load_env: Whether to load environment variables for templates
@@ -46,10 +52,10 @@ def push_assets(
         continue_on_error: Whether to skip failed assets
         force: Whether to skip confirmation prompts
         porcelain: Whether to use machine-readable output
+        instance: Self-hosted instance name (overrides Preset workspace path)
     """
+    from preset_cli.cli.superset.lib import get_import_summary
     from preset_cli.cli.superset.sync.native.command import native
-    from sup.auth.preset import SupPresetAuth
-    from sup.clients.preset import SupPresetClient
     from sup.config.settings import SupContext
 
     ctx = SupContext()
@@ -76,89 +82,14 @@ def push_assets(
         )
         raise typer.Exit(1)
 
-    # Get source and target workspace context
-    source_workspace_id = ctx.get_workspace_id()
-    target_workspace_id = ctx.get_target_workspace_id(cli_override=workspace_id)
-
-    if not source_workspace_id:
-        console.print(
-            f"{EMOJIS['error']} No source workspace configured",
-            style=RICH_STYLES["error"],
+    instance_name = instance or ctx.get_instance_name()
+    if instance_name:
+        workspace_url, auth = _resolve_instance_target(ctx, instance_name)
+        _confirm_instance_push(instance_name, resolved_assets_folder, force, porcelain)
+    else:
+        workspace_url, auth = _resolve_preset_target(
+            ctx, workspace_id, resolved_assets_folder, force, porcelain
         )
-        console.print(
-            "Run [bold]sup workspace list[/] and [bold]sup workspace use <ID>[/]",
-            style=RICH_STYLES["info"],
-        )
-        raise typer.Exit(1)
-
-    if not target_workspace_id:
-        console.print(
-            f"{EMOJIS['error']} No target workspace configured",
-            style=RICH_STYLES["error"],
-        )
-        console.print(
-            "Set target: [bold]sup workspace set-target <ID>[/]",
-            style=RICH_STYLES["info"],
-        )
-        raise typer.Exit(1)
-
-    # Safety confirmation
-    if not force and not porcelain:
-        is_cross_workspace = target_workspace_id != source_workspace_id
-
-        console.print(
-            f"{EMOJIS['warning']} Import Operation Summary",
-            style=RICH_STYLES["warning"],
-        )
-        console.print(f"Assets folder: [cyan]{resolved_assets_folder}[/cyan]")
-        console.print(f"Source workspace: [cyan]{source_workspace_id}[/cyan]")
-        console.print(f"Target workspace: [cyan]{target_workspace_id}[/cyan]")
-
-        if is_cross_workspace:
-            console.print(
-                "[bold]Cross-workspace import[/bold] - assets copied to different workspace",
-                style=RICH_STYLES["info"],
-            )
-        else:
-            console.print(
-                "[bold]Same-workspace import[/bold] - may overwrite existing assets",
-                style=RICH_STYLES["warning"],
-            )
-
-        if not typer.confirm("Continue with import operation?"):
-            console.print(
-                f"{EMOJIS['info']} Import cancelled",
-                style=RICH_STYLES["info"],
-            )
-            raise typer.Exit(0)
-
-    # Resolve target workspace URL
-    preset_client = SupPresetClient.from_context(ctx, silent=True)
-    workspaces = preset_client.get_all_workspaces(silent=True)
-
-    target_workspace = None
-    for ws in workspaces:
-        if ws.get("id") == target_workspace_id:
-            target_workspace = ws
-            break
-
-    if not target_workspace:
-        console.print(
-            f"{EMOJIS['error']} Target workspace {target_workspace_id} not found",
-            style=RICH_STYLES["error"],
-        )
-        raise typer.Exit(1)
-
-    target_hostname = target_workspace.get("hostname")
-    if not target_hostname:
-        console.print(
-            f"{EMOJIS['error']} No hostname for target workspace {target_workspace_id}",
-            style=RICH_STYLES["error"],
-        )
-        raise typer.Exit(1)
-
-    workspace_url = f"https://{target_hostname}/"
-    auth = SupPresetAuth.from_sup_config(ctx, silent=True)
 
     # Create mock Click context for native()
     import_command = click.Command("import")
@@ -191,8 +122,161 @@ def push_assets(
             db_password=(),
         )
 
+    summary = get_import_summary()
     if not porcelain:
+        failed_entries = summary["failed"]
+        if failed_entries:
+            console.print(
+                f"{EMOJIS['warning']} {asset_label.capitalize()} import completed with "
+                f"{len(failed_entries)} failure(s) ({len(summary['succeeded'])} succeeded):",
+                style=RICH_STYLES["warning"],
+            )
+            for entry in failed_entries:
+                try:
+                    path_str = str(Path(entry.get("path", "")).relative_to("bundle"))
+                except ValueError:
+                    path_str = entry.get("path", "")
+                error_msg = entry.get("error", "")
+                line = f"  ✗ {path_str}"
+                if error_msg:
+                    line += f"\n    {error_msg}"
+                console.print(line, style=RICH_STYLES["error"])
+        else:
+            console.print(
+                f"{EMOJIS['success']} {asset_label.capitalize()} import completed successfully",
+                style=RICH_STYLES["success"],
+            )
+
+    if summary["has_failures"]:
+        raise typer.Exit(1)
+
+
+def _resolve_instance_target(ctx, instance_name: str):
+    """Resolve URL + auth for a self-hosted Superset instance."""
+    from preset_cli.auth.factory import create_superset_auth
+
+    instance_config = ctx.get_superset_instance_config(instance_name)
+    if not instance_config:
         console.print(
-            f"{EMOJIS['success']} {asset_label.capitalize()} import completed successfully",
-            style=RICH_STYLES["success"],
+            f"{EMOJIS['error']} Instance configuration not found: {instance_name}",
+            style=RICH_STYLES["error"],
         )
+        raise typer.Exit(1)
+
+    workspace_url = instance_config.url
+    if not workspace_url.endswith("/"):
+        workspace_url += "/"
+
+    try:
+        auth = create_superset_auth(instance_config)
+    except ValueError as exc:
+        console.print(
+            f"{EMOJIS['error']} Authentication configuration error: {exc}",
+            style=RICH_STYLES["error"],
+        )
+        raise typer.Exit(1)
+
+    return workspace_url, auth
+
+
+def _confirm_instance_push(
+    instance_name: str, resolved_assets_folder: str, force: bool, porcelain: bool
+) -> None:
+    if force or porcelain:
+        return
+    console.print(f"{EMOJIS['warning']} Import Operation Summary", style=RICH_STYLES["warning"])
+    console.print(f"Assets folder: [cyan]{resolved_assets_folder}[/cyan]")
+    console.print(f"Target instance: [cyan]{instance_name}[/cyan]")
+    console.print(
+        "[bold]This will import assets[/bold] - may overwrite existing assets",
+        style=RICH_STYLES["warning"],
+    )
+    if not typer.confirm("Continue with import operation?"):
+        console.print(f"{EMOJIS['info']} Import cancelled", style=RICH_STYLES["info"])
+        raise typer.Exit(0)
+
+
+def _resolve_preset_target(
+    ctx, workspace_id: Optional[int], resolved_assets_folder: str, force: bool, porcelain: bool
+):
+    """Resolve URL + auth for a Preset workspace, with safety confirmation."""
+    from sup.auth.preset import SupPresetAuth
+    from sup.clients.preset import SupPresetClient
+
+    source_workspace_id = ctx.get_workspace_id()
+    target_workspace_id = ctx.get_target_workspace_id(cli_override=workspace_id)
+
+    if not source_workspace_id:
+        console.print(
+            f"{EMOJIS['error']} No source workspace configured",
+            style=RICH_STYLES["error"],
+        )
+        console.print(
+            "Run [bold]sup workspace list[/] and [bold]sup workspace use <ID>[/]",
+            style=RICH_STYLES["info"],
+        )
+        raise typer.Exit(1)
+
+    if not target_workspace_id:
+        console.print(
+            f"{EMOJIS['error']} No target workspace configured",
+            style=RICH_STYLES["error"],
+        )
+        console.print(
+            "Set target: [bold]sup workspace set-target <ID>[/]",
+            style=RICH_STYLES["info"],
+        )
+        raise typer.Exit(1)
+
+    # Safety confirmation
+    if not force and not porcelain:
+        is_cross_workspace = target_workspace_id != source_workspace_id
+
+        console.print(f"{EMOJIS['warning']} Import Operation Summary", style=RICH_STYLES["warning"])
+        console.print(f"Assets folder: [cyan]{resolved_assets_folder}[/cyan]")
+        console.print(f"Source workspace: [cyan]{source_workspace_id}[/cyan]")
+        console.print(f"Target workspace: [cyan]{target_workspace_id}[/cyan]")
+
+        if is_cross_workspace:
+            console.print(
+                "[bold]Cross-workspace import[/bold] - assets copied to different workspace",
+                style=RICH_STYLES["info"],
+            )
+        else:
+            console.print(
+                "[bold]Same-workspace import[/bold] - may overwrite existing assets",
+                style=RICH_STYLES["warning"],
+            )
+
+        if not typer.confirm("Continue with import operation?"):
+            console.print(f"{EMOJIS['info']} Import cancelled", style=RICH_STYLES["info"])
+            raise typer.Exit(0)
+
+    # Resolve target workspace URL
+    preset_client = SupPresetClient.from_context(ctx, silent=True)
+    workspaces = preset_client.get_all_workspaces(silent=True)
+
+    target_workspace = None
+    for ws in workspaces:
+        if ws.get("id") == target_workspace_id:
+            target_workspace = ws
+            break
+
+    if not target_workspace:
+        console.print(
+            f"{EMOJIS['error']} Target workspace {target_workspace_id} not found",
+            style=RICH_STYLES["error"],
+        )
+        raise typer.Exit(1)
+
+    target_hostname = target_workspace.get("hostname")
+    if not target_hostname:
+        console.print(
+            f"{EMOJIS['error']} No hostname for target workspace {target_workspace_id}",
+            style=RICH_STYLES["error"],
+        )
+        raise typer.Exit(1)
+
+    workspace_url = f"https://{target_hostname}/"
+    auth = SupPresetAuth.from_sup_config(ctx, silent=True)
+    return workspace_url, auth

@@ -541,10 +541,9 @@ def push_dashboards(
     assets_folder: Annotated[
         Optional[str],
         typer.Argument(
-            help="Path to assets folder with dashboards. Defaults to assets_folder or './assets'."
+            help="Path to assets folder. Defaults to the configured folder or './assets'.",
         ),
     ] = None,
-    # Target configuration
     instance: Annotated[
         Optional[str],
         typer.Option(
@@ -557,423 +556,56 @@ def push_dashboards(
         typer.Option(
             "--workspace-id",
             "-w",
-            help="Target workspace ID (Preset). If not specified, uses configured target.",
+            help="Target workspace ID (Preset). Defaults to the configured target.",
         ),
     ] = None,
-    # Import options
     overwrite: Annotated[
         bool,
-        typer.Option(
-            "--overwrite",
-            help="Overwrite existing dashboards with same UUID",
-        ),
+        typer.Option("--overwrite", help="Overwrite existing dashboards with the same UUID"),
     ] = False,
     continue_on_error: Annotated[
         bool,
-        typer.Option(
-            "--continue-on-error",
-            help="Continue importing remaining dashboards if one fails",
-        ),
+        typer.Option("--continue-on-error", help="Continue importing if some dashboards fail"),
     ] = False,
-    load_env: Annotated[
-        bool,
-        typer.Option(
-            "--load-env",
-            help="Load environment variables for Jinja2 templating",
-        ),
-    ] = False,
-    disable_jinja_templating: Annotated[
-        bool,
-        typer.Option(
-            "--disable-jinja-templating",
-            help="Disable Jinja2 templating in dashboard definitions",
-        ),
-    ] = False,
-    template_options: Annotated[
-        Optional[list[str]],
-        typer.Option(
-            "--option",
-            "-o",
-            help="Jinja2 template variable (format: KEY=VALUE). Can be used multiple times.",
-        ),
-    ] = None,
-    # Database transformation options
-    database_uuid: Annotated[
-        Optional[str],
-        typer.Option(
-            "--database-uuid",
-            help="Replace all database UUIDs with this UUID in target",
-        ),
-    ] = None,
-    database_name: Annotated[
-        Optional[str],
-        typer.Option(
-            "--database-name",
-            help="Use database with this name from target (auto-fetches UUID)",
-        ),
-    ] = None,
-    auto_map_databases: Annotated[
-        bool,
-        typer.Option(
-            "--auto-map-databases",
-            help="Auto-map databases by matching names between source and target",
-        ),
-    ] = False,
-    # Control flags
+    template_options: TemplateOptions = None,
+    load_env: LoadEnvOption = False,
+    disable_jinja_templating: DisableJinjaOption = False,
     force: Annotated[
         bool,
-        typer.Option(
-            "--force",
-            "-f",
-            help="Skip confirmation prompts",
-        ),
+        typer.Option("--force", "-f", help="Skip confirmation prompts"),
     ] = False,
     porcelain: Annotated[
         bool,
-        typer.Option(
-            "--porcelain",
-            help="Machine-readable output (no decorations, no prompts)",
-        ),
+        typer.Option("--porcelain", help="Machine-readable output"),
     ] = False,
 ):
     """
-    Import dashboards to Superset instance or Preset workspace.
+    Push dashboards from the local filesystem to a Superset instance or Preset workspace.
 
-    Supports both self-hosted Superset instances and Preset workspaces with full
-    dependency resolution (automatically imports required datasets and databases).
-
-    Database UUID transformation allows importing assets across environments
-    by updating database references to match target instance databases.
+    Dependencies (datasets, databases) are imported automatically. Targets a
+    self-hosted instance when ``--instance`` (or ``sup instance use``) is set,
+    otherwise the configured Preset workspace.
 
     Examples:
-        # Import to self-hosted instance
-        sup instance use production
-        sup dashboard push assets/
-
-        # Import to Preset workspace
-        sup dashboard push assets/ --workspace-id 123
-
-        # Import with auto-mapped databases (recommended)
-        sup dashboard push assets/ --auto-map-databases
-
-        # Import with specific database UUID
-        sup dashboard push assets/ --database-uuid abc-123-def
-
-        # Import with database name lookup
-        sup dashboard push assets/ --database-name "Trino"
-
-        # Import with overwrite
-        sup dashboard push assets/ --overwrite --force
-
-        # Import with custom template variables
-        sup dashboard push assets/ --option ENV=prod --option REGION=us-east
+        sup dashboard push assets/                     # Push to the current target
+        sup dashboard push assets/ --instance prod     # Self-hosted instance
+        sup dashboard push assets/ --workspace-id 123  # Preset workspace
+        sup dashboard push assets/ --overwrite --force # Overwrite without prompts
     """
-    from pathlib import Path
+    from preset_cli.cli.superset.sync.native.command import ResourceType
+    from sup.commands.push_helper import push_assets
 
-    from preset_cli.cli.superset.lib import get_import_summary
-    from preset_cli.cli.superset.sync.native.command import ResourceType, native
-    from sup.config.settings import SupContext
-
-    # Initialized before the try so the finally cleanup never hits an unbound
-    # name if an earlier statement raises.
-    temp_dir = None
-    try:
-        ctx = SupContext()
-
-        # Resolve assets folder
-        resolved_assets_folder = (
-            assets_folder
-            or ctx.global_config.assets_folder
-            or ctx.project_state.assets_folder
-            or "./assets"
-        )
-
-        assets_path = Path(resolved_assets_folder)
-        if not assets_path.exists():
-            console.print(
-                f"{EMOJIS['error']} Assets folder does not exist: {resolved_assets_folder}",
-                style=RICH_STYLES["error"],
-            )
-            raise typer.Exit(1)
-        elif not assets_path.is_dir():
-            console.print(
-                f"{EMOJIS['error']} Path is not a directory: {resolved_assets_folder}",
-                style=RICH_STYLES["error"],
-            )
-            raise typer.Exit(1)
-
-        # Create a mock click context for the native() function
-        import click
-
-        from sup.auth.preset import SupPresetAuth
-
-        # Check if we're using self-hosted instance or Preset workspace
-        instance_name = instance or ctx.get_instance_name()
-        source_workspace_id = ctx.get_workspace_id()
-
-        # For self-hosted instances, we don't need workspace IDs
-        if instance_name:
-            # Self-hosted path - instance is the target
-            console.print(
-                f"{EMOJIS['info']} Using self-hosted instance: [cyan]{instance_name}[/cyan]",
-                style=RICH_STYLES["info"],
-            )
-
-            # Skip workspace ID validation for self-hosted
-            use_instance_path = True
-        else:
-            # Preset workspace path - need workspace IDs
-            use_instance_path = False
-            target_workspace_id = ctx.get_target_workspace_id(cli_override=workspace_id)
-
-            if not source_workspace_id:
-                console.print(
-                    f"{EMOJIS['error']} No source workspace configured",
-                    style=RICH_STYLES["error"],
-                )
-                console.print(
-                    "💡 Run [bold]sup workspace list[/] and [bold]sup workspace use <ID>[/]",
-                    style=RICH_STYLES["info"],
-                )
-                raise typer.Exit(1)
-
-            if not target_workspace_id:
-                console.print(
-                    f"{EMOJIS['error']} No target workspace configured",
-                    style=RICH_STYLES["error"],
-                )
-                console.print(
-                    "💡 Set target: [bold]sup workspace set-import-target[/]",
-                    style=RICH_STYLES["info"],
-                )
-                raise typer.Exit(1)
-
-        # Safety confirmation for potentially destructive imports
-        if not force and not porcelain:
-            if use_instance_path:
-                # Self-hosted instance confirmation
-                console.print(
-                    f"{EMOJIS['warning']} Import Operation Summary",
-                    style=RICH_STYLES["warning"],
-                )
-                console.print(f"📁 Assets folder: [cyan]{resolved_assets_folder}[/cyan]")
-                console.print(f"📥 Target instance: [cyan]{instance_name}[/cyan]")
-                console.print(
-                    "⚠️  [bold]This will import dashboards[/bold] - may overwrite existing assets",
-                    style=RICH_STYLES["warning"],
-                )
-            else:
-                # Preset workspace confirmation
-                is_cross_workspace = target_workspace_id != source_workspace_id
-
-                console.print(
-                    f"{EMOJIS['warning']} Import Operation Summary",
-                    style=RICH_STYLES["warning"],
-                )
-                console.print(f"📁 Assets folder: [cyan]{resolved_assets_folder}[/cyan]")
-                console.print(f"📤 Source workspace: [cyan]{source_workspace_id}[/cyan]")
-                console.print(f"📥 Target workspace: [cyan]{target_workspace_id}[/cyan]")
-
-                if is_cross_workspace:
-                    console.print(
-                        "🔄 [bold]Cross-workspace import[/bold] - copying to different workspace",
-                        style=RICH_STYLES["info"],
-                    )
-                else:
-                    console.print(
-                        "⚠️  [bold]Same-workspace import[/bold] - may overwrite existing dashboards",
-                        style=RICH_STYLES["warning"],
-                    )
-
-            if not typer.confirm("Continue with import operation?"):
-                console.print(
-                    f"{EMOJIS['info']} Import cancelled",
-                    style=RICH_STYLES["info"],
-                )
-                raise typer.Exit(0)
-
-        # Get target URL and auth based on instance or workspace
-        if use_instance_path:
-            # Self-hosted instance path
-            instance_config = ctx.get_superset_instance_config(instance_name)
-            if not instance_config:
-                console.print(
-                    f"{EMOJIS['error']} Instance configuration not found: {instance_name}",
-                    style=RICH_STYLES["error"],
-                )
-                raise typer.Exit(1)
-
-            workspace_url = instance_config.url
-            if not workspace_url.endswith("/"):
-                workspace_url += "/"
-
-            # Create auth for self-hosted instance
-            from preset_cli.auth.factory import create_superset_auth
-
-            try:
-                auth = create_superset_auth(instance_config)
-            except ValueError as e:
-                console.print(
-                    f"{EMOJIS['error']} Authentication configuration error: {e}",
-                    style=RICH_STYLES["error"],
-                )
-                raise typer.Exit(1)
-
-        else:
-            # Preset workspace path (original logic)
-            from sup.clients.preset import SupPresetClient
-
-            preset_client = SupPresetClient.from_context(ctx, silent=True)
-            workspaces = preset_client.get_all_workspaces(silent=True)
-
-            target_workspace = None
-            for ws in workspaces:
-                if ws.get("id") == target_workspace_id:
-                    target_workspace = ws
-                    break
-
-            if not target_workspace:
-                console.print(
-                    f"{EMOJIS['error']} Target workspace {target_workspace_id} not found",
-                    style=RICH_STYLES["error"],
-                )
-                raise typer.Exit(1)
-
-            target_hostname = target_workspace.get("hostname")
-            if not target_hostname:
-                console.print(
-                    f"{EMOJIS['error']} No hostname for target workspace {target_workspace_id}",
-                    style=RICH_STYLES["error"],
-                )
-                raise typer.Exit(1)
-
-            workspace_url = f"https://{target_hostname}/"
-            auth = SupPresetAuth.from_sup_config(ctx, silent=True)
-
-        # Apply database UUID transformation if requested
-        use_split_import = not auto_map_databases  # Don't use split when auto-mapping
-
-        try:
-            if database_uuid or database_name or auto_map_databases:
-                from sup.utils.database_transform import transform_database_refs
-
-                if not porcelain:
-                    if database_uuid:
-                        console.print(
-                            f"{EMOJIS['info']} Transforming database refs to UUID: {database_uuid}",
-                            style=RICH_STYLES["info"],
-                        )
-                    elif database_name:
-                        console.print(
-                            f"{EMOJIS['info']} Looking up database: {database_name}",
-                            style=RICH_STYLES["info"],
-                        )
-                    elif auto_map_databases:
-                        console.print(
-                            f"{EMOJIS['info']} Auto-mapping databases by name...",
-                            style=RICH_STYLES["info"],
-                        )
-
-                temp_dir = transform_database_refs(
-                    assets_dir=resolved_assets_folder,
-                    instance_url=workspace_url,
-                    auth=auth,
-                    database_uuid=database_uuid,
-                    database_name=database_name,
-                    auto_map=auto_map_databases,
-                )
-
-                # Use transformed assets
-                if temp_dir:
-                    resolved_assets_folder = temp_dir
-                    if not porcelain:
-                        console.print(
-                            f"{EMOJIS['success']} Database UUIDs transformed",
-                            style=RICH_STYLES["success"],
-                        )
-        except ValueError as e:
-            console.print(
-                f"{EMOJIS['error']} Database transformation failed: {e}",
-                style=RICH_STYLES["error"],
-            )
-            raise typer.Exit(1)
-
-        # Create mock click context that native() expects
-        import_command = click.Command("import")
-        mock_ctx = click.Context(import_command)
-        mock_ctx.obj = {
-            "AUTH": auth,
-            "INSTANCE": workspace_url,
-        }
-
-        if not porcelain:
-            console.print(
-                f"{EMOJIS['info']} Processing dashboards and dependencies...",
-                style=RICH_STYLES["info"],
-            )
-
-        # Call the existing native() function with dashboard-specific settings
-        with mock_ctx:
-            mock_ctx.invoke(
-                native,
-                directory=resolved_assets_folder,
-                option=template_options or (),
-                asset_type=ResourceType.DASHBOARD,
-                overwrite=overwrite,
-                disable_jinja_templating=disable_jinja_templating,
-                disallow_edits=True,
-                external_url_prefix="",
-                load_env=load_env,
-                split=use_split_import,  # Use bundle import when auto-mapping to avoid password prompts
-                continue_on_error=continue_on_error,
-                db_password=(),
-            )
-
-        summary = get_import_summary()
-        if not porcelain:
-            failed_entries = summary["failed"]
-            if failed_entries:
-                console.print(
-                    f"{EMOJIS['warning']} Dashboard import completed with "
-                    f"{len(failed_entries)} failure(s) "
-                    f"({len(summary['succeeded'])} succeeded):",
-                    style=RICH_STYLES["warning"],
-                )
-                for entry in failed_entries:
-                    try:
-                        path_str = str(Path(entry.get("path", "")).relative_to("bundle"))
-                    except ValueError:
-                        path_str = entry.get("path", "")
-                    error_msg = entry.get("error", "")
-                    line = f"  \u2717 {path_str}"
-                    if error_msg:
-                        line += f"\n    {error_msg}"
-                    console.print(line, style=RICH_STYLES["error"])
-            else:
-                console.print(
-                    f"{EMOJIS['success']} Dashboard import completed successfully",
-                    style=RICH_STYLES["success"],
-                )
-
-        if summary["has_failures"]:
-            raise typer.Exit(1)
-
-    except typer.Exit:
-        # Re-raise typer exits (our own error handling)
-        raise
-    except Exception as e:
-        if not porcelain:
-            console.print(
-                f"{EMOJIS['error']} Failed to import dashboards: {e}",
-                style=RICH_STYLES["error"],
-            )
-        raise typer.Exit(1)
-    finally:
-        if temp_dir:
-            import shutil
-
-            shutil.rmtree(temp_dir, ignore_errors=True)
-
-
-if __name__ == "__main__":
-    app()
+    push_assets(
+        asset_type_enum=ResourceType.DASHBOARD,
+        asset_label="dashboards",
+        assets_folder=assets_folder,
+        workspace_id=workspace_id,
+        overwrite=overwrite,
+        template_options=template_options,
+        load_env=load_env,
+        disable_jinja_templating=disable_jinja_templating,
+        continue_on_error=continue_on_error,
+        force=force,
+        porcelain=porcelain,
+        instance=instance,
+    )

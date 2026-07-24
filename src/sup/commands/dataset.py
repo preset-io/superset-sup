@@ -95,9 +95,16 @@ def list_datasets(
         typer.Option("--table-type", help="Filter by table type (table, view, etc.)"),
     ] = None,
     # Output options
+    instance: Annotated[
+        Optional[str],
+        typer.Option(
+            "--instance",
+            help="Superset instance name (self-hosted). Use 'sup instance list'.",
+        ),
+    ] = None,
     workspace_id: Annotated[
         Optional[int],
-        typer.Option("--workspace-id", "-w", help="Workspace ID"),
+        typer.Option("--workspace-id", "-w", help="Preset workspace ID"),
     ] = None,
     json_output: Annotated[bool, typer.Option("--json", help="Output as JSON")] = False,
     yaml_output: Annotated[bool, typer.Option("--yaml", help="Output as YAML")] = False,
@@ -140,11 +147,13 @@ def list_datasets(
         # Get datasets from API with spinner (server-side filtering for performance)
         with data_spinner("datasets", silent=porcelain) as sp:
             ctx = SupContext()
-            client = SupSupersetClient.from_context(ctx, workspace_id)
+            client = SupSupersetClient.from_context(
+                ctx, workspace_id=workspace_id, instance_name=instance
+            )
 
             datasets = client.get_datasets(
                 silent=True,
-                limit=limit_filter,
+                limit=limit_filter or 100,  # Default to 100 for list view
                 text_search=search_filter,  # Server-side table name search
                 filters=api_filters,
                 # When filtering, fetch every page so matches aren't capped to page 1
@@ -181,6 +190,14 @@ def list_datasets(
             workspace_hostname = ctx.get_workspace_hostname()
             display_datasets_table(datasets, workspace_hostname)
 
+    except ValueError as e:
+        # from_context() provides helpful error messages for missing config
+        if not porcelain:
+            console.print(
+                f"{EMOJIS['error']} {e}",
+                style=RICH_STYLES["error"],
+            )
+        raise typer.Exit(1)
     except Exception as e:
         if not porcelain:
             console.print(
@@ -193,9 +210,16 @@ def list_datasets(
 @app.command("info")
 def dataset_info(
     dataset_id: Annotated[int, typer.Argument(help="Dataset ID to inspect")],
+    instance: Annotated[
+        Optional[str],
+        typer.Option(
+            "--instance",
+            help="Superset instance name (self-hosted). Use 'sup instance list'.",
+        ),
+    ] = None,
     workspace_id: Annotated[
         Optional[int],
-        typer.Option("--workspace-id", "-w", help="Workspace ID"),
+        typer.Option("--workspace-id", "-w", help="Preset workspace ID"),
     ] = None,
     json_output: Annotated[bool, typer.Option("--json", help="Output as JSON")] = False,
     porcelain: Annotated[
@@ -215,7 +239,9 @@ def dataset_info(
     try:
         with data_spinner(f"dataset {dataset_id}", silent=porcelain):
             ctx = SupContext()
-            client = SupSupersetClient.from_context(ctx, workspace_id)
+            client = SupSupersetClient.from_context(
+                ctx, workspace_id=workspace_id, instance_name=instance
+            )
             dataset = client.get_dataset(dataset_id, silent=True)
 
         if porcelain:
@@ -230,6 +256,14 @@ def dataset_info(
         else:
             display_dataset_details(dataset)
 
+    except ValueError as e:
+        # from_context() provides helpful error messages for missing config
+        if not porcelain:
+            console.print(
+                f"{EMOJIS['error']} {e}",
+                style=RICH_STYLES["error"],
+            )
+        raise typer.Exit(1)
     except Exception as e:
         if not porcelain:
             console.print(
@@ -268,15 +302,19 @@ def pull_datasets(
         Optional[int],
         typer.Option("--limit", "-l", help="Maximum number of datasets to pull"),
     ] = None,
-    # Pull-specific options
-    workspace_id: Annotated[
-        Optional[int],
+    # Output/connection options
+    instance: Annotated[
+        Optional[str],
         typer.Option(
-            "--workspace-id",
-            "-w",
-            help="Workspace ID (defaults to configured workspace)",
+            "--instance",
+            help="Superset instance name (self-hosted). Use 'sup instance list'.",
         ),
     ] = None,
+    workspace_id: Annotated[
+        Optional[int],
+        typer.Option("--workspace-id", "-w", help="Preset workspace ID"),
+    ] = None,
+    # Pull-specific options
     overwrite: Annotated[
         bool,
         typer.Option("--overwrite", help="Overwrite existing files"),
@@ -335,14 +373,38 @@ def pull_datasets(
             raise typer.Exit(1)
 
         # Get datasets using existing API
-        client = SupSupersetClient.from_context(ctx, workspace_id)
+        client = SupSupersetClient.from_context(
+            ctx, workspace_id=workspace_id, instance_name=instance
+        )
 
         with data_spinner("datasets to export", silent=porcelain) as sp:
             # Get datasets (server-side filtering)
-            datasets = client.get_datasets(
-                silent=True,
-                text_search=search_filter,
-            )
+            # If no limit specified, fetch all datasets via pagination
+            if limit:
+                datasets = client.get_datasets(
+                    silent=True,
+                    text_search=search_filter,
+                    limit=limit,
+                )
+            else:
+                # Fetch all datasets via pagination
+                datasets = []
+                page = 0
+                page_size = 100  # Larger page size for efficiency
+                while True:
+                    page_datasets = client.get_datasets(
+                        silent=True,
+                        text_search=search_filter,
+                        limit=page_size,
+                        page=page,
+                    )
+                    if not page_datasets:
+                        break
+                    datasets.extend(page_datasets)
+                    # If we got less than page_size, we've reached the end
+                    if len(page_datasets) < page_size:
+                        break
+                    page += 1
 
             # Client-side filtering
             if id_filter:
@@ -581,7 +643,14 @@ def push_datasets(
     assets_folder: Annotated[
         Optional[str],
         typer.Argument(
-            help="Assets folder to push dataset definitions from (defaults to configured folder)",
+            help="Path to assets folder. Defaults to the configured folder or './assets'.",
+        ),
+    ] = None,
+    instance: Annotated[
+        Optional[str],
+        typer.Option(
+            "--instance",
+            help="Target self-hosted instance name. Use 'sup instance list'.",
         ),
     ] = None,
     workspace_id: Annotated[
@@ -589,30 +658,23 @@ def push_datasets(
         typer.Option(
             "--workspace-id",
             "-w",
-            help="Workspace ID (defaults to configured workspace)",
+            help="Target workspace ID (Preset). Defaults to the configured target.",
         ),
     ] = None,
     overwrite: Annotated[
         bool,
-        typer.Option("--overwrite", help="Overwrite existing datasets"),
+        typer.Option("--overwrite", help="Overwrite existing datasets with the same UUID"),
+    ] = False,
+    continue_on_error: Annotated[
+        bool,
+        typer.Option("--continue-on-error", help="Continue importing if some datasets fail"),
     ] = False,
     template_options: TemplateOptions = None,
     load_env: LoadEnvOption = False,
     disable_jinja_templating: DisableJinjaOption = False,
-    continue_on_error: Annotated[
-        bool,
-        typer.Option(
-            "--continue-on-error",
-            help="Continue importing even if some datasets fail",
-        ),
-    ] = False,
     force: Annotated[
         bool,
-        typer.Option(
-            "--force",
-            "-f",
-            help="Skip confirmation prompts",
-        ),
+        typer.Option("--force", "-f", help="Skip confirmation prompts"),
     ] = False,
     porcelain: Annotated[
         bool,
@@ -620,42 +682,32 @@ def push_datasets(
     ] = False,
 ):
     """
-    Push dataset definitions from local filesystem to Superset workspace.
+    Push datasets from the local filesystem to a Superset instance or Preset workspace.
 
-    Reads dataset configurations from YAML files and creates/updates datasets
-    in the workspace. Database dependencies are pushed first.
+    Dependencies (datasets, databases) are imported automatically. Targets a
+    self-hosted instance when ``--instance`` (or ``sup instance use``) is set,
+    otherwise the configured Preset workspace.
 
     Examples:
-        sup dataset push                               # Push to configured target
-        sup dataset push ./backup                      # Push from specific folder
-        sup dataset push --workspace-id=456            # Push to specific workspace
-        sup dataset push --overwrite --force            # Overwrite without confirmation
-        sup dataset push --continue-on-error           # Skip failures, continue
-        sup dataset push --option env=prod --load-env  # Template with variables
+        sup dataset push assets/                     # Push to the current target
+        sup dataset push assets/ --instance prod     # Self-hosted instance
+        sup dataset push assets/ --workspace-id 123  # Preset workspace
+        sup dataset push assets/ --overwrite --force # Overwrite without prompts
     """
     from preset_cli.cli.superset.sync.native.command import ResourceType
     from sup.commands.push_helper import push_assets
 
-    try:
-        push_assets(
-            asset_type_enum=ResourceType.DATASET,
-            asset_label="datasets",
-            assets_folder=assets_folder,
-            workspace_id=workspace_id,
-            overwrite=overwrite,
-            template_options=template_options,
-            load_env=load_env,
-            disable_jinja_templating=disable_jinja_templating,
-            continue_on_error=continue_on_error,
-            force=force,
-            porcelain=porcelain,
-        )
-    except typer.Exit:
-        raise
-    except Exception as e:
-        if not porcelain:
-            console.print(
-                f"{EMOJIS['error']} Failed to import datasets: {e}",
-                style=RICH_STYLES["error"],
-            )
-        raise typer.Exit(1)
+    push_assets(
+        asset_type_enum=ResourceType.DATASET,
+        asset_label="datasets",
+        assets_folder=assets_folder,
+        workspace_id=workspace_id,
+        overwrite=overwrite,
+        template_options=template_options,
+        load_env=load_env,
+        disable_jinja_templating=disable_jinja_templating,
+        continue_on_error=continue_on_error,
+        force=force,
+        porcelain=porcelain,
+        instance=instance,
+    )

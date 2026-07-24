@@ -24,6 +24,8 @@ def _make_ctx(assets_folder="./assets", workspace_id=100, target_workspace_id=20
     ctx.get_assets_folder.return_value = assets_folder
     ctx.get_workspace_id.return_value = workspace_id
     ctx.get_target_workspace_id.return_value = target_workspace_id
+    # No self-hosted instance configured: these tests exercise the Preset path.
+    ctx.get_instance_name.return_value = None
     return ctx
 
 

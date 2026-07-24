@@ -256,6 +256,7 @@ class TestSqlCommand:
         sql_command(query="SELECT 1")
         mock_execute.assert_called_once_with(
             query="SELECT 1",
+            instance=None,
             workspace_id=None,
             database_id=None,
             json_output=False,

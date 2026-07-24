@@ -264,7 +264,7 @@ def test_list_workspace_id(mock_ctx_cls, mock_client_cls, mock_data_spinner):
     with patch("sup.commands.query.display_saved_queries_table"):
         result = runner.invoke(app, ["list", "--workspace-id", "99"])
         assert result.exit_code == 0
-    mock_client_cls.from_context.assert_called_once_with(ctx, 99)
+    mock_client_cls.from_context.assert_called_once_with(ctx, workspace_id=99, instance_name=None)
 
 
 @patch(SPINNER)
@@ -413,7 +413,7 @@ def test_info_workspace_id(mock_ctx_cls, mock_client_cls, mock_data_spinner):
     with patch("sup.commands.query.display_saved_query_details"):
         result = runner.invoke(app, ["info", "1", "--workspace-id", "42"])
         assert result.exit_code == 0
-    mock_client_cls.from_context.assert_called_once_with(ctx, 42)
+    mock_client_cls.from_context.assert_called_once_with(ctx, workspace_id=42, instance_name=None)
 
 
 # ---- display_saved_query_details ----

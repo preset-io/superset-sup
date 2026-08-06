@@ -5,8 +5,9 @@
 #    pip-compile --no-annotate
 #
 -e file:.
-aiohttp==3.8.3
-aiosignal==1.2.0
+aiohappyeyeballs==2.6.1
+aiohttp==3.12.14
+aiosignal==1.4.0
 annotated-types==0.7.0
 appdirs==1.4.4
 async-timeout==4.0.2
@@ -33,6 +34,7 @@ packaging==21.3
 pandas==1.4.2
 prison==0.2.1
 prompt-toolkit==3.0.29
+propcache==0.4.1
 pydantic==2.12.4
 pydantic-core==2.41.5
 pydantic-settings==2.11.0
@@ -59,4 +61,4 @@ typing-inspection==0.4.2
 urllib3==1.26.9
 wcwidth==0.2.5
 websockets==10.3
-yarl==1.7.2
+yarl==1.22.0

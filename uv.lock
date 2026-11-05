@@ -1664,7 +1664,7 @@ requires-dist = [
     { name = "setuptools", marker = "extra == 'testing'" },
     { name = "snowflake-sqlalchemy", marker = "extra == 'snowflake'", specifier = "==1.4.4" },
     { name = "sqlalchemy", specifier = ">=1.4,<3" },
-    { name = "sqlglot", specifier = ">=26" },
+    { name = "sqlglot", specifier = ">=26,<30" },
     { name = "tabulate", specifier = ">=0.8.9" },
     { name = "typer", specifier = ">=0.12.0" },
     { name = "typing-extensions", specifier = ">=4.0.1" },

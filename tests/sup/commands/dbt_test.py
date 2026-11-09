@@ -244,7 +244,7 @@ class TestSyncDbtCore:
             result = runner.invoke(app, ["core", str(manifest), "--workspace-id", "42"])
 
         assert result.exit_code == 0
-        assert "Using workspace: 42" in result.output
+        assert "Using workspace/instance: 42" in result.output
 
     def test_success_without_workspace_id(self, tmp_path):
         manifest = tmp_path / "manifest.json"
@@ -651,7 +651,7 @@ class TestSyncDbtCloud:
 
             result = runner.invoke(app, ["cloud", "--workspace-id", "99"])
         assert result.exit_code == 0
-        assert "Using workspace: 99" in result.output
+        assert "Using workspace/instance: 99" in result.output
 
     def test_success_without_workspace_id(self):
         click_patch, _ = _mock_click_runner(0, "")

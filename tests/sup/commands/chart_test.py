@@ -50,6 +50,8 @@ def _ctx(workspace_id=1, hostname="ws.preset.io", assets_folder="./assets", targ
     m.get_workspace_hostname.return_value = hostname
     m.get_assets_folder.return_value = assets_folder
     m.get_target_workspace_id.return_value = target_workspace_id
+    # No self-hosted instance configured: push tests exercise the Preset path.
+    m.get_instance_name.return_value = None
     return m
 
 

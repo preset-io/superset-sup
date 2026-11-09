@@ -64,6 +64,7 @@ EMOJIS = {
     "search": "🔍",
     "config": "⚙️",
     "workspace": "🏢",
+    "server": "🖥️",
     "sql": "📝",
     "dashboard": "📈",
     "user": "👤",

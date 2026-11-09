@@ -21,6 +21,13 @@ app = typer.Typer(help="Manage users", no_args_is_help=True)
 
 @app.command("list")
 def list_users(
+    instance: Annotated[
+        Optional[str],
+        typer.Option(
+            "--instance",
+            help="Superset instance name (self-hosted). Use 'sup instance list'.",
+        ),
+    ] = None,
     workspace_id: Annotated[
         Optional[int],
         typer.Option("--workspace-id", "-w", help="Workspace ID"),
@@ -49,7 +56,9 @@ def list_users(
     try:
         with data_spinner("users", silent=porcelain) as sp:
             ctx = SupContext()
-            client = SupSupersetClient.from_context(ctx, workspace_id)
+            client = SupSupersetClient.from_context(
+                ctx, workspace_id=workspace_id, instance_name=instance
+            )
 
             # Get users from the Superset API
             users_list = list(client.client.export_users())
@@ -80,6 +89,14 @@ def list_users(
         else:
             client.display_users_table(users)
 
+    except ValueError as e:
+        # from_context() provides helpful error messages for missing config
+        if not porcelain:
+            console.print(
+                f"{EMOJIS['error']} {e}",
+                style=RICH_STYLES["error"],
+            )
+        raise typer.Exit(1)
     except Exception as e:
         if not porcelain:
             console.print(
@@ -92,6 +109,13 @@ def list_users(
 @app.command("info")
 def user_info(
     user_id: Annotated[int, typer.Argument(help="User ID to inspect")],
+    instance: Annotated[
+        Optional[str],
+        typer.Option(
+            "--instance",
+            help="Superset instance name (self-hosted). Use 'sup instance list'.",
+        ),
+    ] = None,
     workspace_id: Annotated[
         Optional[int],
         typer.Option("--workspace-id", "-w", help="Workspace ID"),
@@ -115,7 +139,9 @@ def user_info(
     try:
         with data_spinner(f"user {user_id}", silent=porcelain):
             ctx = SupContext()
-            client = SupSupersetClient.from_context(ctx, workspace_id)
+            client = SupSupersetClient.from_context(
+                ctx, workspace_id=workspace_id, instance_name=instance
+            )
 
             # Get all users and find the specific one
             users_list = list(client.client.export_users())
@@ -152,6 +178,14 @@ def user_info(
 
     except typer.Exit:
         raise
+    except ValueError as e:
+        # from_context() provides helpful error messages for missing config
+        if not porcelain:
+            console.print(
+                f"{EMOJIS['error']} {e}",
+                style=RICH_STYLES["error"],
+            )
+        raise typer.Exit(1)
     except Exception as e:
         if not porcelain:
             console.print(

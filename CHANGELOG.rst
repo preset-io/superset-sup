@@ -5,6 +5,11 @@ Changelog
 Next
 ====
 
+Version 0.1.7 - 2026-11-20
+===========================
+
+- Bounded ``sqlglot`` below 30 to restore ``sup dbt core`` / ``sup dbt cloud`` imports (`#61 <https://github.com/preset-io/superset-sup/pull/61>`_).
+
 Version 0.1.6 - 2026-06-23
 ===========================
 
